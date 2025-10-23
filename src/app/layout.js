@@ -1,8 +1,24 @@
 // src/app/layout.js
 import './globals.css';
-import { Inter } from 'next/font/google';
+import { Poppins, Lora, Fira_Code } from "next/font/google"
 
-const inter = Inter({ subsets: ['latin'] });
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
+})
+
+const lora = Lora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-serif",
+})
+
+const firaCode = Fira_Code({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-mono",
+})
 
 export const metadata = {
   title: 'ManagHer — Solopreneur Journey',
@@ -11,10 +27,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id">
-      <body className={inter.className}>
-        {children}
-      </body>
+    <html lang="en" className="dark"> 
+      <body>{children}</body>
     </html>
   );
 }
