@@ -45,6 +45,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#faf9fb] p-8 font-sans">
+
       {/* Layout Utama */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 max-w-7xl mx-auto">
 
