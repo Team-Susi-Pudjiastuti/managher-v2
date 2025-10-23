@@ -78,6 +78,7 @@ export default function Home() {
               <option value="Teknologi">Teknologi</option>
               <option value="Pendidikan">Pendidikan</option>
               <option value="Kesehatan">Kesehatan</option>
+              
             </select>
             <button
               onClick={handleGenerate}
@@ -111,7 +112,7 @@ export default function Home() {
                   <p><strong>Manfaat:</strong> {idea.benefit}</p>
                   <p><strong>Harga:</strong> {idea.price}</p>
                 </div>
-                <button className="mt-4 w-full bg-gradient-to-r from-pink-500 to-pink-400 hover:from-pink-600 hover:to-pink-500 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200">
+                <button className="mt-4 w-full bg-gradient-to-red from-red-500 to-red-400 hover:from-red-600 hover:to-red-500 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"> 
                   Gunakan Produk Ini
                 </button>
               </div>
