@@ -1,4 +1,5 @@
 'use client';
+
 import { useState } from 'react';
 
 export default function Home() {
@@ -63,7 +64,7 @@ export default function Home() {
           </div>
 
           {/* Form Generate */}
-          <div className="bg-white border border-pink-200 rounded-2xl shadow-sm p-6 mb-10 max-w-lg mx-auto">
+          <div className="bg-white border border-pink-400 rounded-2xl shadow-sm p-6 mb-10 max-w-lg mx-auto">
             <label htmlFor="interest" className="block text-sm font-medium text-gray-700 mb-2">
               Bidang minatmu apa?
             </label>
@@ -71,14 +72,13 @@ export default function Home() {
               id="interest"
               value={selectedInterest}
               onChange={(e) => setSelectedInterest(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
             >
               <option value="Makanan & Minuman">Makanan & Minuman</option>
               <option value="Fashion">Fashion</option>
               <option value="Teknologi">Teknologi</option>
               <option value="Pendidikan">Pendidikan</option>
               <option value="Kesehatan">Kesehatan</option>
-              
             </select>
             <button
               onClick={handleGenerate}
@@ -100,7 +100,7 @@ export default function Home() {
             {generatedIdeas.map((idea, index) => (
               <div
                 key={index}
-                className="bg-white border border-pink-200 rounded-2xl shadow-md p-6 hover:shadow-lg transition-all duration-300"
+                className="bg-white border border-pink-400 rounded-2xl shadow-sm p-6 hover:shadow-lg transition-all duration-300"
               >
                 <h3 className="text-lg font-bold text-pink-600 mb-3">{idea.title}</h3>
                 <div className="space-y-2 text-sm text-gray-700">
@@ -112,7 +112,7 @@ export default function Home() {
                   <p><strong>Manfaat:</strong> {idea.benefit}</p>
                   <p><strong>Harga:</strong> {idea.price}</p>
                 </div>
-                <button className="mt-4 w-full bg-gradient-to-red from-red-500 to-red-400 hover:from-red-600 hover:to-red-500 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"> 
+                <button className="mt-4 w-full bg-pink-500 hover:bg-pink-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200">
                   Gunakan Produk Ini
                 </button>
               </div>
@@ -121,22 +121,22 @@ export default function Home() {
         </div>
 
         {/* TIPS & RESOURCE */}
-        <aside className="bg-white border border-pink-200 rounded-2xl shadow-sm p-5 h-fit">
+        <aside className="bg-white border border-pink-400 rounded-2xl shadow-sm p-5 h-fit">
           <h3 className="text-lg font-bold text-gray-800 mb-4">💭 Tips & Resources</h3>
           <div className="space-y-4 text-sm">
-            <div className="p-3 bg-pink-50 rounded-lg border-l-4 border-pink-400">
+            <div className="p-3 bg-pink-50 rounded-lg border-l-4 border-pink-500">
               <h4 className="font-semibold text-pink-700">Tip #1</h4>
               <p className="text-gray-600">Fokus pada solusi masalah nyata, bukan hanya ide keren.</p>
             </div>
-            <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+            <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
               <h4 className="font-semibold text-blue-700">Tip #2</h4>
               <p className="text-gray-600">Uji pasar kecil dulu sebelum produksi massal.</p>
             </div>
-            <div className="p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+            <div className="p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
               <h4 className="font-semibold text-yellow-700">Tip #3</h4>
               <p className="text-gray-600">Gunakan feedback pelanggan untuk iterasi produk.</p>
             </div>
-            <div className="p-3 bg-teal-50 rounded-lg border-l-4 border-teal-400">
+            <div className="p-3 bg-teal-50 rounded-lg border-l-4 border-teal-500">
               <h4 className="font-semibold text-teal-700">Resource</h4>
               <p className="text-gray-600">Baca panduan “Startup dari Nol” di blog kami.</p>
               <a href="#" className="text-teal-500 underline text-xs mt-1 block">
