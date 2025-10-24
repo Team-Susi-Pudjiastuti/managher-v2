@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { User, Mail, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import NotificationModal from '@/components/NotificationModal'; // Sesuaikan path jika perlu
+import NotificationModal from '@/components/NotificationModal';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -45,17 +45,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-white font-[Poppins] p-6">
-      <div className="relative w-full max-w-sm">
-        {/* Bayangan PINK di belakang card */}
+    <main className="min-h-screen flex items-center justify-center bg-white font-[Poppins] p-4 sm:p-6">
+      <div className="relative w-full max-w-md">
         <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-2xl"></div>
 
         {/* Card utama */}
         <div
-          className="relative bg-white text-[#5b5b5b] rounded-2xl border-t border-l border-black p-8"
+          className="relative bg-white text-[#5b5b5b] rounded-2xl border-t border-l border-black p-6 sm:p-8"
           style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
         >
-          <h1 className="text-2xl font-semibold mb-2 text-center">
+          <h1 className="text-xl sm:text-2xl font-semibold mb-2 text-center">
             Buat Akun
           </h1>
           <p className="text-center text-sm mb-6">
@@ -76,13 +75,13 @@ export default function RegisterPage() {
             }}
             tabIndex={-1}
           >
-            <User className="text-[#7a7a7a]" size={20} strokeWidth={2} />
+            <User className="text-[#7a7a7a] shrink-0" size={20} strokeWidth={2} />
             <input
               type="text"
               placeholder="Nama Lengkap"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins]"
+              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins] min-w-0"
             />
           </div>
 
@@ -100,13 +99,13 @@ export default function RegisterPage() {
             }}
             tabIndex={-1}
           >
-            <Mail className="text-[#7a7a7a]" size={20} strokeWidth={2} />
+            <Mail className="text-[#7a7a7a] shrink-0" size={20} strokeWidth={2} />
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins]"
+              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins] min-w-0"
             />
           </div>
 
@@ -124,13 +123,13 @@ export default function RegisterPage() {
             }}
             tabIndex={-1}
           >
-            <Lock className="text-[#7a7a7a]" size={20} strokeWidth={2} />
+            <Lock className="text-[#7a7a7a] shrink-0" size={20} strokeWidth={2} />
             <input
               type="password"
               placeholder="Kata Sandi"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins]"
+              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins] min-w-0"
             />
           </div>
 
@@ -148,13 +147,13 @@ export default function RegisterPage() {
             }}
             tabIndex={-1}
           >
-            <Lock className="text-[#7a7a7a]" size={20} strokeWidth={2} />
+            <Lock className="text-[#7a7a7a] shrink-0" size={20} strokeWidth={2} />
             <input
               type="password"
               placeholder="Konfirmasi Kata Sandi"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins]"
+              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins] min-w-0"
             />
           </div>
 
@@ -166,7 +165,7 @@ export default function RegisterPage() {
               border-t border-l border-black 
               transition-all duration-200
               hover:bg-[#fbe2a7] hover:text-[#333333]
-              hover:translate-x-0.5 hover:translate-y-0.5 font-[Poppins]"
+              hover:translate-x-0.5 hover:translate-y-0.5 font-[Poppins] text-sm sm:text-base"
             style={{ boxShadow: '3px 3px 0 0 #8acfd1' }}
           >
             Daftar
@@ -174,9 +173,9 @@ export default function RegisterPage() {
 
           {/* Divider */}
           <div className="my-6 flex items-center justify-center">
-            <div className="h-px w-20 bg-black"></div>
+            <div className="h-px w-16 sm:w-20 bg-black"></div>
             <span className="px-3 text-xs text-[#5b5b5b] font-[Poppins]">atau</span>
-            <div className="h-px w-20 bg-black"></div>
+            <div className="h-px w-16 sm:w-20 bg-black"></div>
           </div>
 
           {/* Link Login */}
@@ -189,7 +188,6 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* Gunakan komponen modal */}
       <NotificationModal
         isOpen={showModal}
         message={modalMessage}
