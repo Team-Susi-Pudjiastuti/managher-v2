@@ -22,12 +22,10 @@ export default function LoginPage() {
       return;
     }
 
-    // Simulasi login berhasil
     setModalMessage('Login berhasil!');
     setModalType('success');
     setShowModal(true);
 
-    // Arahkan ke onboarding setelah 1.5 detik
     setTimeout(() => {
       router.push('/onboarding');
     }, 1500);
@@ -38,16 +36,16 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-white font-[Poppins] p-6">
-      <div className="relative w-full max-w-sm">
+    <main className="min-h-screen flex items-center justify-center bg-white font-[Poppins] p-4 sm:p-6">
+      <div className="relative w-full max-w-md">
         <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-2xl"></div>
 
         {/* Card utama */}
         <div
-          className="relative bg-white text-[#5b5b5b] rounded-2xl border-t border-l border-black p-8"
+          className="relative bg-white text-[#5b5b5b] rounded-2xl border-t border-l border-black p-6 sm:p-8"
           style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
         >
-          <h1 className="text-2xl font-semibold mb-2 text-center">Selamat Datang</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold mb-2 text-center">Selamat Datang</h1>
           <p className="text-center text-sm mb-6">
             Masuk ke akun <span className="font-semibold">ManagHer</span> Anda
           </p>
@@ -66,13 +64,13 @@ export default function LoginPage() {
             }}
             tabIndex={-1}
           >
-            <Mail className="text-[#7a7a7a]" size={20} strokeWidth={2} />
+            <Mail className="text-[#7a7a7a] shrink-0" size={20} strokeWidth={2} />
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins]"
+              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins] min-w-0"
             />
           </div>
 
@@ -90,13 +88,13 @@ export default function LoginPage() {
             }}
             tabIndex={-1}
           >
-            <Lock className="text-[#7a7a7a]" size={20} strokeWidth={2} />
+            <Lock className="text-[#7a7a7a] shrink-0" size={20} strokeWidth={2} />
             <input
               type="password"
               placeholder="Kata Sandi"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins]"
+              className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins] min-w-0"
             />
           </div>
 
@@ -108,7 +106,7 @@ export default function LoginPage() {
               border-t border-l border-black 
               transition-all duration-200
               hover:bg-[#fbe2a7] hover:text-[#333333]
-              hover:translate-x-0.5 hover:translate-y-0.5 font-[Poppins]"
+              hover:translate-x-0.5 hover:translate-y-0.5 font-[Poppins] text-sm sm:text-base"
             style={{ boxShadow: '3px 3px 0 0 #8acfd1' }}
           >
             Masuk
@@ -116,9 +114,9 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div className="my-6 flex items-center justify-center">
-            <div className="h-px w-20 bg-black" />
-            <span className="px-3 text-xs font-[Poppins]">atau</span>
-            <div className="h-px w-20 bg-black" />
+            <div className="h-px w-16 sm:w-20 bg-black"></div>
+            <span className="px-3 text-xs text-[#5b5b5b] font-[Poppins]">atau</span>
+            <div className="h-px w-16 sm:w-20 bg-black"></div>
           </div>
 
           {/* Link Register */}
@@ -131,7 +129,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Komponen modal */}
       <NotificationModal
         isOpen={showModal}
         message={modalMessage}
