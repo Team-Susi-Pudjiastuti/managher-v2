@@ -1,16 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useParams } from 'next/navigation'; // ✅ tambahkan useParams
+import { usePathname, useParams } from 'next/navigation';
 import { Home, FileText, Settings, LogOut, Sparkle } from 'lucide-react';
 
-export default function Sidebar() {
+export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
   const pathname = usePathname();
-  const params = useParams(); // ✅ dapatkan semua params
-  const projectId = params.projectId; // ✅ ambil projectId dari [projectId]
+  const params = useParams();
+  const projectId = params.projectId;
 
-  // Jika belum ada projectId (misal di halaman lain), jangan render link
-  if (!projectId) {
+  if (!projectId) return null;
+
+  if (isMobile && !isSidebarOpen) {
     return null;
   }
 
@@ -20,46 +21,116 @@ export default function Sidebar() {
     { name: 'Settings', href: `/dashboard/${projectId}/settings`, icon: Settings },
   ];
 
+  // Tooltip
+  const showTooltip = !isSidebarOpen && !isMobile;
+
   return (
-    <div className="flex h-full flex-col border-r border-[#e0e0e0] bg-white w-64 p-4 font-[Poppins]">
-      {/* Logo ManagHer dengan Sparkle */}
-      <div className="flex items-center gap-2 mb-8">
-        <Sparkle size={24} className="text-[#f02d9c]" />
-        <span className="text-lg font-bold text-[#f02d9c]">ManagHer</span>
-      </div>
+    <>
+      {isMobile && isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40"
+          onClick={toggleSidebar}
+        />
+      )}
 
-      <nav className="flex-1 space-y-2">
-        {menuItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-colors ${
-                isActive
-                  ? 'bg-[#fbe2a7] text-[#f02d9c] font-medium border border-black'
-                  : 'text-[#5b5b5b] hover:bg-[#fbe2a7] hover:text-[#f02d9c]'
-              }`}
-            >
-              <Icon size={18} className={isActive ? 'text-[#f02d9c]' : 'text-[#7a7a7a]'} />
-              {item.name}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <button
-        onClick={() => {
-          if (confirm('Yakin ingin keluar?')) {
-            window.location.href = '/login';
-          }
-        }}
-        className="mt-4 flex items-center gap-3 px-3 py-2.5 text-sm text-[#f02d9c] rounded-lg hover:bg-[#fbe2a7]"
+      <div
+        className={`${
+          isMobile 
+            ? 'fixed inset-y-0 left-0 z-40 w-64' 
+            : isSidebarOpen 
+              ? 'w-64' 
+              : 'w-16'
+        } flex flex-col border-r border-[#e0e0e0] bg-white transition-all duration-300 ease-in-out font-sans
+        ${isMobile ? '' : 'sticky top-0 h-screen'}`}
       >
-        <LogOut size={18} className="text-[#f02d9c]" />
-        Logout
-      </button>
-    </div>
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 mb-2">
+          <div className="flex items-center gap-2">
+            <Sparkle size={24} className="text-[#f02d9c]" />
+            {(isSidebarOpen || isMobile) && (
+              <span className="text-lg font-bold text-[#f02d9c]">ManagHer</span>
+            )}
+          </div>
+
+          {isMobile && isSidebarOpen ? (
+            <button
+              onClick={toggleSidebar}
+              className="text-[#5b5b5b] hover:text-[#f02d9c]"
+              aria-label="Close menu"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          ) : !isMobile ? (
+            <button
+              onClick={toggleSidebar}
+              className="text-[#5b5b5b] hover:text-[#f02d9c]"
+              aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {isSidebarOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              )}
+            </button>
+          ) : null}
+        </div>
+
+        {/* Menu */}
+        <nav className="flex-1 overflow-y-auto px-2 pb-2">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                title={showTooltip ? item.name : undefined}
+                className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-colors ${
+                  !isSidebarOpen && !isMobile ? 'justify-center px-2' : ''
+                } ${
+                  isActive
+                    ? 'bg-[#fbe2a7] text-[#f02d9c] font-medium border border-black'
+                    : 'text-[#5b5b5b] hover:bg-[#fbe2a7] hover:text-[#f02d9c]'
+                }`}
+                onClick={() => {
+                  if (isMobile) toggleSidebar();
+                }}
+              >
+                <Icon
+                  size={18}
+                  className={isActive ? 'text-[#f02d9c]' : 'text-[#7a7a7a]'}
+                />
+                {(isSidebarOpen || isMobile) && item.name}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Logout */}
+        <div className="px-2 pb-4">
+          <button
+            onClick={() => {
+              if (confirm('Yakin ingin keluar?')) {
+                window.location.href = '/login';
+              }
+            }}
+            title={showTooltip ? 'Logout' : undefined}
+            className={`flex items-center gap-3 px-3 py-2.5 text-sm text-[#f02d9c] rounded-lg hover:bg-[#fbe2a7] transition-colors ${
+              !isSidebarOpen && !isMobile ? 'justify-center px-2' : ''
+            }`}
+          >
+            <LogOut size={18} className="text-[#f02d9c]" />
+            {(isSidebarOpen || isMobile) && 'Logout'}
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
