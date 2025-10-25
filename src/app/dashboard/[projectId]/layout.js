@@ -1,4 +1,3 @@
-// app/dashboard/[projectId]/layout.js
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,7 +13,7 @@ export default function DashboardLayout({ children }) {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       if (mobile) {
-        setIsSidebarOpen(false); // mobile selalu mulai tertutup
+        setIsSidebarOpen(false); 
       }
     };
 
@@ -29,7 +28,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="flex min-h-screen bg-white">
-      {/* Sidebar hanya muncul di desktop, atau di mobile saat open */}
+      {/* Sidebar */}
       <Sidebar 
         isSidebarOpen={isSidebarOpen} 
         toggleSidebar={toggleSidebar} 
