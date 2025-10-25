@@ -118,7 +118,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
           <button
             onClick={() => {
               if (confirm('Yakin ingin keluar?')) {
-                window.location.href = '/login';
+                window.location.href = '/auth/login';
               }
             }}
             title={showTooltip ? 'Logout' : undefined}
