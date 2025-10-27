@@ -1,440 +1,456 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { ChromePicker } from 'react-color';
+import {
+  Edit3,
+  Target,
+  Zap,
+  Lightbulb,
+  Award,
+  BookOpen,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle
+} from 'lucide-react';
 
-export default function ConceptDevelopment() {
-  // State untuk Dokumen Konsep Produk
-  const [productName, setProductName] = useState('Kamera Travel Ringan Pro');
-  const [category, setCategory] = useState('');
-  const [description, setDescription] = useState('Kamera ringan dengan AI untuk traveler pemula.');
-  const [features, setFeatures] = useState(['Bobot hanya 200 gram']);
-  const [benefits, setBenefits] = useState(['Bisa dibawa ke mana saja tanpa capek']);
-  const [targetAudience, setTargetAudience] = useState('Traveler muda usia 18–35 tahun yang suka konten visual');
+// Helper: get initials
+const getInitials = (name) => {
+  if (!name || name.trim() === '') return 'NB';
+  return name
+    .trim()
+    .split(' ')
+    .map((word) => word[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+};
 
-  // State untuk Uji Minat Calon Pelanggan
-  const [respondents, setRespondents] = useState([
-    { name: 'Bu Siti', interest: 3, comment: 'Cocok buat saya yang sering jalan-jalan' }
-  ]);
+// Helper: contrast text
+const getContrastTextColor = (hex) => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? '#111827' : '#ffffff';
+};
 
-  // State untuk Identitas Brand
-  const [brandName, setBrandName] = useState('SnapEase');
-  const [slogan, setSlogan] = useState('Capture Every Moment, Effortlessly');
-  const [valueProp, setValueProp] = useState('Apa yang membuat brand-mu unik? Untuk siapa? Apa manfaat utamanya?');
-  const [colorPalette, setColorPalette] = useState(['#F43F5E', '#F9FAFB', '#1F2937']);
-  const [logoUrl, setLogoUrl] = useState('');
+export default function Level3Page() {
+  const { projectId } = useParams();
+  const router = useRouter();
 
-  // Fungsi tambah fitur & manfaat
-  const addFeature = () => {
-    setFeatures([...features, '']);
+  // Form state
+  const [brandName, setBrandName] = useState('');
+  const [tagline, setTagline] = useState('');
+  const [productName, setProductName] = useState('');
+  const [productDesc, setProductDesc] = useState('');
+  const [price, setPrice] = useState('');
+
+  // Palette
+  const [palette, setPalette] = useState(['#F6E8D6']);
+  const [activePickerIndex, setActivePickerIndex] = useState(0);
+  const MAX_COLORS = 6;
+
+  // Logo
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState('');
+  const logoUploadRef = useRef(null);
+
+  // UI state
+  const [isEditing, setIsEditing] = useState(true); // mulai dalam mode edit
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Palette handlers
+  const updateColor = (idx, hex) => {
+    setPalette((prev) => prev.map((c, i) => (i === idx ? hex : c)));
   };
 
-  const addBenefit = () => {
-    setBenefits([...benefits, '']);
+  const addColor = () => {
+    if (palette.length >= MAX_COLORS) return;
+    setPalette((prev) => [...prev, '#D9C9B6']);
+    setActivePickerIndex(palette.length);
   };
 
-  // Fungsi update fitur/manfaat
-  const updateFeature = (index, value) => {
-    const newFeatures = [...features];
-    newFeatures[index] = value;
-    setFeatures(newFeatures);
+  const removeColor = (idx) => {
+    if (palette.length <= 1) return;
+    setPalette((prev) => prev.filter((_, i) => i !== idx));
+    setActivePickerIndex(Math.max(0, activePickerIndex - 1));
   };
 
-  const updateBenefit = (index, value) => {
-    const newBenefits = [...benefits];
-    newBenefits[index] = value;
-    setBenefits(newBenefits);
+  // Logo upload
+  const handleLogoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      alert('Format gambar tidak didukung. Gunakan JPG, PNG, atau GIF.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran gambar terlalu besar. Maksimal 5MB.');
+      return;
+    }
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
-  // Fungsi tambah responden
-  const addRespondent = () => {
-    setRespondents([...respondents, { name: '', interest: 3, comment: '' }]);
+  // Simpan ke localStorage
+  const handleSave = () => {
+    const data = {
+      brandName,
+      tagline,
+      productName,
+      productDesc,
+      price,
+      palette,
+      logoPreview // base64 string
+    };
+    localStorage.setItem(`concept-${projectId}`, JSON.stringify(data));
+    alert('Konsep brand berhasil disimpan! ✅');
   };
 
-  // Fungsi update responden
-  const updateRespondent = (index, field, value) => {
-    const newRespondents = [...respondents];
-    newRespondents[index][field] = value;
-    setRespondents(newRespondents);
-  };
+  const brandInitials = getInitials(brandName);
 
-  // Hitung rata-rata minat
-  const avgInterest = respondents.length > 0
-    ? (respondents.reduce((sum, r) => sum + r.interest, 0) / respondents.length).toFixed(1)
-    : 0;
+  if (!isMounted) {
+    return <div className="min-h-screen bg-white p-6">Loading...</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      {/* Header */}
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Bangun Konsep & Identitas Brand-mu</h1>
-        <p className="text-gray-600 mt-2">
-          Jelaskan produkmu, uji minat pelanggan, lalu bangun identitas brand yang kuat.
-        </p>
-      </div>
+    <div className="min-h-screen bg-white font-sans p-3 sm:p-4 md:p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="relative">
+          <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-2xl"></div>
+          <div
+            className="relative bg-white rounded-2xl border-t border-l border-black p-4 sm:p-5 md:p-6"
+            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+          >
+            <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-4 sm:mb-6">
+              Level 3: Concept Development
+            </h1>
 
-      {/* Layout 4 Kolom */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
-
-        {/* KOL 1: FORM IDE - Dokumen Konsep Produk + Uji Minat */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Dokumen Konsep Produk */}
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-pink-400">
-            <h2 className="text-lg font-semibold text-pink-600 mb-4">1. Dokumen Konsep Produk</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Kolom Kiri: Form Input */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nama Produk
-                </label>
-                <input
-                  type="text"
-                  value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                  placeholder="Contoh: Kamera Travel Ringan Pro"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Kategori
-                </label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                >
-                  <option value="">Pilih kategori</option>
-                  <option value="Teknologi">Teknologi</option>
-                  <option value="Makanan">Makanan</option>
-                  <option value="Fashion">Fashion</option>
-                  <option value="Kesehatan">Kesehatan</option>
-                </select>
-              </div>
-            </div>
+                {isEditing ? (
+                  <div className="space-y-4">
+                    {/* Brand Info */}
+                    <div className="border border-gray-300 rounded-xl p-4 bg-[#fdf6f0]">
+                      <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
+                        <Target size={16} /> Brand Info
+                      </h3>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Nama Brand</label>
+                          <input
+                            type="text"
+                            value={brandName}
+                            onChange={(e) => setBrandName(e.target.value)}
+                            className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
+                            placeholder="Contoh: Intan Bakery"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Tagline</label>
+                          <input
+                            type="text"
+                            value={tagline}
+                            onChange={(e) => setTagline(e.target.value)}
+                            className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
+                            placeholder="Contoh: crafted with love & sweetness"
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Deskripsi Singkat (1–2 kalimat)
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Contoh: Kamera ringan dengan AI untuk traveler pemula."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                rows="2"
-              />
-            </div>
+                    {/* Product Info */}
+                    <div className="border border-gray-300 rounded-xl p-4 bg-[#f0f9f9]">
+                      <h3 className="font-bold text-[#f02d9c] mb-3 flex items-center gap-2">
+                        <Zap size={16} /> Product Info
+                      </h3>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Nama Produk</label>
+                          <input
+                            type="text"
+                            value={productName}
+                            onChange={(e) => setProductName(e.target.value)}
+                            className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
+                            placeholder="Contoh: Sourdough Intan"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Deskripsi Singkat</label>
+                          <textarea
+                            value={productDesc}
+                            onChange={(e) => setProductDesc(e.target.value)}
+                            className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
+                            rows="3"
+                            placeholder="Contoh: Roti artisan dengan aroma gandum asli..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Harga (opsional)</label>
+                          <input
+                            type="text"
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value)}
+                            className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
+                            placeholder="Contoh: 150000"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Upload Gambar Prototype</label>
+                          <div
+                            className="mt-1 border-2 border-dashed border-[#7a7a7a] rounded-lg p-3 text-center cursor-pointer hover:border-[#f02d9c]"
+                            onClick={() => logoUploadRef.current?.click()}
+                          >
+                            {logoPreview ? (
+                              <div className="relative w-full h-20 flex items-center justify-center">
+                                <img src={logoPreview} alt="Preview" className="max-h-full max-w-full object-contain" />
+                              </div>
+                            ) : (
+                              <p className="text-sm text-[#5b5b5b]">Klik untuk upload (JPG/PNG/GIF, max 5MB)</p>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/gif"
+                              onChange={handleLogoUpload}
+                              ref={logoUploadRef}
+                              className="hidden"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Fitur Utama
-                </label>
-                <button
-                  onClick={addFeature}
-                  className="text-xs text-pink-600 hover:text-pink-800"
-                >
-                  + Tambah Fitur
-                </button>
-              </div>
-              {features.map((feature, index) => (
-                <input
-                  key={index}
-                  type="text"
-                  value={feature}
-                  onChange={(e) => updateFeature(index, e.target.value)}
-                  placeholder={`Contoh: Bobot hanya 200 gram`}
-                  className="w-full px-3 py-2 mb-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                />
-              ))}
-            </div>
-
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Manfaat Utama
-                </label>
-                <button
-                  onClick={addBenefit}
-                  className="text-xs text-pink-600 hover:text-pink-800"
-                >
-                  + Tambah Manfaat
-                </button>
-              </div>
-              {benefits.map((benefit, index) => (
-                <input
-                  key={index}
-                  type="text"
-                  value={benefit}
-                  onChange={(e) => updateBenefit(index, e.target.value)}
-                  placeholder={`Contoh: Bisa dibawa ke mana saja tanpa capek`}
-                  className="w-full px-3 py-2 mb-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                />
-              ))}
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Target Pelanggan
-              </label>
-              <textarea
-                value={targetAudience}
-                onChange={(e) => setTargetAudience(e.target.value)}
-                placeholder="Contoh: Traveler muda usia 18–35 tahun yang suka konten visual"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                rows="2"
-              />
-            </div>
-          </div>
-
-          {/* Uji Minat Calon Pelanggan */}
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-pink-400">
-            <h3 className="font-semibold text-gray-800 mb-2">Uji Minat Calon Pelanggan (*Concept Testing*)</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Ajukan konsep produkmu ke minimal 3 orang dari target pelanggan. Mintalah mereka menilai minat mereka (1–5) dan berikan komentar.
-            </p>
-
-            {respondents.map((respondent, index) => (
-              <div key={index} className="bg-white rounded-lg p-4 mb-4 border border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Nama responden
-                    </label>
-                    <input
-                      type="text"
-                      value={respondent.name}
-                      onChange={(e) => updateRespondent(index, 'name', e.target.value)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Minat (1–5)
-                    </label>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-600">1 = Tidak Minat</span>
-                      <input
-                        type="range"
-                        min="1"
-                        max="5"
-                        value={respondent.interest}
-                        onChange={(e) => updateRespondent(index, 'interest', parseInt(e.target.value))}
-                        className="w-full mx-2 accent-pink-500"
-                      />
-                      <span className="text-xs text-gray-600">5 = Sangat Minat</span>
+                    {/* Palette Editor */}
+                    <div className="border border-gray-300 rounded-xl p-4 bg-white">
+                      <h3 className="font-bold text-[#f02d9c] mb-3">Palette Editor</h3>
+                      <p className="text-xs text-[#5b5b5b] mb-2">Warna pertama digunakan untuk logo brand.</p>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {palette.map((color, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <button
+                              onClick={() => setActivePickerIndex(i)}
+                              className="w-8 h-8 rounded-full border border-[#7a7a7a]"
+                              style={{ backgroundColor: color }}
+                            />
+                            <span className="text-xs">{color.toUpperCase()}</span>
+                            <button
+                              onClick={() => removeColor(i)}
+                              disabled={palette.length <= 1}
+                              className="text-xs text-red-500 disabled:opacity-40"
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-2">
+                        <div className="text-xs text-[#5b5b5b] mb-2">Color Picker (aktif: warna {activePickerIndex + 1})</div>
+                        <div className="bg-white p-2 border border-gray-300 rounded">
+                          <ChromePicker
+                            color={palette[activePickerIndex]}
+                            onChangeComplete={(col) => updateColor(activePickerIndex, col.hex)}
+                            disableAlpha
+                          />
+                        </div>
+                        <button
+                          onClick={addColor}
+                          disabled={palette.length >= MAX_COLORS}
+                          className="mt-2 px-3 py-1.5 text-xs bg-[#f02d9c] text-white rounded disabled:opacity-50"
+                        >
+                          + Tambah Warna
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Komentar (opsional)
-                  </label>
-                  <textarea
-                    value={respondent.comment}
-                    onChange={(e) => updateRespondent(index, 'comment', e.target.value)}
-                    className="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm"
-                    rows="2"
-                  />
-                </div>
-              </div>
-            ))}
+                ) : (
+                  /* Preview Mode — Semua dalam satu card */
+                  <div className="p-4 border border-gray-300 rounded-xl bg-white shadow-sm">
+                    <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
+                      <Eye size={16} /> Brand & Product Preview
+                    </h3>
 
-            <div className="flex justify-between items-center mb-4">
-              <button
-                onClick={addRespondent}
-                className="text-xs text-pink-600 hover:text-pink-800"
-              >
-                + Tambah Responden
-              </button>
-              {respondents.length > 0 && (
-                <button
-                  onClick={() => setRespondents([])}
-                  className="text-xs text-red-600 hover:text-red-800"
-                >
-                  Hapus Semua
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+                    {/* Brand Identity */}
+                    <div className="p-3 mb-3 bg-[#fdf6f0] rounded border border-[#f0d5c2]">
+                      <h4 className="font-bold text-[#0a5f61] text-sm mb-2">Brand Identity</h4>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="flex items-center justify-center rounded-lg"
+                          style={{
+                            width: 40,
+                            height: 40,
+                            backgroundColor: palette[0],
+                            color: getContrastTextColor(palette[0]),
+                          }}
+                        >
+                          <span className="text-xs font-medium">{brandInitials}</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{brandName || 'Nama Brand'}</p>
+                          <p className="text-xs text-[#5b5b5b]">{tagline || 'Tagline Anda'}</p>
+                        </div>
+                      </div>
+                    </div>
 
-        {/* KOL 2: FORM BRAND - Identitas Brand */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-pink-400">
-          <h2 className="text-lg font-semibold text-pink-600 mb-4">2. Identitas Brand</h2>
+                    {/* Kartu Produk */}
+                    <div className="p-3 mb-3 bg-[#f0f9f9] rounded border border-[#c2e9e8]">
+                      <h4 className="font-bold text-[#f02d9c] text-sm mb-2">Kartu Produk</h4>
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="flex items-center justify-center rounded-lg"
+                          style={{
+                            width: 40,
+                            height: 40,
+                            backgroundColor: palette[0],
+                            color: getContrastTextColor(palette[0]),
+                          }}
+                        >
+                          <span className="text-xs font-medium">{brandInitials}</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{productName || 'Nama Produk'}</p>
+                          <p className="text-xs text-[#5b5b5b] mt-1">{productDesc || 'Deskripsi produk...'}</p>
+                          {price && (
+                            <p className="text-xs font-medium text-[#f02d9c] mt-1">
+                              Rp {parseInt(price).toLocaleString('id-ID') || '0'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nama Brand
-              </label>
-              <input
-                type="text"
-                value={brandName}
-                onChange={(e) => setBrandName(e.target.value)}
-                placeholder="Contoh: SnapEase"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Slogan / Tagline
-              </label>
-              <input
-                type="text"
-                value={slogan}
-                onChange={(e) => setSlogan(e.target.value)}
-                placeholder="Contoh: Capture Every Moment, Effortlessly"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-              />
-            </div>
-          </div>
+                    {/* Gambar Prototype */}
+                    <div>
+                      <h4 className="font-bold text-[#5b5b5b] text-sm mb-2">Gambar Prototype</h4>
+                      {logoPreview ? (
+                        <div className="w-full h-24 rounded border border-[#ddd] overflow-hidden">
+                          <img src={logoPreview} alt="Prototype" className="w-full h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="w-full h-24 rounded border-2 border-dashed border-[#7a7a7a] flex items-center justify-center">
+                          <p className="text-sm text-[#7a7a7a] text-center">
+                            Upload gambar prototype<br />untuk melihat preview
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Value Proposition
-            </label>
-            <textarea
-              value={valueProp}
-              onChange={(e) => setValueProp(e.target.value)}
-              placeholder="Apa yang membuat brand-mu unik? Untuk siapa? Apa manfaat utamanya?"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-              rows="3"
-            />
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Palet Warna Utama
-            </label>
-            <div className="flex space-x-2">
-              {colorPalette.map((color, index) => (
-                <div
-                  key={index}
-                  className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
-                  style={{ backgroundColor: color }}
-                  onClick={() => {
-                    const newColors = [...colorPalette];
-                    newColors[index] = prompt('Masukkan kode warna HEX (contoh: #FF5733)', color) || color;
-                    setColorPalette(newColors);
-                  }}
-                ></div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Logo (Optional)
-            </label>
-            <input
-              type="text"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="URL gambar logo (optional)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Contoh: https://example.com/logo.png
-            </p>
-          </div>
-        </div>
-
-        {/* KOL 3: PREVIEW IDE - Preview Konsep Produk */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-pink-400">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            📄 Preview Konsep Produk
-          </h2>
-          <div className="space-y-4 text-sm text-gray-700">
-            <div>
-              <strong>Nama Produk:</strong> {productName}
-            </div>
-            <div>
-              <strong>Kategori:</strong> {category || '—'}
-            </div>
-            <div>
-              <strong>Deskripsi:</strong> {description}
-            </div>
-            <div>
-              <strong>Fitur:</strong>
-              <ul className="list-disc list-inside ml-4 mt-1">
-                {features.map((f, i) => (
-                  <li key={i}>{f || '—'}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <strong>Manfaat:</strong>
-              <ul className="list-disc list-inside ml-4 mt-1">
-                {benefits.map((b, i) => (
-                  <li key={i}>{b || '—'}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <strong>Target Pelanggan:</strong> {targetAudience}
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <strong>Hasil Uji Minat (*Concept Testing*)</strong>
-              <div className="text-xs text-gray-600 mt-1">
-                {respondents.length} responden • Rata-rata minat: {avgInterest}/5
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* KOL 4: PREVIEW BRAND - Preview Identitas Brand */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-pink-400">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            🎨 Preview Identitas Brand
-          </h2>
-          <div className="space-y-4 text-sm text-gray-700">
-            <div>
-              <strong>Nama Brand:</strong> {brandName}
-            </div>
-            <div>
-              <strong>Slogan:</strong> {slogan}
-            </div>
-            <div>
-              <strong>Value Proposition:</strong> {valueProp}
-            </div>
-            <div>
-              <strong>Palet Warna:</strong>
-              <div className="flex space-x-2 mt-2">
-                {colorPalette.map((color, index) => (
-                  <div
-                    key={index}
-                    className="w-6 h-6 rounded"
-                    style={{ backgroundColor: color }}
-                  ></div>
-                ))}
-              </div>
-            </div>
-            {logoUrl && (
-              <div>
-                <strong>Logo:</strong>
-                <div className="mt-2">
-                  <img src={logoUrl} alt="Logo" className="h-12 w-auto border border-gray-200 rounded" />
+                {/* Tombol Aksi */}
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <button
+                    onClick={handleSave}
+                    className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
+                  >
+                    <CheckCircle size={16} />
+                    Simpan
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(!isEditing)}
+                    className="px-4 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1"
+                  >
+                    <Edit3 size={16} />
+                    {isEditing ? 'Lihat Preview' : 'Edit'}
+                  </button>
+                  <button
+                    onClick={() => router.push(`/dashboard/${projectId}/plan/level2`)}
+                    className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
+                  >
+                    <ChevronLeft size={16} />
+                    Prev
+                  </button>
+                  <button
+                    onClick={() => router.push(`/dashboard/${projectId}/plan/level4`)}
+                    className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
+                  >
+                    Next
+                    <ChevronRight size={16} />
+                  </button>
                 </div>
               </div>
-            )}
+
+              {/* Kolom Kanan: Tujuan, Tips, Resources */}
+              <div className="space-y-5">
+                <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
+                  <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
+                    <Lightbulb size={16} />
+                    Tujuan Level 3
+                  </h3>
+                  <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
+                    <li>Mengembangkan identitas visual brand yang konsisten</li>
+                    <li>Mendefinisikan nama, tagline, dan positioning produk</li>
+                    <li>Menyusun elemen dasar brand untuk digunakan di tahap selanjutnya</li>
+                  </ul>
+                </div>
+
+                <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
+                  <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
+                    <Award size={16} />
+                    Tips & Best Practice
+                  </h3>
+                  <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
+                    <li>Gunakan <strong>1–2 warna utama</strong> untuk konsistensi brand</li>
+                    <li>Warna logo harus kontras dengan latar belakang</li>
+                    <li>Tagline harus <strong>pendek, jelas, dan emosional</strong></li>
+                    <li>Upload gambar prototype yang <strong>representatif</strong> (kemasan, UI, atau produk fisik)</li>
+                  </ul>
+                </div>
+
+                <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
+                  <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
+                    <BookOpen size={16} />
+                    Resources Resmi
+                  </h3>
+                  <ul className="text-sm text-[#5b5b5b] space-y-2">
+                    <li>
+                      <a
+                        href="https://www.strategyzer.com/canvas/value-proposition-canvas"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                      >
+                        Strategyzer: Value Proposition Design <ChevronRight size={12} />
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="https://miro.com/templates/value-proposition-canvas/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                      >
+                        Miro: Value Proposition Canvas Template <ChevronRight size={12} />
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="https://perempuaninovasi.id/workshop"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                      >
+                        Workshop Branding untuk UMKM <ChevronRight size={12} />
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
-      </div>
-
-      {/* Tombol Simpan & Lanjut */}
-      <div className="mt-8 text-center">
-        <button
-          className="px-6 py-3 bg-pink-500 hover:bg-pink-600 text-white font-medium rounded-lg transition duration-200"
-        >
-          Simpan & Lanjut ke Level Berikutnya
-        </button>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-8 text-center text-xs text-gray-500">
-        © 2025 ManagHer — Empowering Women Entrepreneurs 💖
       </div>
     </div>
   );
