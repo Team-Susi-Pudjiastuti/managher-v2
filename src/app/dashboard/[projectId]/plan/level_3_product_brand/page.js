@@ -276,14 +276,14 @@ export default function Level3Page() {
                     </div>
                   </div>
                 ) : (
-                  /* Preview Mode — Semua dalam satu card */
+                  /* Preview Mode — Satu kartu besar, sesuai gambar */
                   <div className="p-4 border border-gray-300 rounded-xl bg-white shadow-sm">
                     <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
                       <Eye size={16} /> Brand & Product Preview
                     </h3>
 
-                    {/* Brand Identity */}
-                    <div className="p-3 mb-3 bg-[#fdf6f0] rounded border border-[#f0d5c2]">
+                    {/* Brand Identity Section */}
+                    <div className="p-3 mb-3 rounded-lg" style={{ backgroundColor: '#f8f4fa', border: '1px solid #e6d9ee' }}>
                       <h4 className="font-bold text-[#0a5f61] text-sm mb-2">Brand Identity</h4>
                       <div className="flex items-center gap-3">
                         <div
@@ -304,8 +304,8 @@ export default function Level3Page() {
                       </div>
                     </div>
 
-                    {/* Kartu Produk */}
-                    <div className="p-3 mb-3 bg-[#f0f9f9] rounded border border-[#c2e9e8]">
+                    {/* Kartu Produk Section */}
+                    <div className="p-3 mb-3 rounded-lg" style={{ backgroundColor: '#f0fafb', border: '1px solid #d0ebea' }}>
                       <h4 className="font-bold text-[#f02d9c] text-sm mb-2">Kartu Produk</h4>
                       <div className="flex items-start gap-3">
                         <div
@@ -331,7 +331,7 @@ export default function Level3Page() {
                       </div>
                     </div>
 
-                    {/* Gambar Prototype */}
+                    {/* Gambar Prototype Section */}
                     <div>
                       <h4 className="font-bold text-[#5b5b5b] text-sm mb-2">Gambar Prototype</h4>
                       {logoPreview ? (
