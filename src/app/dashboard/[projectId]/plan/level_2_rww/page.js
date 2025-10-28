@@ -35,8 +35,9 @@ export default function RWW() {
   const updateProject = useProjectStore((state) => state.updateProject);
 
   const [respondenName, setRespondenName] = useState('');
-  const [hubungan, setHubungan] = useState('');
-  const [responses, setResponses] = useState([]);
+  const [jenisKelamin, setJenisKelamin] = useState('');
+  const [usia, setUsia] = useState('');
+  const [aktivitas, setAktivitas] = useState('');
 
   const [q1, setQ1] = useState(null);
   const [q2, setQ2] = useState(null);
@@ -48,20 +49,13 @@ export default function RWW() {
   const [q8, setQ8] = useState(null);
   const [q9, setQ9] = useState(null);
 
-  const [q1Note, setQ1Note] = useState('');
-  const [q2Note, setQ2Note] = useState('');
-  const [q3Note, setQ3Note] = useState('');
-  const [q4Note, setQ4Note] = useState('');
-  const [q5Note, setQ5Note] = useState('');
-  const [q6Note, setQ6Note] = useState('');
-  const [q7Note, setQ7Note] = useState('');
-  const [q8Note, setQ8Note] = useState('');
-  const [q9Note, setQ9Note] = useState('');
+  const [notes, setNotes] = useState({});
 
   const [isEditing, setIsEditing] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [project, setProject] = useState(null);
+  const [responses, setResponses] = useState([]);
 
   // Deteksi mobile
   useEffect(() => {
@@ -71,18 +65,28 @@ export default function RWW() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load data dari store jika ada
+  // Load data dari store dan localStorage
   useEffect(() => {
-    if (projectId) {
-      const found = projects.find((p) => p.id === projectId);
-      setProject(found);
-      const saved = localStorage.getItem(`rww_data_${projectId}`);
-      if (saved) {
+    if (!projectId) return;
+
+    const found = projects.find((p) => p.id === projectId);
+    setProject(found);
+
+    const saved = localStorage.getItem(`rww_data_${projectId}`);
+    if (saved) {
+      try {
         const { responses: savedResponses } = JSON.parse(saved);
-        setResponses(savedResponses);
+        setResponses(Array.isArray(savedResponses) ? savedResponses : []);
+      } catch (e) {
+        console.error('Gagal memuat data RWW dari localStorage:', e);
+        setResponses([]);
       }
     }
   }, [projectId, projects]);
+
+  const handleNoteChange = (key, value) => {
+    setNotes((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handleAddResponden = () => {
     const allAnswered = [q1, q2, q3, q4, q5, q6, q7, q8, q9].every((val) => val !== null);
@@ -94,21 +98,23 @@ export default function RWW() {
     const newResponse = {
       id: Date.now(),
       name: respondenName || '—',
-      relationship: hubungan || '—',
+      gender: jenisKelamin || '—',
+      age: usia || '—',
+      activity: aktivitas || '—',
       real: (q1 + q2 + q3) / 3,
       win: (q4 + q5 + q6) / 3,
       worth: (q7 + q8 + q9) / 3,
       total: ((q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8 + q9) / 9).toFixed(1),
       notes: {
-        q1: q1Note,
-        q2: q2Note,
-        q3: q3Note,
-        q4: q4Note,
-        q5: q5Note,
-        q6: q6Note,
-        q7: q7Note,
-        q8: q8Note,
-        q9: q9Note,
+        q1: notes.q1 || '',
+        q2: notes.q2 || '',
+        q3: notes.q3 || '',
+        q4: notes.q4 || '',
+        q5: notes.q5 || '',
+        q6: notes.q6 || '',
+        q7: notes.q7 || '',
+        q8: notes.q8 || '',
+        q9: notes.q9 || '',
       },
     };
 
@@ -116,7 +122,9 @@ export default function RWW() {
 
     // Reset form
     setRespondenName('');
-    setHubungan('');
+    setJenisKelamin('');
+    setUsia('');
+    setAktivitas('');
     setQ1(null);
     setQ2(null);
     setQ3(null);
@@ -126,15 +134,7 @@ export default function RWW() {
     setQ7(null);
     setQ8(null);
     setQ9(null);
-    setQ1Note('');
-    setQ2Note('');
-    setQ3Note('');
-    setQ4Note('');
-    setQ5Note('');
-    setQ6Note('');
-    setQ7Note('');
-    setQ8Note('');
-    setQ9Note('');
+    setNotes({});
   };
 
   const calculateAverages = () => {
@@ -184,7 +184,7 @@ export default function RWW() {
     };
     localStorage.setItem(`rww_data_${projectId}`, JSON.stringify(dataToSave));
 
-    // Simpan ke store juga (opsional)
+    // Simpan ke store juga
     const updatedLevels = [...(project?.levels || [])];
     if (!updatedLevels[1]) updatedLevels[1] = { id: 2, completed: false, data: {} };
     updatedLevels[1] = {
@@ -261,7 +261,7 @@ export default function RWW() {
                         <h2 className="text-lg font-bold mb-5">Tambah Data Responden</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                           <div>
-                            <label className="block text-sm font-medium mb-2">Nama Responden</label>
+                            <label className="block text-sm font-medium mb-2">Nama Lengkap</label>
                             <input
                               type="text"
                               value={respondenName}
@@ -272,12 +272,37 @@ export default function RWW() {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium mb-2">Hubungan</label>
+                            <label className="block text-sm font-medium mb-2">Jenis Kelamin</label>
+                            <select
+                              value={jenisKelamin}
+                              onChange={(e) => setJenisKelamin(e.target.value)}
+                              className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] bg-white"
+                              style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+                            >
+                              <option value="">Pilih Jenis Kelamin</option>
+                              <option value="Laki-laki">Laki-laki</option>
+                              <option value="Perempuan">Perempuan</option>
+                              <option value="Lainnya">Lainnya</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">Usia</label>
+                            <input
+                              type="number"
+                              value={usia}
+                              onChange={(e) => setUsia(e.target.value)}
+                              placeholder="Contoh: 25"
+                              className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
+                              style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">Aktivitas</label>
                             <input
                               type="text"
-                              value={hubungan}
-                              onChange={(e) => setHubungan(e.target.value)}
-                              placeholder="Contoh: Calon Pengguna"
+                              value={aktivitas}
+                              onChange={(e) => setAktivitas(e.target.value)}
+                              placeholder="Contoh: Mahasiswa"
                               className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                             />
@@ -291,22 +316,19 @@ export default function RWW() {
                           </h3>
                           <div className="space-y-5">
                             {[1, 2, 3].map((q) => {
-                              let questionText, value, setValue, setNote;
+                              let questionText, value, setValue;
                               if (q === 1) {
                                 questionText = 'Seberapa sering Anda mengalami masalah ini?';
                                 value = q1;
                                 setValue = setQ1;
-                                setNote = setQ1Note;
                               } else if (q === 2) {
                                 questionText = 'Seberapa penting solusi ini bagi Anda?';
                                 value = q2;
                                 setValue = setQ2;
-                                setNote = setQ2Note;
                               } else {
                                 questionText = 'Pernahkah Anda mencari solusi serupa sebelumnya?';
                                 value = q3;
                                 setValue = setQ3;
-                                setNote = setQ3Note;
                               }
                               return (
                                 <div key={q}>
@@ -315,8 +337,8 @@ export default function RWW() {
                                   </label>
                                   <RatingBox value={value} onChange={setValue} />
                                   <textarea
-                                    value={setNote ? eval(`q${q}Note`) : ''}
-                                    onChange={(e) => setNote(e.target.value)}
+                                    value={notes[`q${q}`] || ''}
+                                    onChange={(e) => handleNoteChange(`q${q}`, e.target.value)}
                                     placeholder="Opsional: Jelaskan..."
                                     className="w-full mt-3 px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
                                     style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
@@ -334,22 +356,19 @@ export default function RWW() {
                           </h3>
                           <div className="space-y-5">
                             {[4, 5, 6].map((q) => {
-                              let questionText, value, setValue, setNote;
+                              let questionText, value, setValue;
                               if (q === 4) {
                                 questionText = 'Seberapa unik solusi ini dibanding yang ada?';
                                 value = q4;
                                 setValue = setQ4;
-                                setNote = setQ4Note;
                               } else if (q === 5) {
                                 questionText = 'Apakah solusi ini lebih mudah digunakan?';
                                 value = q5;
                                 setValue = setQ5;
-                                setNote = setQ5Note;
                               } else {
                                 questionText = 'Seberapa besar kepercayaan Anda terhadap kualitasnya?';
                                 value = q6;
                                 setValue = setQ6;
-                                setNote = setQ6Note;
                               }
                               return (
                                 <div key={q}>
@@ -358,8 +377,8 @@ export default function RWW() {
                                   </label>
                                   <RatingBox value={value} onChange={setValue} />
                                   <textarea
-                                    value={setNote ? eval(`q${q}Note`) : ''}
-                                    onChange={(e) => setNote(e.target.value)}
+                                    value={notes[`q${q}`] || ''}
+                                    onChange={(e) => handleNoteChange(`q${q}`, e.target.value)}
                                     placeholder="Opsional: Jelaskan..."
                                     className="w-full mt-3 px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
                                     style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
@@ -377,22 +396,19 @@ export default function RWW() {
                           </h3>
                           <div className="space-y-5">
                             {[7, 8, 9].map((q) => {
-                              let questionText, value, setValue, setNote;
+                              let questionText, value, setValue;
                               if (q === 7) {
                                 questionText = 'Seberapa besar kemungkinan Anda membeli produk ini?';
                                 value = q7;
                                 setValue = setQ7;
-                                setNote = setQ7Note;
                               } else if (q === 8) {
                                 questionText = 'Apakah harganya sebanding dengan manfaatnya?';
                                 value = q8;
                                 setValue = setQ8;
-                                setNote = setQ8Note;
                               } else {
                                 questionText = 'Seberapa besar Anda merekomendasikan bisnis ini?';
                                 value = q9;
                                 setValue = setQ9;
-                                setNote = setQ9Note;
                               }
                               return (
                                 <div key={q}>
@@ -401,8 +417,8 @@ export default function RWW() {
                                   </label>
                                   <RatingBox value={value} onChange={setValue} />
                                   <textarea
-                                    value={setNote ? eval(`q${q}Note`) : ''}
-                                    onChange={(e) => setNote(e.target.value)}
+                                    value={notes[`q${q}`] || ''}
+                                    onChange={(e) => handleNoteChange(`q${q}`, e.target.value)}
                                     placeholder="Opsional: Jelaskan..."
                                     className="w-full mt-3 px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
                                     style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
@@ -610,7 +626,9 @@ export default function RWW() {
                             {responses.map((r) => (
                               <div key={r.id} className="text-xs p-2 border border-gray-200 rounded bg-white">
                                 <div className="font-medium text-[#0a5f61]">{r.name}</div>
-                                <div className="text-[#5b5b5b]">{r.relationship}</div>
+                                <div className="text-[#5b5b5b]">
+                                  {r.gender}, {r.age} tahun, {r.activity}
+                                </div>
                                 <div className="text-[#f02d9c] font-bold mt-1">Total: {r.total}</div>
                               </div>
                             ))}

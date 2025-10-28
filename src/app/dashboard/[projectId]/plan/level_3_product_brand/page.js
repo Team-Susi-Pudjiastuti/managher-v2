@@ -271,6 +271,36 @@ export default function Level3Page() {
                                   placeholder="Contoh: crafted with love & sweetness"
                                 />
                               </div>
+                              <div>
+                                <label className="block text-xs font-medium text-[#5b5b5b] mb-1">
+                                  Upload Logo Brand
+                                </label>
+                                <div
+                                  className="mt-1 border-2 border-dashed border-[#7a7a7a] rounded-lg p-3 text-center cursor-pointer hover:border-[#f02d9c]"
+                                  onClick={() => logoUploadRef.current?.click()}
+                                >
+                                  {logoPreview ? (
+                                    <div className="relative w-full h-20 flex items-center justify-center">
+                                      <img
+                                        src={logoPreview}
+                                        alt="Logo Preview"
+                                        className="max-h-full max-w-full object-contain"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-[#5b5b5b]">
+                                      Klik untuk upload (JPG/PNG/GIF, max 5MB)
+                                    </p>
+                                  )}
+                                  <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/gif"
+                                    onChange={handleLogoUpload}
+                                    ref={logoUploadRef}
+                                    className="hidden"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </div>
 
@@ -316,36 +346,6 @@ export default function Level3Page() {
                                   placeholder="Contoh: 150000"
                                 />
                               </div>
-                              <div>
-                                <label className="block text-xs font-medium text-[#5b5b5b] mb-1">
-                                  Upload Gambar Prototype
-                                </label>
-                                <div
-                                  className="mt-1 border-2 border-dashed border-[#7a7a7a] rounded-lg p-3 text-center cursor-pointer hover:border-[#f02d9c]"
-                                  onClick={() => logoUploadRef.current?.click()}
-                                >
-                                  {logoPreview ? (
-                                    <div className="relative w-full h-20 flex items-center justify-center">
-                                      <img
-                                        src={logoPreview}
-                                        alt="Preview"
-                                        className="max-h-full max-w-full object-contain"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <p className="text-sm text-[#5b5b5b]">
-                                      Klik untuk upload (JPG/PNG/GIF, max 5MB)
-                                    </p>
-                                  )}
-                                  <input
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/gif"
-                                    onChange={handleLogoUpload}
-                                    ref={logoUploadRef}
-                                    className="hidden"
-                                  />
-                                </div>
-                              </div>
                             </div>
                           </div>
 
@@ -385,13 +385,6 @@ export default function Level3Page() {
                                   disableAlpha
                                 />
                               </div>
-                              <button
-                                onClick={addColor}
-                                disabled={palette.length >= MAX_COLORS}
-                                className="mt-2 px-3 py-1.5 text-xs bg-[#f02d9c] text-white rounded disabled:opacity-50"
-                              >
-                                + Tambah Warna
-                              </button>
                             </div>
                           </div>
                         </div>
@@ -404,7 +397,13 @@ export default function Level3Page() {
 
   <div className="border rounded-xl overflow-hidden" style={{ backgroundColor: '#f0f2f5' }}>
     {/* Brand Identity */}
-    <div className="p-4 border-b border-gray-200" style={{ backgroundColor: 'white' }}>
+    <div
+      className="p-4 border-b border-gray-200"
+      style={{
+        backgroundColor: palette[1] || palette[0], 
+        color: getContrastTextColor(palette[1] || palette[0]), 
+      }}
+    >
       <h4 className="text-xs font-semibold text-[#5b5b5b] mb-2">Brand Identity Preview</h4>
       <div className="flex items-center gap-3">
         <div
@@ -412,11 +411,19 @@ export default function Level3Page() {
           style={{
             width: 48,
             height: 48,
-            backgroundColor: palette[0],
+            backgroundColor: palette[0], // First color for logo background
             color: getContrastTextColor(palette[0]),
           }}
         >
-          <span className="text-sm font-bold">{brandInitials}</span>
+          {logoPreview ? (
+            <img
+              src={logoPreview}
+              alt="Logo"
+              className="w-full h-full object-cover rounded-lg"
+            />
+          ) : (
+            <span className="text-sm font-bold">{brandInitials}</span>
+          )}
         </div>
         <div className="min-w-0">
           <p className="font-medium text-sm truncate">{brandName || 'Nama Brand'}</p>
@@ -426,8 +433,14 @@ export default function Level3Page() {
     </div>
 
     {/* Product Card */}
-    <div className="p-4 border-b border-gray-200" style={{ backgroundColor: 'white' }}>
-      <h4 className="text-xs font-semibold text-[#5b5b5b] mb-2">Kartu Produk Preview</h4>
+    <div
+      className="p-4 border-b border-gray-200"
+      style={{
+        backgroundColor: palette[1] || palette[0], // Use second color for background, fallback to first
+        color: getContrastTextColor(palette[1] || palette[0]), // Ensure text is readable
+      }}
+    >
+      <h4 className="text-xs font-semibold mb-2">Product Preview</h4>
       <div className="flex items-start gap-3">
         {/* Logo tetap ukuran 48x48, tidak menyusut */}
         <div
@@ -435,21 +448,29 @@ export default function Level3Page() {
           style={{
             width: 48,
             height: 48,
-            backgroundColor: palette[0],
+            backgroundColor: palette[0], // First color for logo background
             color: getContrastTextColor(palette[0]),
           }}
         >
-          <span className="text-sm font-bold">{brandInitials}</span>
+          {logoPreview ? (
+            <img
+              src={logoPreview}
+              alt="Logo"
+              className="w-full h-full object-cover rounded-lg"
+            />
+          ) : (
+            <span className="text-sm font-bold">{brandInitials}</span>
+          )}
         </div>
 
         {/* Teks: bisa panjang, tapi tidak mengganggu layout */}
         <div className="min-w-0 flex-1">
           <p className="font-medium text-sm">{productName || 'Nama Produk'}</p>
-          <p className="text-xs text-[#5b5b5b] mt-1 whitespace-pre-wrap break-words">
+          <p className="text-xs mt-1 whitespace-pre-wrap break-words">
             {productDesc || 'Deskripsi produk...'}
           </p>
           {price && (
-            <p className="text-xs font-medium text-[#f02d9c] mt-1">
+            <p className="text-xs font-medium mt-1">
               Rp {parseInt(price).toLocaleString('id-ID') || '0'}
             </p>
           )}
@@ -457,25 +478,8 @@ export default function Level3Page() {
       </div>
     </div>
 
-    {/* Gambar Prototype */}
-    <div className="p-4" style={{ backgroundColor: 'white' }}>
-      <h4 className="text-xs font-semibold text-[#5b5b5b] mb-2">Gambar Prototype</h4>
-      {logoPreview ? (
-        <div className="w-full h-32 rounded-lg border border-[#ddd] overflow-hidden bg-white flex items-center justify-center">
-          <img
-            src={logoPreview}
-            alt="Prototype"
-            className="max-h-full max-w-full object-contain"
-          />
-        </div>
-      ) : (
-        <div className="w-full h-32 rounded-lg border-2 border-dashed border-[#7a7a7a] flex items-center justify-center bg-gray-50">
-          <p className="text-xs text-[#7a7a7a] text-center px-2">
-            Upload gambar prototype<br />untuk melihat preview
-          </p>
-        </div>
-      )}
-    </div>
+    {/* Removed: Gambar Prototype Preview */}
+    {/* The entire section for "Gambar Prototype" has been deleted as per request */}
   </div>
 </div>
                       )}
