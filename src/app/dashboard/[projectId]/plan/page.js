@@ -54,7 +54,7 @@ export default function PlanLevelsPage() {
   const totalXp = PLAN_LEVELS.reduce((sum, l) => sum + l.xp, 0);
   const phaseProgress = Math.min(100, Math.floor((currentXp / totalXp) * 100));
 
-  // ✅ Cari level pertama yang BELUM selesai → hanya ini yang "aktif" untuk dikerjakan
+  // Cari level pertama yang BELUM selesai → hanya ini yang "aktif" untuk dikerjakan
   const firstIncompleteLevel = enrichedLevels.find(l => !l.completed);
 
   const breadcrumbItems = [
@@ -131,7 +131,7 @@ export default function PlanLevelsPage() {
         <div className="space-y-4 sm:space-y-6">
           {enrichedLevels.map((level) => {
             const isCompleted = level.completed;
-            const isUnlocked = level.id <= (firstIncompleteLevel?.id || Infinity); // ✅ Semua level ≤ firstIncomplete dibuka
+            const isUnlocked = level.id <= (firstIncompleteLevel?.id || Infinity); // Semua level ≤ firstIncomplete dibuka
             const isActive = level.id === firstIncompleteLevel?.id;
 
             return (
