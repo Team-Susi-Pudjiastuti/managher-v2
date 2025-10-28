@@ -47,13 +47,13 @@ export default function PlanSidebar({
 
   const sidebarItems = [
     { id: 'overview', title: 'Overview', icon: LayoutDashboard, href: `/dashboard/${projectId}` },
-    { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level1` },
-    { id: 2, title: 'RWW Analysist', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level2` },
-    { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level3` },
-    { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level4` },
-    { id: 5, title: 'MVP', icon: Box, href: `/dashboard/${projectId}/plan/level5` },
-    { id: 6, title: 'Beta Testing', icon: Users, href: `/dashboard/${projectId}/plan/level6` },
-    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level7` }
+    { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level_1_idea` },
+    { id: 2, title: 'RWW Analysist', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww` },
+    { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level_3_product_brand` },
+    { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas` },
+    { id: 5, title: 'MVP', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP` },
+    { id: 6, title: 'Beta Testing', icon: Users, href: `/dashboard/${projectId}/plan/level_6_beta_testing` },
+    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch` }
   ];
 
   const isLevelCompleted = (id) => {
