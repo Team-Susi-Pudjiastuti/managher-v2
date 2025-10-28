@@ -6,18 +6,9 @@ import { useEffect, useState } from 'react';
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
 
-
 import { 
-  Lightbulb, 
-  CheckCircle, 
-  Palette, 
-  FileText, 
-  Box, 
-  Users, 
-  Rocket,
-  Lock,
-  Check,      
-  Sparkle     
+  Lightbulb, CheckCircle, Palette, FileText, Box, Users, Rocket,
+  Lock, Check, Sparkle 
 } from 'lucide-react';
 
 const PLAN_LEVELS = [
@@ -62,7 +53,9 @@ export default function PlanLevelsPage() {
   const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
   const totalXp = PLAN_LEVELS.reduce((sum, l) => sum + l.xp, 0);
   const phaseProgress = Math.min(100, Math.floor((currentXp / totalXp) * 100));
-  const currentLevel = enrichedLevels.find(l => !l.completed) || enrichedLevels[enrichedLevels.length - 1];
+
+  // ✅ Cari level pertama yang BELUM selesai → hanya ini yang "aktif" untuk dikerjakan
+  const firstIncompleteLevel = enrichedLevels.find(l => !l.completed);
 
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },
@@ -71,7 +64,7 @@ export default function PlanLevelsPage() {
 
   const renderLevelBadge = (level) => {
     const isCompleted = level.completed;
-    const isActive = level.id === currentLevel.id && !isCompleted;
+    const isActive = level.id === firstIncompleteLevel?.id;
 
     let bgColor, textColor, borderColor;
     if (isActive) {
@@ -110,12 +103,10 @@ export default function PlanLevelsPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* BREADCRUMB SEBAGAI HEADER */}
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
         <Breadcrumb items={breadcrumbItems} />
       </div>
 
-      {/* Konten utama */}
       <div className="max-w-4xl mx-auto mt-6 p-3 sm:p-4 md:p-6">
         <h1 className="text-xl sm:text-2xl font-bold text-[#5b5b5b] mb-4 sm:mb-6">Fase: Plan</h1>
 
@@ -132,7 +123,7 @@ export default function PlanLevelsPage() {
           </div>
           <p className="text-xs sm:text-sm text-[#7a7a7a] mt-2">
             {phaseProgress < 100
-              ? `Lanjutkan ke Level ${currentLevel.id} untuk menyelesaikan fase ini`
+              ? `Lanjutkan ke Level ${firstIncompleteLevel?.id || ''} untuk menyelesaikan fase ini`
               : 'Fase Plan telah selesai!'}
           </p>
         </div>
@@ -140,7 +131,8 @@ export default function PlanLevelsPage() {
         <div className="space-y-4 sm:space-y-6">
           {enrichedLevels.map((level) => {
             const isCompleted = level.completed;
-            const isActive = level.id === currentLevel.id && !isCompleted;
+            const isUnlocked = level.id <= (firstIncompleteLevel?.id || Infinity); // ✅ Semua level ≤ firstIncomplete dibuka
+            const isActive = level.id === firstIncompleteLevel?.id;
 
             return (
               <div key={level.id} className="relative">
@@ -167,22 +159,23 @@ export default function PlanLevelsPage() {
                             <Sparkle size={14} className="text-[#f02d9c] mt-0.5 shrink-0" />
                             <span>Siap dikerjakan — klik "Buka" untuk mulai</span>
                           </>
-                        ) : (
+                        ) : !isUnlocked ? (
                           <>
                             <Lock size={14} className="text-gray-500 mt-0.5 shrink-0" />
                             <span>Belum bisa diakses — selesaikan level sebelumnya</span>
+                          </>
+                        ) : (
+                          // Level sudah dibuka tapi belum selesai (misal: user kembali ke L1 setelah L2)
+                          <>
+                            <Sparkle size={14} className="text-[#f02d9c] mt-0.5 shrink-0" />
+                            <span>Buka untuk lanjutkan</span>
                           </>
                         )}
                       </p>
                     </div>
 
                     <div className="shrink-0 mt-2 sm:mt-0">
-                      {isCompleted ? (
-                        <span className="px-2.5 py-1 bg-[#8acfd1] text-[#0a5f61] rounded-full text-xs sm:text-sm font-medium border border-black whitespace-nowrap flex items-center gap-1">
-                          <Check size={12} />
-                          Selesai
-                        </span>
-                      ) : isActive ? (
+                      {isCompleted || isUnlocked ? (
                         <Link href={`/dashboard/${projectId}/plan/level${level.id}`} className="group relative inline-block">
                           <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-full"></div>
                           <div
