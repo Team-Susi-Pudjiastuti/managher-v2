@@ -12,13 +12,13 @@ import {
 } from 'lucide-react';
 
 const PLAN_LEVELS = [
-  { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb },
-  { id: 2, title: "RWW Analysist", phase: "plan", xp: 10, icon: CheckCircle },
-  { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette },
-  { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText },
-  { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box },
-  { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users },
-  { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket },
+  { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb, path: "level_1_idea" },
+  { id: 2, title: "RWW Analysist", phase: "plan", xp: 10, icon: CheckCircle, path: "level_2_rww" },
+  { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette, path: "level_3_product_brand" },
+  { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText, path: "level_4_lean_canvas" },
+  { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box, path: "level_5_MVP" },
+  { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users, path: "level_6_beta_testing" },
+  { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket, path: "level_7_launch" },
 ];
 
 export default function PlanLevelsPage() {
@@ -54,7 +54,6 @@ export default function PlanLevelsPage() {
   const totalXp = PLAN_LEVELS.reduce((sum, l) => sum + l.xp, 0);
   const phaseProgress = Math.min(100, Math.floor((currentXp / totalXp) * 100));
 
-  // Cari level pertama yang BELUM selesai → hanya ini yang "aktif" untuk dikerjakan
   const firstIncompleteLevel = enrichedLevels.find(l => !l.completed);
 
   const breadcrumbItems = [
@@ -131,7 +130,7 @@ export default function PlanLevelsPage() {
         <div className="space-y-4 sm:space-y-6">
           {enrichedLevels.map((level) => {
             const isCompleted = level.completed;
-            const isUnlocked = level.id <= (firstIncompleteLevel?.id || Infinity); // Semua level ≤ firstIncomplete dibuka
+            const isUnlocked = level.id <= (firstIncompleteLevel?.id || Infinity);
             const isActive = level.id === firstIncompleteLevel?.id;
 
             return (
@@ -165,7 +164,6 @@ export default function PlanLevelsPage() {
                             <span>Belum bisa diakses — selesaikan level sebelumnya</span>
                           </>
                         ) : (
-                          // Level sudah dibuka tapi belum selesai (misal: user kembali ke L1 setelah L2)
                           <>
                             <Sparkle size={14} className="text-[#f02d9c] mt-0.5 shrink-0" />
                             <span>Buka untuk lanjutkan</span>
@@ -176,7 +174,10 @@ export default function PlanLevelsPage() {
 
                     <div className="shrink-0 mt-2 sm:mt-0">
                       {isCompleted || isUnlocked ? (
-                        <Link href={`/dashboard/${projectId}/plan/level${level.id}`} className="group relative inline-block">
+                        <Link 
+                          href={`/dashboard/${projectId}/plan/${level.path}`} 
+                          className="group relative inline-block"
+                        >
                           <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-full"></div>
                           <div
                             className="relative px-3 py-1 sm:px-4 sm:py-1.5 bg-white rounded-full border-t border-l border-black font-medium text-black text-xs sm:text-sm

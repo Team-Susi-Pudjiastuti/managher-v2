@@ -19,7 +19,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
 
   // Otomatis collapse saat masuk Level 1–7
   useEffect(() => {
-    const isInLevelPage = /\/plan\/level[1-7]/.test(pathname);
+    const isInLevelPage = /\/plan\/level_[1-7]_[a-z]/.test(pathname);
     if (isInLevelPage) {
       setIsCollapsed(true);
       localStorage.setItem('sidebar_collapsed', 'true');
