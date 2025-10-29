@@ -44,7 +44,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // 🔥 Panggil register() dari Zustand
     const result = await register(name, username, email, password);
 
     if (result.success) {

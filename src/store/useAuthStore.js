@@ -33,7 +33,7 @@ export const useAuthStore = create(
             },
           });
 
-          return { success: true, message: res.data.message };
+          return { success: true, message: res.message };
         } catch (error) {
           console.error('Registration failed:', error.message);
           return { success: false, message: error.message };
@@ -45,23 +45,27 @@ export const useAuthStore = create(
         try {
           const res = await apiRequest('login', 'POST', {
             username,
-            password,
+            password
           });
 
+          console.log('Response dari API:', res)
+
           // backend kamu mengembalikan: { message, data: { username, email } }
-          const userData = res.data?.data;
+          const userData = res.data;
 
           if (!userData) throw new Error('Invalid response from server');
 
           set({
             isAuthenticated: true,
             user: {
+              id: userData._id,
+              name: userData.name,
               username: userData.username,
               email: userData.email,
             },
           });
 
-          return { success: true, message: res.data.message };
+          return { success: true, message: res.message || 'Login successful', user: userData };
         } catch (error) {
           console.error('Login failed:', error.message);
           return { success: false, message: error.message };
