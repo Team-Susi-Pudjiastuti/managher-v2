@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Home, FileText, Settings, LogOut, Sparkle } from 'lucide-react';
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
@@ -9,20 +10,39 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
   const params = useParams();
   const projectId = params.projectId;
 
-  if (!projectId) return null;
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sidebar_collapsed') === 'true';
+    }
+    return false;
+  });
 
-  if (isMobile && !isSidebarOpen) {
-    return null;
-  }
+  // Otomatis collapse saat masuk Level 1–7
+  useEffect(() => {
+    const isInLevelPage = /\/plan\/level[1-7]/.test(pathname);
+    if (isInLevelPage) {
+      setIsCollapsed(true);
+      localStorage.setItem('sidebar_collapsed', 'true');
+    }
+  }, [pathname]);
+
+  const handleToggle = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem('sidebar_collapsed', String(newState));
+  };
+
+  if (!projectId) return null;
+  if (isMobile && !isSidebarOpen) return null;
+
+  const effectiveOpen = isMobile ? isSidebarOpen : !isCollapsed;
+  const showTooltip = !effectiveOpen && !isMobile;
 
   const menuItems = [
     { name: 'Dashboard', href: `/dashboard/${projectId}`, icon: Home },
     { name: 'Profile Bisnis', href: `/dashboard/${projectId}/profile`, icon: FileText },
     { name: 'Settings', href: `/dashboard/${projectId}/settings`, icon: Settings },
   ];
-
-  // Tooltip
-  const showTooltip = !isSidebarOpen && !isMobile;
 
   return (
     <>
@@ -37,7 +57,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
         className={`${
           isMobile 
             ? 'fixed inset-y-0 left-0 z-40 w-64' 
-            : isSidebarOpen 
+            : effectiveOpen 
               ? 'w-64' 
               : 'w-16'
         } flex flex-col border-r border-[#e0e0e0] bg-white transition-all duration-300 ease-in-out font-sans
@@ -47,7 +67,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
         <div className="flex items-center justify-between p-4 mb-2">
           <div className="flex items-center gap-2">
             <Sparkle size={24} className="text-[#f02d9c]" />
-            {(isSidebarOpen || isMobile) && (
+            {(effectiveOpen || isMobile) && (
               <span className="text-lg font-bold text-[#f02d9c]">ManagHer</span>
             )}
           </div>
@@ -65,11 +85,11 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
             </button>
           ) : !isMobile ? (
             <button
-              onClick={toggleSidebar}
+              onClick={handleToggle}
               className="text-[#5b5b5b] hover:text-[#f02d9c]"
-              aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              aria-label={effectiveOpen ? "Collapse sidebar" : "Expand sidebar"}
             >
-              {isSidebarOpen ? (
+              {effectiveOpen ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
@@ -93,7 +113,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
                 href={item.href}
                 title={showTooltip ? item.name : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-colors ${
-                  !isSidebarOpen && !isMobile ? 'justify-center px-2' : ''
+                  !effectiveOpen && !isMobile ? 'justify-center px-2' : ''
                 } ${
                   isActive
                     ? 'bg-[#fbe2a7] text-[#f02d9c] font-medium border border-black'
@@ -107,7 +127,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
                   size={18}
                   className={isActive ? 'text-[#f02d9c]' : 'text-[#7a7a7a]'}
                 />
-                {(isSidebarOpen || isMobile) && item.name}
+                {(effectiveOpen || isMobile) && item.name}
               </Link>
             );
           })}
@@ -118,16 +138,16 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
           <button
             onClick={() => {
               if (confirm('Yakin ingin keluar?')) {
-                window.location.href = '/auth/login';
+                window.location.href = '/login';
               }
             }}
             title={showTooltip ? 'Logout' : undefined}
             className={`flex items-center gap-3 px-3 py-2.5 text-sm text-[#f02d9c] rounded-lg hover:bg-[#fbe2a7] transition-colors ${
-              !isSidebarOpen && !isMobile ? 'justify-center px-2' : ''
+              !effectiveOpen && !isMobile ? 'justify-center px-2' : ''
             }`}
           >
             <LogOut size={18} className="text-[#f02d9c]" />
-            {(isSidebarOpen || isMobile) && 'Logout'}
+            {(effectiveOpen || isMobile) && 'Logout'}
           </button>
         </div>
       </div>
