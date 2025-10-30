@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Menu as MenuIcon, X } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 
@@ -23,22 +24,30 @@ export default function PlanSidebar({
   mobileSidebarOpen = false,
   setMobileSidebarOpen = () => {}
 }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const pathname = usePathname();
   const projects = useProjectStore((state) => state.projects);
   const project = projects.find(p => p.id === projectId);
 
-  useEffect(() => {
-    if (!isMobile) {
-      setSidebarCollapsed(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('plan_sidebar_collapsed') === 'true';
     }
-  }, [isMobile]);
+    return false;
+  });
 
-  const toggleSidebar = () => {
-    if (isMobile) {
-      setMobileSidebarOpen(!mobileSidebarOpen);
-    } else {
-      setSidebarCollapsed(!sidebarCollapsed);
+  // halaman level path
+  useEffect(() => {
+    const isInLevelPage = /\/plan\/level_[1-7]_[a-z]/.test(pathname);
+    if (isInLevelPage) {
+      setIsCollapsed(true);
+      localStorage.setItem('plan_sidebar_collapsed', 'true');
     }
+  }, [pathname]);
+
+  const handleToggle = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem('plan_sidebar_collapsed', String(newState));
   };
 
   const closeMobileSidebar = () => {
@@ -61,8 +70,14 @@ export default function PlanSidebar({
     return project?.levels?.[id - 1]?.completed || false;
   };
 
-  const isActive = (id) => id === currentLevelId;
-  const showText = isMobile ? mobileSidebarOpen : !sidebarCollapsed;
+  const isActive = (id) => {
+    if (id === 'overview') return pathname === `/dashboard/${projectId}`;
+    // Cocokkan berdasarkan path level
+    const levelPath = sidebarItems.find(item => item.id === id)?.href;
+    return levelPath && pathname.startsWith(levelPath);
+  };
+
+  const showText = isMobile ? mobileSidebarOpen : !isCollapsed;
 
   if (isMobile && !mobileSidebarOpen) {
     return null;
@@ -78,16 +93,15 @@ export default function PlanSidebar({
       )}
 
       <div
-        className={`
-          ${isMobile 
+        className={`${
+          isMobile 
             ? 'fixed inset-y-0 left-0 z-40 w-64' 
             : 'lg:sticky lg:top-0 lg:z-0'
-          }
-          bg-white transition-all duration-300 ease-in-out
-          ${isMobile ? '' : (sidebarCollapsed ? 'w-12' : 'w-64')}
+        }
+        bg-white transition-all duration-300 ease-in-out
+        ${isMobile ? '' : (isCollapsed ? 'w-12' : 'w-64')}
         `}
       >
-        {/* Header Sidebar */}
         <div className="px-4 pt-4 lg:p-0 mb-4">
           <div
             className={`bg-white rounded-2xl border-t border-l border-black flex items-center ${
@@ -101,7 +115,7 @@ export default function PlanSidebar({
           >
             {!showText ? (
               <button
-                onClick={toggleSidebar}
+                onClick={isMobile ? closeMobileSidebar : handleToggle}
                 className="text-[#5b5b5b] hover:text-[#f02d9c] transition-colors flex items-center justify-center"
                 aria-label="Toggle sidebar"
               >
@@ -123,7 +137,7 @@ export default function PlanSidebar({
                   </button>
                 ) : (
                   <button
-                    onClick={toggleSidebar}
+                    onClick={handleToggle}
                     className="text-[#5b5b5b] hover:text-[#f02d9c]"
                     aria-label="Collapse sidebar"
                   >
@@ -135,7 +149,6 @@ export default function PlanSidebar({
           </div>
         </div>
 
-        {/* Daftar Menu */}
         <div className="px-4 space-y-2">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
