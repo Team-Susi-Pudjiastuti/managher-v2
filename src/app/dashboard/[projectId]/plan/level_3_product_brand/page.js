@@ -17,11 +17,8 @@ import {
   Menu,
 } from 'lucide-react';
 
-// Komponen UI
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
-
-// Zustand Store
 import useProjectStore from '@/store/useProjectStore';
 
 // Helper: get initials
@@ -49,41 +46,35 @@ export default function Level3Page() {
   const { projectId } = useParams();
   const router = useRouter();
 
-  // Zustand
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
 
-  // Form state
   const [brandName, setBrandName] = useState('');
   const [tagline, setTagline] = useState('');
   const [productName, setProductName] = useState('');
   const [productDesc, setProductDesc] = useState('');
   const [price, setPrice] = useState('');
 
-  // Palette
   const [palette, setPalette] = useState(['#F6E8D6']);
   const [activePickerIndex, setActivePickerIndex] = useState(0);
   const MAX_COLORS = 6;
 
-  // Logo
-  const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('');
   const logoUploadRef = useRef(null);
 
-  // UI state
   const [isEditing, setIsEditing] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const [project, setProject] = useState(null);
 
-  // Sidebar mobile
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Init
+  // Mounting
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  // Mobile detection
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
@@ -91,25 +82,30 @@ export default function Level3Page() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Load saved data
   useEffect(() => {
     if (projectId) {
       const found = projects.find((p) => p.id === projectId);
       setProject(found);
       const saved = localStorage.getItem(`concept-${projectId}`);
       if (saved) {
-        const data = JSON.parse(saved);
-        setBrandName(data.brandName || '');
-        setTagline(data.tagline || '');
-        setProductName(data.productName || '');
-        setProductDesc(data.productDesc || '');
-        setPrice(data.price || '');
-        setPalette(data.palette || ['#F6E8D6']);
-        setLogoPreview(data.logoPreview || '');
+        try {
+          const data = JSON.parse(saved);
+          setBrandName(data.brandName || '');
+          setTagline(data.tagline || '');
+          setProductName(data.productName || '');
+          setProductDesc(data.productDesc || '');
+          setPrice(data.price || '');
+          setPalette(data.palette || ['#F6E8D6']);
+          setLogoPreview(data.logoPreview || '');
+        } catch (e) {
+          console.warn('Failed to parse concept data', e);
+        }
       }
     }
   }, [projectId, projects]);
 
-  // Palette handlers
+  // Palette
   const updateColor = (idx, hex) => {
     setPalette((prev) => prev.map((c, i) => (i === idx ? hex : c)));
   };
@@ -139,7 +135,6 @@ export default function Level3Page() {
       alert('Ukuran gambar terlalu besar. Maksimal 5MB.');
       return;
     }
-    setLogoFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       setLogoPreview(reader.result);
@@ -147,7 +142,7 @@ export default function Level3Page() {
     reader.readAsDataURL(file);
   };
 
-  // Simpan ke localStorage & store
+  // Save
   const handleSave = () => {
     const data = {
       brandName,
@@ -161,14 +156,13 @@ export default function Level3Page() {
     };
     localStorage.setItem(`concept-${projectId}`, JSON.stringify(data));
 
-    // Simpan ke Zustand store
     if (project) {
       const updatedLevels = [...(project.levels || [])];
-      if (!updatedLevels[2]) {
-        updatedLevels[2] = { id: 3, completed: false }; // ✅ Perbaikan: hapus koma & objek kosong
+      while (updatedLevels.length <= 2) {
+        updatedLevels.push({ id: updatedLevels.length + 1, completed: false });
       }
       updatedLevels[2] = {
-        ...updatedLevels[2],
+        id: 3,
         completed: !!brandName && !!productName,
         data: { concept: data },
       };
@@ -176,11 +170,12 @@ export default function Level3Page() {
     }
 
     alert('Konsep brand berhasil disimpan! ✅');
+    // Jika ingin otomatis ke preview setelah simpan, aktifkan baris berikut:
+    // setIsEditing(false);
   };
 
   const brandInitials = getInitials(brandName);
 
-  // Breadcrumb items
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },
     { href: `/dashboard/${projectId}/plan`, label: 'Fase Plan' },
@@ -213,7 +208,6 @@ export default function Level3Page() {
       )}
 
       <div className="flex">
-        {/* Sidebar */}
         <PlanSidebar
           projectId={projectId}
           currentLevelId={3}
@@ -222,12 +216,11 @@ export default function Level3Page() {
           setMobileSidebarOpen={setMobileSidebarOpen}
         />
 
-        {/* Main Content */}
         <main className="flex-1">
           <div className="py-6 px-3 sm:px-4 md:px-6">
             <div className="max-w-6xl mx-auto">
               <div className="relative">
-                <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-2xl"></div>
+                <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-2xl" />
                 <div
                   className="relative bg-white rounded-2xl border-t border-l border-black p-4 sm:p-5 md:p-6"
                   style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
@@ -237,7 +230,6 @@ export default function Level3Page() {
                   </h1>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Kolom Kiri: Form Input */}
                     <div>
                       {isEditing ? (
                         <div className="space-y-4">
@@ -271,6 +263,36 @@ export default function Level3Page() {
                                   placeholder="Contoh: crafted with love & sweetness"
                                 />
                               </div>
+                              <div>
+                                <label className="block text-xs font-medium text-[#5b5b5b] mb-1">
+                                  Upload Logo Brand
+                                </label>
+                                <div
+                                  className="mt-1 border-2 border-dashed border-[#7a7a7a] rounded-lg p-3 text-center cursor-pointer hover:border-[#f02d9c]"
+                                  onClick={() => logoUploadRef.current?.click()}
+                                >
+                                  {logoPreview ? (
+                                    <div className="relative w-full h-20 flex items-center justify-center">
+                                      <img
+                                        src={logoPreview}
+                                        alt="Logo Preview"
+                                        className="max-h-full max-w-full object-contain"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-[#5b5b5b]">
+                                      Klik untuk upload (JPG/PNG/GIF, max 5MB)
+                                    </p>
+                                  )}
+                                  <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/gif"
+                                    onChange={handleLogoUpload}
+                                    ref={logoUploadRef}
+                                    className="hidden"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </div>
 
@@ -300,7 +322,7 @@ export default function Level3Page() {
                                   value={productDesc}
                                   onChange={(e) => setProductDesc(e.target.value)}
                                   className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
-                                  rows="3"
+                                  rows={3}
                                   placeholder="Contoh: Roti artisan dengan aroma gandum asli..."
                                 />
                               </div>
@@ -315,36 +337,6 @@ export default function Level3Page() {
                                   className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
                                   placeholder="Contoh: 150000"
                                 />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-[#5b5b5b] mb-1">
-                                  Upload Gambar Prototype
-                                </label>
-                                <div
-                                  className="mt-1 border-2 border-dashed border-[#7a7a7a] rounded-lg p-3 text-center cursor-pointer hover:border-[#f02d9c]"
-                                  onClick={() => logoUploadRef.current?.click()}
-                                >
-                                  {logoPreview ? (
-                                    <div className="relative w-full h-20 flex items-center justify-center">
-                                      <img
-                                        src={logoPreview}
-                                        alt="Preview"
-                                        className="max-h-full max-w-full object-contain"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <p className="text-sm text-[#5b5b5b]">
-                                      Klik untuk upload (JPG/PNG/GIF, max 5MB)
-                                    </p>
-                                  )}
-                                  <input
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/gif"
-                                    onChange={handleLogoUpload}
-                                    ref={logoUploadRef}
-                                    className="hidden"
-                                  />
-                                </div>
                               </div>
                             </div>
                           </div>
@@ -385,102 +377,73 @@ export default function Level3Page() {
                                   disableAlpha
                                 />
                               </div>
-                              <button
-                                onClick={addColor}
-                                disabled={palette.length >= MAX_COLORS}
-                                className="mt-2 px-3 py-1.5 text-xs bg-[#f02d9c] text-white rounded disabled:opacity-50"
-                              >
-                                + Tambah Warna
-                              </button>
                             </div>
                           </div>
                         </div>
                       ) : (
-                        /* Preview Mode */
-<div className="p-4 border border-gray-300 rounded-xl bg-white shadow-sm">
-  <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
-    <Eye size={16} /> Brand & Product Preview
-  </h3>
+                        /* ✅ PREVIEW MODE BARU — BRAND + PRODUCT JADI SATU */
+                        <div className="p-4 border border-gray-300 rounded-xl bg-white shadow-sm">
+                          <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
+                            <Eye size={16} /> Brand & Product Preview
+                          </h3>
 
-  <div className="border rounded-xl overflow-hidden" style={{ backgroundColor: '#f0f2f5' }}>
-    {/* Brand Identity */}
-    <div className="p-4 border-b border-gray-200" style={{ backgroundColor: 'white' }}>
-      <h4 className="text-xs font-semibold text-[#5b5b5b] mb-2">Brand Identity Preview</h4>
-      <div className="flex items-center gap-3">
-        <div
-          className="flex items-center justify-center rounded-lg flex-shrink-0"
-          style={{
-            width: 48,
-            height: 48,
-            backgroundColor: palette[0],
-            color: getContrastTextColor(palette[0]),
-          }}
-        >
-          <span className="text-sm font-bold">{brandInitials}</span>
-        </div>
-        <div className="min-w-0">
-          <p className="font-medium text-sm truncate">{brandName || 'Nama Brand'}</p>
-          <p className="text-xs text-[#5b5b5b] truncate">{tagline || 'Tagline Anda'}</p>
-        </div>
-      </div>
-    </div>
+                          <div
+                            className="rounded-xl overflow-hidden p-4"
+                            style={{
+                              backgroundColor: palette[1] || palette[0],
+                              color: getContrastTextColor(palette[1] || palette[0]),
+                            }}
+                          >
+                            <div className="flex flex-col items-center text-center">
+                              {/* Logo */}
+                              <div
+                                className="flex items-center justify-center rounded-lg mb-3"
+                                style={{
+                                  width: 64,
+                                  height: 64,
+                                  backgroundColor: palette[0],
+                                  color: getContrastTextColor(palette[0]),
+                                }}
+                              >
+                                {logoPreview ? (
+                                  <img
+                                    src={logoPreview}
+                                    alt="Logo"
+                                    className="w-full h-full object-cover rounded-lg"
+                                  />
+                                ) : (
+                                  <span className="text-lg font-bold">{brandInitials}</span>
+                                )}
+                              </div>
 
-    {/* Product Card */}
-    <div className="p-4 border-b border-gray-200" style={{ backgroundColor: 'white' }}>
-      <h4 className="text-xs font-semibold text-[#5b5b5b] mb-2">Kartu Produk Preview</h4>
-      <div className="flex items-start gap-3">
-        {/* Logo tetap ukuran 48x48, tidak menyusut */}
-        <div
-          className="flex items-center justify-center rounded-lg flex-shrink-0"
-          style={{
-            width: 48,
-            height: 48,
-            backgroundColor: palette[0],
-            color: getContrastTextColor(palette[0]),
-          }}
-        >
-          <span className="text-sm font-bold">{brandInitials}</span>
-        </div>
+                              {/* Brand Name */}
+                              <p className="font-bold text-lg">{brandName || 'Nama Brand'}</p>
 
-        {/* Teks: bisa panjang, tapi tidak mengganggu layout */}
-        <div className="min-w-0 flex-1">
-          <p className="font-medium text-sm">{productName || 'Nama Produk'}</p>
-          <p className="text-xs text-[#5b5b5b] mt-1 whitespace-pre-wrap break-words">
-            {productDesc || 'Deskripsi produk...'}
-          </p>
-          {price && (
-            <p className="text-xs font-medium text-[#f02d9c] mt-1">
-              Rp {parseInt(price).toLocaleString('id-ID') || '0'}
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
+                              {/* Tagline */}
+                              <p className="text-sm opacity-90 mt-1">{tagline || 'Tagline Anda'}</p>
 
-    {/* Gambar Prototype */}
-    <div className="p-4" style={{ backgroundColor: 'white' }}>
-      <h4 className="text-xs font-semibold text-[#5b5b5b] mb-2">Gambar Prototype</h4>
-      {logoPreview ? (
-        <div className="w-full h-32 rounded-lg border border-[#ddd] overflow-hidden bg-white flex items-center justify-center">
-          <img
-            src={logoPreview}
-            alt="Prototype"
-            className="max-h-full max-w-full object-contain"
-          />
-        </div>
-      ) : (
-        <div className="w-full h-32 rounded-lg border-2 border-dashed border-[#7a7a7a] flex items-center justify-center bg-gray-50">
-          <p className="text-xs text-[#7a7a7a] text-center px-2">
-            Upload gambar prototype<br />untuk melihat preview
-          </p>
-        </div>
-      )}
-    </div>
-  </div>
-</div>
+                              <div className="w-full h-px bg-black/10 my-3"></div>
+
+                              {/* Product Name */}
+                              <p className="font-semibold text-base mt-1">{productName || 'Nama Produk'}</p>
+
+                              {/* Product Description */}
+                              <p className="text-sm opacity-90 mt-2 whitespace-pre-wrap break-words max-w-prose">
+                                {productDesc || 'Deskripsi produk...'}
+                              </p>
+
+                              {/* Price */}
+                              {price && (
+                                <p className="font-medium text-sm mt-2">
+                                  Rp {parseInt(price).toLocaleString('id-ID') || '0'}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       )}
 
-                      {/* Tombol Aksi */}
+                      {/* Action Buttons */}
                       <div className="flex flex-wrap gap-2 mt-4">
                         <button
                           onClick={handleSave}
@@ -493,7 +456,7 @@ export default function Level3Page() {
                           onClick={() => setIsEditing(!isEditing)}
                           className="px-4 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1"
                         >
-                          <Edit3 size={16} />
+                          {isEditing ? <Eye size={16} /> : <Edit3 size={16} />}
                           {isEditing ? 'Lihat Preview' : 'Edit'}
                         </button>
                         <button
@@ -507,13 +470,12 @@ export default function Level3Page() {
                           onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas`)}
                           className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
                         >
-                          Next
-                          <ChevronRight size={16} />
+                          Next <ChevronRight size={16} />
                         </button>
                       </div>
                     </div>
 
-                    {/* Kolom Kanan: Edukasi */}
+                    {/* Edukasi */}
                     <div className="space-y-5">
                       <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
                         <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
@@ -538,8 +500,7 @@ export default function Level3Page() {
                             Tagline harus <strong>pendek, jelas, dan emosional</strong>
                           </li>
                           <li>
-                            Upload gambar prototype yang <strong>representatif</strong> (kemasan, UI, atau produk
-                            fisik)
+                            Upload gambar prototype yang <strong>representatif</strong> (kemasan, UI, atau produk fisik)
                           </li>
                         </ul>
                       </div>
