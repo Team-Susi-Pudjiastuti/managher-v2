@@ -3,10 +3,10 @@
 import { CheckCircle } from 'lucide-react';
 
 export default function ProjectCard({ project, onClick }) {
-  const totalLevels = 12; 
-  const completedLevels = project.levels.filter((l) => l.completed).length;
-  const progress = Math.min(100, Math.floor((completedLevels / totalLevels) * 100));
-  const isCompleted = completedLevels === totalLevels;
+  // const totalLevels = 12; 
+  // const completedLevels = project.levels.filter((l) => l.completed).length;
+  // const progress = Math.min(100, Math.floor((completedLevels / totalLevels) * 100));
+  // const isCompleted = completedLevels === totalLevels;
 
   return (
     <div
@@ -29,23 +29,32 @@ export default function ProjectCard({ project, onClick }) {
 
         {/* Status Level: 0/12 */}
         <p className="text-[#7a7a7a] text-sm mb-3 font-[Poppins]">
-          Level: <span className="font-semibold">{completedLevels}/{totalLevels}</span>
+          Level: <span className="font-semibold">
+            1
+          {/* {completedLevels}/{totalLevels} */}
+          </span> 
         </p>
 
         {/* Progress Bar */}
         <div className="w-full bg-[#f0f0f0] rounded-full h-2 border border-[#e0e0e0] mb-2">
           <div
             className="bg-[#f02d9c] h-2 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
+            style={{ width: '10%'
+              // `${progress}%` 
+            }}
           ></div>
         </div>
 
         {/* Persentase & Status */}
         <div className="flex justify-between items-center">
           <span className="text-[#7a7a7a] text-xs font-[Poppins]">
-            {progress}%
+            10%
+            {/* {progress}% */}
           </span>
-          {isCompleted ? (
+          <span className="text-[#f02d9c] text-xs font-semibold font-[Poppins]">
+              Lanjutkan
+          </span>
+          {/* {isCompleted ? (
             <span className="flex items-center gap-1 text-[#8acfd1] text-xs font-semibold font-[Poppins]">
               <CheckCircle size={14} />
               Selesai!
@@ -54,7 +63,7 @@ export default function ProjectCard({ project, onClick }) {
             <span className="text-[#f02d9c] text-xs font-semibold font-[Poppins]">
               Lanjutkan
             </span>
-          )}
+          )} */}
         </div>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Mail, Lock } from 'lucide-react';
-import { useAuthStore } from '@/store/useAuthStore';
+import useAuthStore from '@/store/useAuthStore';
 import NotificationModal from '@/components/NotificationModal';
 
 export default function RegisterPage() {

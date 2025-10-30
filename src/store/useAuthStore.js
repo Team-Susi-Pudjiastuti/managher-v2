@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiRequest } from '../lib/api';
 
-export const useAuthStore = create(
+const useAuthStore = create(
   persist(
     (set, get) => ({
       isAuthenticated: false,
@@ -18,7 +18,7 @@ export const useAuthStore = create(
             password,
           });
 
-          // backend kamu mengembalikan: { message, data: newUser }
+          // { message, data: newUser }
           const user = res.data;
 
           if (!user) throw new Error('Invalid response from server');
@@ -48,9 +48,7 @@ export const useAuthStore = create(
             password
           });
 
-          console.log('Response dari API:', res)
-
-          // backend kamu mengembalikan: { message, data: { username, email } }
+          // { message, data: { username, email } }
           const userData = res.data;
 
           if (!userData) throw new Error('Invalid response from server');
@@ -86,3 +84,5 @@ export const useAuthStore = create(
     // }
   )
 );
+
+export default useAuthStore;

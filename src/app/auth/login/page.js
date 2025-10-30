@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/useAuthStore';
+import useAuthStore from '@/store/useAuthStore';
 import Link from 'next/link';
 import NotificationModal from '@/components/NotificationModal';
 
@@ -33,11 +33,12 @@ export default function LoginPage() {
 
     const result = await login(username, password);
     if (result.success) {
-      router.push(`/onboarding/${result.user.id}`);
       setModalMessage(result.message || 'Login berhasil!');
       setModalType('success');
       setShowModal(true);
-      // Arahkan ke onboarding setelah 1.5 detik
+      setTimeout(() => {
+        router.push(`/onboarding/${result.user.id}`);
+      }, 1500);
     } else {
       setModalMessage(result.message || 'Login gagal. Coba lagi.');
       setModalType('error');

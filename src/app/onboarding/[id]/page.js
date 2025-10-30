@@ -2,15 +2,27 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import useProjectStore from '@/store/useProjectStore';
+import useAuthStore from '@/store/useAuthStore';
 import ProjectCard from '@/components/ProjectCard';
 
 export default function OnboardingPage() {
+  const params = useParams();
+  const id = params.id;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectName, setProjectName] = useState('');
-  const { projects, addProject } = useProjectStore();
+  const { projects, getAllprojects, addProject } = useProjectStore();
   const router = useRouter();
+  console.log(projects);
+
+  useEffect(() => {
+      if (id) {
+        getAllprojects(id);
+      }
+  }, [id]);
 
   const openModal = () => {
     setProjectName('');
@@ -21,16 +33,10 @@ export default function OnboardingPage() {
     setIsModalOpen(false);
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!projectName.trim()) return;
-    const newProject = {
-      id: uuidv4(),
-      name: projectName,
-      progress: 0,
-      levels: [],
-      businessProfile: {}
-    };
-    addProject(newProject);
+    
+    await addProject(id, projectName);
     setIsModalOpen(false);
   };
 
@@ -87,9 +93,9 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full max-w-2xl px-1">
               {projects.map((project) => (
                 <ProjectCard
-                  key={project.id}
+                  key={project._id}
                   project={project}
-                  onClick={() => router.push(`/dashboard/${project.id}`)}
+                  onClick={() => router.push(`/dashboard/${project._id}`)}
                 />
               ))}
             </div>
