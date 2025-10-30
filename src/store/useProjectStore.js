@@ -28,10 +28,11 @@ import useAuthStore from './useAuthStore';
 const useProjectStore = create(
   persist((set, get) => ({
     projects: [],
+    phases: [],
+    levels:[],
     getAllprojects: async (userId) => {
       try {
         const res = await apiRequest(`project/${userId}`, 'GET');
-        console.log('API response:', res.data);
         set({ projects: res.data || [] });
       } catch (error) {
         console.error('Error fetching projects:', error);
@@ -51,9 +52,17 @@ const useProjectStore = create(
     //       p.id === id ? { ...p, ...updates } : p
     //     ),
     //   })),
-    getProject: async (id) => {
-      const res = await apiRequest('project', 'GET', { id });
+    getProject: async (projectId) => {
+      const res = await apiRequest(`project/detail/${projectId}`, 'GET');
+      set({ phases: res.data?.phases || [] });
+      console.log('phases:', res.data?.phases || []);
+      set({ levels: res.data?.levels || [] });
+      console.log('levels:', res.data?.levels || []);
       return res.data || {};
+    },
+    getPhases: async (projectId) => {
+      const res = await apiRequest('phase', 'GET', { projectId });
+      set({ phases: res.data || [] });
     },
   })
   )

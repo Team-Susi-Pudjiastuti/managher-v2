@@ -31,16 +31,15 @@ const TOTAL_XP = LEVELS.reduce((sum, level) => sum + level.xp, 0);
 export default function DashboardPage() {
   const { projectId } = useParams();
   const [project, setProject] = useState(null);
-  const projects = useProjectStore((state) => state.projects);
+  const { getProject, projects, phases, levels } = useProjectStore((state) => state);
 
   useEffect(() => {
     if (projectId) {
-      const found = projects.find((p) => p.id === projectId);
-      setProject(found);
+      getProject(projectId);
     }
-  }, [projectId, projects]);
+  }, [projectId]);
 
-  if (!projectId || !project) {
+  if (!projectId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white p-4">
         Memuat proyek...
