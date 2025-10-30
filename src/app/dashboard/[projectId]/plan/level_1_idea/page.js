@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -17,12 +16,14 @@ import {
   CheckCircle,
   Eye,
   Info,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 
-// Helper: parse productsServices
+// === HELPER: Parse & Format Products & Services ===
 const parseProductsServices = (text) => {
   const lines = text.split('\n').map((l) => l.trim()).filter((l) => l);
   let ide = '',
@@ -30,33 +31,63 @@ const parseProductsServices = (text) => {
     deskripsi = '',
     fitur = '',
     manfaat = '',
-    harga = '';
-
+    harga = '',
+    biayaModal = '',
+    biayaBahanBaku = '',
+    hargaJual = '',
+    margin = '';
   for (const line of lines) {
     if (line.startsWith('Jenis:')) jenis = line.replace('Jenis:', '').trim();
     else if (line.startsWith('Deskripsi:')) deskripsi = line.replace('Deskripsi:', '').trim();
-    else if (line.includes('Harga:')) harga = line;
-    else if (line.includes('Fitur') || line.includes('fitur')) fitur = line;
-    else if (line.includes('Manfaat') || line.includes('manfaat')) manfaat = line;
+    else if (line.startsWith('Fitur')) fitur = line;
+    else if (line.startsWith('Manfaat')) manfaat = line;
+    else if (line.startsWith('Harga:')) harga = line;
+    else if (line.startsWith('Biaya Modal:')) biayaModal = line;
+    else if (line.startsWith('Biaya Bahan Baku:')) biayaBahanBaku = line;
+    else if (line.startsWith('Harga Jual:')) hargaJual = line;
+    else if (line.startsWith('Margin:')) margin = line;
     else if (!ide) ide = line;
   }
-
-  if (!jenis && !deskripsi) ide = text;
-
-  return { ide, jenis, deskripsi, fitur, manfaat, harga };
+  return {
+    ide,
+    jenis,
+    deskripsi,
+    fitur,
+    manfaat,
+    harga,
+    biayaModal,
+    biayaBahanBaku,
+    hargaJual,
+    margin,
+  };
 };
 
-const formatProductsServices = ({ ide, jenis, deskripsi, fitur, manfaat, harga }) => {
+const formatProductsServices = ({
+  ide,
+  jenis,
+  deskripsi,
+  fitur,
+  manfaat,
+  harga,
+  biayaModal,
+  biayaBahanBaku,
+  hargaJual,
+  margin,
+}) => {
   const parts = [ide];
   if (jenis) parts.push(`Jenis: ${jenis}`);
   if (deskripsi) parts.push(`Deskripsi: ${deskripsi}`);
   if (fitur) parts.push(fitur);
   if (manfaat) parts.push(manfaat);
   if (harga) parts.push(harga);
+  if (biayaModal) parts.push(biayaModal);
+  if (biayaBahanBaku) parts.push(biayaBahanBaku);
+  if (hargaJual) parts.push(hargaJual);
+  if (margin) parts.push(margin);
   return parts.join('\n');
 };
 
-// Generator → mengembalikan 3 ide
+// === GENERATOR IDE DENGAN RINCIAN BIAYA ===
 const generateThreeIdeasFromInterest = (interest) => {
   const baseIdeas = [
     {
@@ -65,7 +96,16 @@ const generateThreeIdeasFromInterest = (interest) => {
       pains: 'Waktu terbatas, tidak sempat belanja & masak, takut anak kurang gizi, stres mengatur menu',
       gains: 'Anak sehat dan tumbuh optimal, hemat waktu, tidak perlu mikir masak, tenang secara mental',
       productsServices:
-        'Meal Prep Box untuk Ibu Bekerja\nJenis: Layanan Langganan Makanan Sehat\nDeskripsi: Kotak makanan siap saji mingguan dengan resep bergizi dari ahli nutrisi, bahan organik lokal\nFitur utama: Dikirim setiap Senin, siap saji dalam 5 menit, bisa atur alergi\nManfaat: Hemat 10 jam/minggu, anak lebih sehat, tidak perlu mikir menu\nHarga: Rp299.000/minggu (5 menu)',
+        'Meal Prep Box untuk Ibu Bekerja\n' +
+        'Jenis: Layanan Langganan Makanan Sehat\n' +
+        'Deskripsi: Kotak makanan siap saji mingguan dengan resep bergizi dari ahli nutrisi, bahan organik lokal\n' +
+        'Fitur utama: Dikirim setiap Senin, siap saji dalam 5 menit, bisa atur alergi\n' +
+        'Manfaat: Hemat 10 jam/minggu, anak lebih sehat, tidak perlu mikir menu\n' +
+        'Harga: Rp299.000/minggu (5 menu)\n' +
+        'Biaya Modal: Rp5.000.000 (kompor portable, wadah food-grade 100 pcs, branding awal)\n' +
+        'Biaya Bahan Baku: Beras organik (Rp50.000), Ayam kampung (Rp80.000), Sayur lokal (Rp30.000), Bumbu & minyak (Rp20.000) → Total: Rp180.000/minggu\n' +
+        'Harga Jual: Rp299.000/minggu\n' +
+        'Margin: ±40%',
       painRelievers:
         'Dikirim setiap Senin pagi → tidak perlu belanja\nSiap saji dalam 5 menit → tidak perlu masak\nBisa atur alergi/makanan pantangan → aman untuk anak',
       gainCreators: 'Hemat 10 jam/minggu\nAnak-anak lebih sehat\nTidak perlu mikir menu\nHarga: Rp299.000/minggu (5 menu)',
@@ -76,7 +116,16 @@ const generateThreeIdeasFromInterest = (interest) => {
       pains: 'Beli outfit mahal tapi jarang dipakai, takut tidak sesuai ekspektasi, repot laundry & simpan',
       gains: 'Tampil percaya diri, hemat uang, tidak perlu khawatir soal penyimpanan, ramah lingkungan',
       productsServices:
-        'Modest Wear Rental untuk Acara Formal\nJenis: Platform Sewa Pakaian\nDeskripsi: Sewa hijab & dress formal berkualitas tinggi dengan opsi pengiriman & laundry gratis\nFitur utama: Sewa mulai Rp149rb, gratis pengiriman & pengembalian, coba virtual via AR\nManfaat: Tampil fresh tanpa beli baru, hemat 70%, ramah lingkungan\nHarga: Rp149.000/3 hari',
+        'Modest Wear Rental untuk Acara Formal\n' +
+        'Jenis: Platform Sewa Pakaian\n' +
+        'Deskripsi: Sewa hijab & dress formal berkualitas tinggi dengan opsi pengiriman & laundry gratis\n' +
+        'Fitur utama: Sewa mulai Rp149rb, gratis pengiriman & pengembalian, coba virtual via AR\n' +
+        'Manfaat: Tampil fresh tanpa beli baru, hemat 70%, ramah lingkungan\n' +
+        'Harga: Rp149.000/3 hari\n' +
+        'Biaya Modal: Rp10.000.000 (stok awal 50 outfit, gantungan, kemasan, sistem booking sederhana)\n' +
+        'Biaya Bahan Baku: Rp0 (tidak ada produksi, hanya perawatan: laundry & steaming @Rp15.000/outfit)\n' +
+        'Harga Jual: Rp149.000/3 hari\n' +
+        'Margin: ±60% setelah skala',
       painRelievers:
         'Sewa mulai Rp149rb → jauh lebih murah daripada beli\nGratis pengiriman & pengembalian\nBisa coba virtual via AR → minim risiko salah pilih',
       gainCreators: 'Tampil fresh di setiap acara tanpa beli baru\nHemat hingga 70% dibanding beli\nRamah lingkungan\nHarga: Rp149.000/3 hari',
@@ -87,7 +136,16 @@ const generateThreeIdeasFromInterest = (interest) => {
       pains: 'Tidak punya waktu dampingi, kursus offline mahal, anak cepat bosan dengan metode kaku',
       gains: 'Anak paham logika pemrograman, bisa bikin game sederhana, lebih percaya diri di sekolah',
       productsServices:
-        'Kelas Coding untuk Anak SD via WhatsApp\nJenis: Layanan Edukasi Digital\nDeskripsi: Program belajar coding 12 minggu dengan video pendek, tantangan seru, dan hadiah digital\nFitur utama: Cukup 10 menit/hari, grup WhatsApp eksklusif, bisa pakai HP\nManfaat: Anak belajar mandiri, biaya terjangkau, dapat sertifikat digital\nHarga: Rp99.000/program',
+        'Kelas Coding untuk Anak SD via WhatsApp\n' +
+        'Jenis: Layanan Edukasi Digital\n' +
+        'Deskripsi: Program belajar coding 12 minggu dengan video pendek, tantangan seru, dan hadiah digital\n' +
+        'Fitur utama: Cukup 10 menit/hari, grup WhatsApp eksklusif, bisa pakai HP\n' +
+        'Manfaat: Anak belajar mandiri, biaya terjangkau, dapat sertifikat digital\n' +
+        'Harga: Rp99.000/program\n' +
+        'Biaya Modal: Rp500.000 (pembuatan konten video, desain worksheet, sistem otomatisasi WhatsApp)\n' +
+        'Biaya Bahan Baku: Rp0 (digital, tidak ada bahan fisik)\n' +
+        'Harga Jual: Rp99.000/program\n' +
+        'Margin: ±95%',
       painRelievers:
         'Cukup 10 menit/hari → tidak mengganggu jadwal\nGrup WhatsApp eksklusif dengan mentor → responsif\nTidak perlu laptop → bisa pakai HP orang tua',
       gainCreators: 'Anak belajar mandiri tanpa perlu dampingan\nBiaya terjangkau\nDapat sertifikat digital\nHarga: Rp99.000/program',
@@ -98,27 +156,33 @@ const generateThreeIdeasFromInterest = (interest) => {
       pains: 'Tidak paham Excel, takut ribet, sering lupa catat, stok sering kehabisan tanpa sadar',
       gains: 'Tahu untung/rugi harian, siap laporan pajak, stok terpantau, tidur lebih tenang',
       productsServices:
-        'Aplikasi Catatan Keuangan UMKM Warung\nJenis: Aplikasi Mobile\nDeskripsi: Aplikasi pencatatan keuangan berbasis suara dengan antarmuka super sederhana, hanya butuh HP Android\nFitur utama: Cukup ucapkan transaksi, backup otomatis, notifikasi stok habis\nManfaat: Tidak perlu bisa baca/tulis lancar, laporan otomatis, siap laporan pajak\nHarga: Rp49.000/bulan',
+        'Aplikasi Catatan Keuangan UMKM Warung\n' +
+        'Jenis: Aplikasi Mobile\n' +
+        'Deskripsi: Aplikasi pencatatan keuangan berbasis suara dengan antarmuka super sederhana, hanya butuh HP Android\n' +
+        'Fitur utama: Cukup ucapkan transaksi, backup otomatis, notifikasi stok habis\n' +
+        'Manfaat: Tidak perlu bisa baca/tulis lancar, laporan otomatis, siap laporan pajak\n' +
+        'Harga: Rp49.000/bulan\n' +
+        'Biaya Modal: Rp15.000.000 (pengembangan MVP, hosting awal, uji coba lapangan)\n' +
+        'Biaya Bahan Baku: Rp50.000/bulan (server cloud, biaya API suara, maintenance)\n' +
+        'Harga Jual: Rp49.000/bulan\n' +
+        'Margin: ±80% setelah 500 pengguna aktif',
       painRelievers:
         'Cukup ucapkan: “Hari ini jual 50 kopi, modal 200rb” → otomatis jadi laporan\nBackup otomatis ke cloud\nNotifikasi saat stok hampir habis',
       gainCreators: 'Tidak perlu bisa baca/tulis lancar\nLaporan harian & mingguan otomatis\nSiap untuk laporan pajak\nHarga: Rp49.000/bulan',
     },
   ];
-
   const normalized = interest.toLowerCase().trim();
   const matched = baseIdeas.find(
     (idea) =>
       idea.interest.toLowerCase().includes(normalized) || normalized.includes(idea.interest.toLowerCase())
   );
-
   const others = baseIdeas.filter((i) => i !== matched);
   const randomOthers = others.sort(() => 0.5 - Math.random()).slice(0, 2);
   const result = matched ? [matched, ...randomOthers] : baseIdeas.sort(() => 0.5 - Math.random()).slice(0, 3);
-
   return result;
 };
 
-// Komponen Penjelasan VPC
+// === KOMPONEN PENJELASAN VPC ===
 const VpcExplanation = () => {
   return (
     <div className="mb-5 p-4 border border-gray-300 rounded-xl bg-[#f8fafc] shadow-sm">
@@ -129,7 +193,6 @@ const VpcExplanation = () => {
         VPC adalah alat strategis dari <strong>Strategyzer</strong> dan <strong>Miro</strong> untuk memastikan produk Anda
         benar-benar dibutuhkan pelanggan.
       </p>
-
       <div className="space-y-3 text-xs text-[#5b5b5b]">
         <div>
           <span className="font-bold text-[#f02d9c]">Customer Profile</span> menjawab:
@@ -145,7 +208,6 @@ const VpcExplanation = () => {
             </li>
           </ul>
         </div>
-
         <div>
           <span className="font-bold text-[#f02d9c]">Value Map</span> menjawab:
           <ul className="list-disc pl-5 mt-1 space-y-1">
@@ -160,7 +222,6 @@ const VpcExplanation = () => {
             </li>
           </ul>
         </div>
-
         <p className="mt-2">
           Tujuan akhir: <strong>mencapai Product-Market Fit</strong> — produk Anda benar-benar cocok dengan kebutuhan
           pasar.
@@ -170,12 +231,12 @@ const VpcExplanation = () => {
   );
 };
 
+// === KOMPONEN UTAMA ===
 export default function Level1Page() {
   const { projectId } = useParams();
   const router = useRouter();
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
-
   const [interest, setInterest] = useState('');
   const [vpcData, setVpcData] = useState({
     customerJobs: '',
@@ -188,10 +249,10 @@ export default function Level1Page() {
   const [isEditing, setIsEditing] = useState(false);
   const [generatedIdeas, setGeneratedIdeas] = useState([]);
   const [selectedIdea, setSelectedIdea] = useState(null);
-
   const [project, setProject] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isFinanceOpen, setIsFinanceOpen] = useState(false); // <-- State untuk dropdown keuangan
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -250,6 +311,7 @@ export default function Level1Page() {
       painRelievers: idea.painRelievers,
       gainCreators: idea.gainCreators,
     });
+    setIsFinanceOpen(false); // reset dropdown saat ganti ide
     setIsEditing(false);
   };
 
@@ -283,13 +345,27 @@ export default function Level1Page() {
 
   const ps = parseProductsServices(vpcData.productsServices);
 
+  // Parsing rincian modal & biaya bahan baku untuk ditampilkan lebih rapi
+  const parseModalDetails = (text) => {
+    if (!text) return [];
+    const clean = text.replace('Biaya Modal: ', '').trim();
+    const match = clean.match(/\((.+)\)/);
+    return match ? match[1].split(',').map((item) => item.trim()) : [clean];
+  };
+
+  const parseBahanBakuDetails = (text) => {
+    if (!text) return [];
+    const clean = text.replace('Biaya Bahan Baku: ', '').trim();
+    const parts = clean.split('→')[0].split(',');
+    return parts.map((part) => part.trim());
+  };
+
   return (
     <div className="min-h-screen bg-white font-sans">
       {/* Breadcrumb */}
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
         <Breadcrumb items={breadcrumbItems} />
       </div>
-
       {/* Mobile Header */}
       {isMobile && !mobileSidebarOpen && (
         <header className="p-3 flex items-center border-b border-gray-200 bg-white top-10 z-30">
@@ -303,7 +379,6 @@ export default function Level1Page() {
           <h1 className="ml-2 font-bold text-[#5b5b5b] text-base">Level 1: Ide Generator</h1>
         </header>
       )}
-
       <div className="flex mt-6">
         {/* Sidebar */}
         <PlanSidebar
@@ -313,7 +388,6 @@ export default function Level1Page() {
           mobileSidebarOpen={mobileSidebarOpen}
           setMobileSidebarOpen={setMobileSidebarOpen}
         />
-
         {/* Main Content */}
         <main className="flex-1">
           <div className="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto">
@@ -328,7 +402,6 @@ export default function Level1Page() {
                     Level 1: Ide Generator
                   </h1>
                 )}
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Kolom Kiri: Input & Preview */}
                   <div>
@@ -354,7 +427,6 @@ export default function Level1Page() {
                         </button>
                       </div>
                     </div>
-
                     {/* 3 Pilihan Ide */}
                     {generatedIdeas.length > 0 && !selectedIdea && (
                       <div className="mb-5">
@@ -377,7 +449,6 @@ export default function Level1Page() {
                         </div>
                       </div>
                     )}
-
                     {/* Brand & Product Preview */}
                     {selectedIdea && !isEditing && (
                       <>
@@ -385,7 +456,6 @@ export default function Level1Page() {
                           <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
                             <Eye size={16} /> Brand & Product Preview
                           </h3>
-
                           {/* Product & Services */}
                           <div className="p-3 mb-3 bg-[#f0f9f9] rounded border border-[#c2e9e8]">
                             <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
@@ -421,8 +491,53 @@ export default function Level1Page() {
                                 </li>
                               )}
                             </ul>
-                          </div>
 
+                            {/* Dropdown Rincian Keuangan */}
+                            <div className="mt-3">
+                              <button
+                                onClick={() => setIsFinanceOpen(!isFinanceOpen)}
+                                className="flex items-center gap-1 text-xs font-medium text-[#f02d9c]"
+                              >
+                                {isFinanceOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                Lihat rincian keuangan
+                              </button>
+                              {isFinanceOpen && (
+                                <div className="mt-2 p-3 bg-white border border-dashed border-[#c2e9e8] rounded text-xs text-[#5b5b5b]">
+                                  <h5 className="font-bold text-[#0a5f61] mb-2">Rincian Keuangan</h5>
+                                  {ps.biayaModal && (
+                                    <div className="mb-2">
+                                      <p className="font-medium">Modal Awal:</p>
+                                      <p>{ps.biayaModal.replace('Biaya Modal: ', '')}</p>
+                                      <ul className="list-disc pl-4 mt-1">
+                                        {parseModalDetails(ps.biayaModal).map((item, i) => (
+                                          <li key={i}>{item}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {ps.biayaBahanBaku && (
+                                    <div className="mb-2">
+                                      <p className="font-medium">Biaya Bahan Baku:</p>
+                                      <p>{ps.biayaBahanBaku.replace('Biaya Bahan Baku: ', '')}</p>
+                                      <ul className="list-disc pl-4 mt-1">
+                                        {parseBahanBakuDetails(ps.biayaBahanBaku).map((item, i) => (
+                                          <li key={i}>{item}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {ps.hargaJual && (
+                                    <p className="font-medium">
+                                      Harga Jual: {ps.hargaJual.replace('Harga Jual: ', '')}
+                                    </p>
+                                  )}
+                                  {ps.margin && (
+                                    <p className="font-medium">Margin: {ps.margin.replace('Margin: ', '')}</p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                           {/* Customer Profile */}
                           <div className="p-3 mb-3 bg-[#fdf6f0] rounded border border-[#f0d5c2]">
                             <h4 className="font-bold text-[#0a5f61] text-sm mb-2 flex items-center gap-1">
@@ -440,7 +555,6 @@ export default function Level1Page() {
                               </li>
                             </ul>
                           </div>
-
                           {/* Value Map */}
                           <div className="p-3 bg-[#f0f9f9] rounded border border-[#c2e9e8]">
                             <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
@@ -456,12 +570,10 @@ export default function Level1Page() {
                             </ul>
                           </div>
                         </div>
-
                         {/* Penjelasan VPC */}
                         <VpcExplanation />
                       </>
                     )}
-
                     {/* Edit Mode */}
                     {selectedIdea && isEditing && (
                       <div className="space-y-4">
@@ -499,7 +611,6 @@ export default function Level1Page() {
                             </div>
                           </div>
                         </div>
-
                         <div className="border border-gray-300 rounded-xl p-4 bg-[#f0f9f9]">
                           <h3 className="font-bold text-[#f02d9c] mb-3 flex items-center gap-2">
                             <Zap size={16} /> Value Map
@@ -562,9 +673,49 @@ export default function Level1Page() {
                               <input
                                 type="text"
                                 placeholder="Harga"
-                                value={ps.harga}
+                                value={ps.harga ? ps.harga.replace('Harga: ', '') : ''}
                                 onChange={(e) => {
-                                  const newPs = { ...ps, harga: e.target.value };
+                                  const newPs = { ...ps, harga: e.target.value ? `Harga: ${e.target.value}` : '' };
+                                  handleVpcChange('productsServices', formatProductsServices(newPs));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded text-sm"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Biaya Modal"
+                                value={ps.biayaModal ? ps.biayaModal.replace('Biaya Modal: ', '') : ''}
+                                onChange={(e) => {
+                                  const newPs = { ...ps, biayaModal: e.target.value ? `Biaya Modal: ${e.target.value}` : '' };
+                                  handleVpcChange('productsServices', formatProductsServices(newPs));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded text-sm"
+                              />
+                              <textarea
+                                placeholder="Biaya Bahan Baku (rincian bahan & biaya)"
+                                value={ps.biayaBahanBaku ? ps.biayaBahanBaku.replace('Biaya Bahan Baku: ', '') : ''}
+                                onChange={(e) => {
+                                  const newPs = { ...ps, biayaBahanBaku: e.target.value ? `Biaya Bahan Baku: ${e.target.value}` : '' };
+                                  handleVpcChange('productsServices', formatProductsServices(newPs));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded text-sm"
+                                rows="3"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Harga Jual"
+                                value={ps.hargaJual ? ps.hargaJual.replace('Harga Jual: ', '') : ''}
+                                onChange={(e) => {
+                                  const newPs = { ...ps, hargaJual: e.target.value ? `Harga Jual: ${e.target.value}` : '' };
+                                  handleVpcChange('productsServices', formatProductsServices(newPs));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded text-sm"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Margin (contoh: ±40%)"
+                                value={ps.margin ? ps.margin.replace('Margin: ', '') : ''}
+                                onChange={(e) => {
+                                  const newPs = { ...ps, margin: e.target.value ? `Margin: ${e.target.value}` : '' };
                                   handleVpcChange('productsServices', formatProductsServices(newPs));
                                 }}
                                 className="w-full p-2 border border-gray-300 rounded text-sm"
@@ -594,7 +745,6 @@ export default function Level1Page() {
                         </div>
                       </div>
                     )}
-
                     {/* Tombol Aksi */}
                     {selectedIdea && (
                       <div className="flex flex-wrap gap-2 mt-4">
@@ -629,7 +779,6 @@ export default function Level1Page() {
                       </div>
                     )}
                   </div>
-
                   {/* Kolom Kanan: Tujuan, Tips, Resources */}
                   <div className="space-y-5">
                     <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
@@ -641,9 +790,9 @@ export default function Level1Page() {
                         <li>Pilih ide produk yang relevan dengan minatmu</li>
                         <li>Definisikan Customer Profile & Value Map</li>
                         <li>Capai product-market fit sejak awal</li>
+                        <li>Sertakan estimasi biaya & harga untuk validasi bisnis</li>
                       </ul>
                     </div>
-
                     <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
                       <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
                         <Award size={16} />
@@ -662,9 +811,11 @@ export default function Level1Page() {
                         <li>
                           <strong>Gain Creators</strong> harus melebihi ekspektasi pelanggan
                         </li>
+                        <li>
+                          Sertakan <strong>struktur biaya & harga</strong> sejak dini untuk uji kelayakan
+                        </li>
                       </ul>
                     </div>
-
                     <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
                       <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
                         <BookOpen size={16} /> Resources Validasi Ide

@@ -24,6 +24,18 @@ import {
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
+import {
+  PieChart,
+  Pie,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+
 
 const scaleLabels = ['Tidak Pernah', 'Pernah', 'Kadang', 'Sering', 'Sangat Sering'];
 const range5 = [1, 2, 3, 4, 5];
@@ -570,9 +582,6 @@ export default function RWW() {
                         </h3>
                         <div className="space-y-3">
                           <div>
-                            <h4 className="font-bold text-sm text-[#5b5b5b] mb-1 flex items-center gap-1">
-                              <Video size={14} /> Video
-                            </h4>
                             <ul className="text-sm space-y-1">
                               <li>
                                 <a
@@ -587,9 +596,6 @@ export default function RWW() {
                             </ul>
                           </div>
                           <div>
-                            <h4 className="font-bold text-sm text-[#5b5b5b] mb-1 flex items-center gap-1">
-                              <FileText size={14} /> Bacaan
-                            </h4>
                             <ul className="text-sm space-y-1">
                               <li>
                                 <a
@@ -617,24 +623,124 @@ export default function RWW() {
                       </div>
 
                       {/* Daftar Responden */}
-                      {responses.length > 0 && (
-                        <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                          <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                            <Users size={16} /> Responden ({responses.length})
-                          </h3>
-                          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                            {responses.map((r) => (
-                              <div key={r.id} className="text-xs p-2 border border-gray-200 rounded bg-white">
-                                <div className="font-medium text-[#0a5f61]">{r.name}</div>
-                                <div className="text-[#5b5b5b]">
-                                  {r.gender}, {r.age} tahun, {r.activity}
-                                </div>
-                                <div className="text-[#f02d9c] font-bold mt-1">Total: {r.total}</div>
-                              </div>
-                            ))}
+                    <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd] mt-5">
+                      <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
+                        <Users size={16} /> Data Responden
+                      </h3>
+
+                      {responses.length === 0 ? (
+                        <p className="text-sm text-[#7a7a7a] italic">Belum ada data responden yang ditambahkan.</p>
+                      ) : (
+                        <>
+                          {/* Tabel Responden */}
+                          <div className="overflow-x-auto mb-6">
+                            <table className="min-w-full border border-gray-300 text-sm">
+                              <thead className="bg-[#f02d9c] text-white">
+                                <tr>
+                                  <th className="py-2 px-3 border border-gray-300 text-left">Nama</th>
+                                  <th className="py-2 px-3 border border-gray-300 text-left">Jenis Kelamin</th>
+                                  <th className="py-2 px-3 border border-gray-300 text-left">Usia</th>
+                                  <th className="py-2 px-3 border border-gray-300 text-left">Aktivitas</th>
+                                  <th className="py-2 px-3 border border-gray-300 text-center">Total Skor</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {responses.map((r) => (
+                                  <tr key={r.id} className="odd:bg-white even:bg-[#f9f9f9]">
+                                    <td className="py-2 px-3 border border-gray-300">{r.name}</td>
+                                    <td className="py-2 px-3 border border-gray-300">{r.gender}</td>
+                                    <td className="py-2 px-3 border border-gray-300">{r.age}</td>
+                                    <td className="py-2 px-3 border border-gray-300">{r.activity}</td>
+                                    <td className="py-2 px-3 border border-gray-300 text-center font-bold text-[#f02d9c]">
+                                      {r.total}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
-                        </div>
+
+                          {/* Diagram Responden */}
+                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
+                              <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Jenis Kelamin</h4>
+                              <ResponsiveContainer width="100%" height={220}>
+                                <PieChart>
+                                  <Pie
+                                    dataKey="value"
+                                    data={[
+                                      { name: 'Laki-laki', value: responses.filter(r => r.gender === 'Laki-laki').length, fill: '#4A90E2' }, // biru
+                                      { name: 'Perempuan', value: responses.filter(r => r.gender === 'Perempuan').length, fill: '#f02d9c' }, // pink
+                                      { name: 'Lainnya', value: responses.filter(r => r.gender === 'Lainnya').length, fill: '#C4C4C4' }, // abu
+                                    ]}
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={70}
+                                    label
+                                  />
+                                  <Tooltip />
+                                </PieChart>
+                              </ResponsiveContainer>
+                          </div>
+
+
+                          {/*Diagram Aktivitas*/}
+                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
+                              <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Rata-rata Skor per Aktivitas</h4>
+                              <ResponsiveContainer width="100%" height={220}>
+                                <BarChart
+                                  data={Object.entries(
+                                    responses.reduce((acc, r) => {
+                                      if (!acc[r.activity]) acc[r.activity] = [];
+                                      acc[r.activity].push(parseFloat(r.total));
+                                      return acc;
+                                    }, {})
+                                  ).map(([activity, totals]) => ({
+                                    name: activity,
+                                    avg: (totals.reduce((a, b) => a + b, 0) / totals.length).toFixed(1),
+                                  }))}
+                                >
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="name" />
+                                  <YAxis />
+                                  <Tooltip />
+                                  <Bar dataKey="avg" fill="#8acfd1" />
+                                </BarChart>
+                              </ResponsiveContainer>
+                          </div>
+
+                          {/* Diagram Usia */}
+                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
+                            <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Usia Responden</h4>
+                            <ResponsiveContainer width="100%" height={250}>
+                              <BarChart
+                                data={Object.entries(
+                                  responses.reduce((acc, r) => {
+                                    const ageGroup =
+                                      r.age < 20
+                                        ? '<20'
+                                        : r.age <= 25
+                                        ? '21-25'
+                                        : r.age <= 30
+                                        ? '26-30'
+                                        : r.age <= 40
+                                        ? '31-40'
+                                        : '>40';
+                                    acc[ageGroup] = (acc[ageGroup] || 0) + 1;
+                                    return acc;
+                                  }, {})
+                                ).map(([range, count]) => ({ range, count }))}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="range" />
+                                <YAxis />
+                                <Tooltip />
+                                <Bar dataKey="count" fill="#f02d9c" />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </>
                       )}
+                    </div>
                     </div>
                   </div>
                 </div>
