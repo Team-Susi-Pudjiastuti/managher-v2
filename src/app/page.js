@@ -120,7 +120,7 @@ export default function LandingPage() {
             <Link href="#how-it-works" className="text-sm font-medium hover:text-black">Cara Kerja</Link>
             <Link href="#usp" className="text-sm font-medium hover:text-black">Keunggulan</Link>
             <Link href="#features" className="text-sm font-medium hover:text-black">Fitur</Link>
-            <Link href="/register" className="inline-flex items-center gap-2 px-4 py-2 bg-[#f02d9c] text-white font-semibold rounded-full hover:brightness-95 transition">
+            <Link href="/auth/register" className="inline-flex items-center gap-2 px-4 py-2 bg-[#f02d9c] text-white font-semibold rounded-full hover:brightness-95 transition">
               <Gamepad2 size={16} /> Mulai
             </Link>
           </nav>
@@ -143,7 +143,7 @@ export default function LandingPage() {
             <Link href="#how-it-works" onClick={() => setOpen(false)}>Cara Kerja</Link>
             <Link href="#usp" onClick={() => setOpen(false)}>Keunggulan</Link>
             <Link href="#features" onClick={() => setOpen(false)}>Fitur</Link>
-            <Link href="/register" onClick={() => setOpen(false)} className="inline-flex items-center gap-2 px-4 py-2 bg-[#f02d9c] text-white font-semibold rounded-full">Mulai</Link>
+            <Link href="/auth/register" onClick={() => setOpen(false)} className="inline-flex items-center gap-2 px-4 py-2 bg-[#f02d9c] text-white font-semibold rounded-full">Mulai</Link>
           </motion.div>
         )}
       </header>
@@ -191,7 +191,7 @@ export default function LandingPage() {
 
               <div className="flex flex-wrap gap-3">
                 <Link
-                  href="/register"
+                  href="/auth/register"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f02d9c] text-white rounded-full font-semibold shadow-[0_4px_12px_rgba(240,45,156,0.15)] hover:scale-[1.02] transition-transform text-sm"
                 >
                   <Gamepad2 size={16} /> Mulai Sekarang
@@ -411,7 +411,7 @@ export default function LandingPage() {
                 Gabung ribuan perempuan yang membangun bisnis dari nol — dengan panduan, komunitas, dan semangat.
               </p>
               <Link
-                href="/register"
+                href="/auth/register"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#f02d9c] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(240,45,156,0.25)] hover:scale-[1.02] transition-transform text-sm"
               >
                 Daftar Sekarang
