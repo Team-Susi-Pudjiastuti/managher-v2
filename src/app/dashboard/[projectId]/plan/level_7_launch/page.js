@@ -32,7 +32,7 @@ import {
 
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
-import PlanSidebar from '@/components/PlanSidebar';
+import PlanSidebar from '@./components/PlanSidebar';
 
 // Daftar item checklist
 const CHECKLIST_ITEMS = [
