@@ -50,11 +50,7 @@ const useProjectStore = create(
       const newProject = res.data;
 
       set((state) => ({ projects: [...state.projects, newProject] }));
-      set((state) => ({ levels: [...state.levels, ...newProject.levels] }));
-      set((state) => ({ phases: [...state.phases, ...newProject.phases] }));
-      set((state) => ({ planLevels: [...state.planLevels, ...newProject.levels.filter(l => l.phase === 'plan')] }));
-      set((state) => ({ sellLevels: [...state.sellLevels, ...newProject.levels.filter(l => l.phase === 'sell')] }));
-      set((state) => ({ scaleUpLevels: [...state.scaleUpLevels, ...newProject.levels.filter(l => l.phase === 'scaleUp')] }));
+     
       return newProject;
     },
     // updateProject: (id, updates) =>
@@ -78,6 +74,9 @@ const useProjectStore = create(
       const res = await apiRequest(`level/${projectId}`, 'GET');
       const levels = res.data || [];
       set({ levels: levels });
+      set({ planLevels: levels.filter(l => l.phase.name === 'plan') });  
+      set({ sellLevels: levels.filter(l => l.phase.name === 'sell') });
+      set({ scaleUpLevels: levels.filter(l => l.phase.name === 'scale_up') });  
       return levels;
     }
   })

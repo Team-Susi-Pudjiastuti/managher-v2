@@ -23,17 +23,15 @@ const PLAN_LEVELS = [
 
 export default function PlanLevelsPage() {
   const { projectId } = useParams();
-  const [project, setProject] = useState(null);
-  const projects = useProjectStore((state) => state.projects);
+  const { getLevels, levels, planLevels } = useProjectStore();
 
   useEffect(() => {
-    if (projectId) {
-      const found = projects.find((p) => p.id === projectId);
-      setProject(found);
+    if (projectId) {;
+      getLevels(projectId);
     }
-  }, [projectId, projects]);
+  }, [projectId]);
 
-  if (!project) {
+  if (!levels) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white p-4">
         Memuat...
@@ -41,8 +39,8 @@ export default function PlanLevelsPage() {
     );
   }
 
-  const enrichedLevels = PLAN_LEVELS.map(level => {
-    const existing = project?.levels?.find(l => l.id === level.id);
+  const enrichedLevels = planLevels.map(level => {
+    const existing = levels?.find(l => l.id === level.id);
     return {
       ...level,
       completed: existing?.completed || false,
@@ -51,7 +49,7 @@ export default function PlanLevelsPage() {
 
   const completedLevels = enrichedLevels.filter(l => l.completed);
   const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
-  const totalXp = PLAN_LEVELS.reduce((sum, l) => sum + l.xp, 0);
+  const totalXp = planLevels.reduce((sum, l) => sum + l.xp, 0);
   const phaseProgress = Math.min(100, Math.floor((currentXp / totalXp) * 100));
 
   const firstIncompleteLevel = enrichedLevels.find(l => !l.completed);
