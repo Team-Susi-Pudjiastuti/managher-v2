@@ -48,10 +48,8 @@ export default function ProjectCard({ project, onClick }) {
         <div className="w-full bg-[#f0f0f0] rounded-full h-2 border border-[#e0e0e0] mb-2">
           <div
             className="bg-[#f02d9c] h-2 rounded-full transition-all duration-500 ease-out"
-            style={{ width: 
-              `${progress}%` 
-            }}
-          ></div>
+            style={{ width: `${progress}%` }}>
+          </div>
         </div>
 
         {/* Persentase & Status */}
