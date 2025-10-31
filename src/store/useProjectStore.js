@@ -52,18 +52,26 @@ const useProjectStore = create(
     //       p.id === id ? { ...p, ...updates } : p
     //     ),
     //   })),
-    getProject: async (projectId) => {
-      const res = await apiRequest(`project/detail/${projectId}`, 'GET');
-      set({ phases: res.data?.phases || [] });
-      console.log('phases:', res.data?.phases || []);
-      set({ levels: res.data?.levels || [] });
-      console.log('levels:', res.data?.levels || []);
-      return res.data || {};
-    },
+    // getProject: async (projectId) => {
+    //   const res = await apiRequest(`project/detail/${projectId}`, 'GET');
+    //   set({ phases: res.data?.phases || [] });
+    //   console.log('phases:', res.data?.phases || []);
+    //   set({ levels: res.data?.levels || [] });
+    //   console.log('levels:', res.data?.levels || []);
+    //   return res.data || {};
+    // },
     getPhases: async (projectId) => {
-      const res = await apiRequest('phase', 'GET', { projectId });
-      set({ phases: res.data || [] });
+      const res = await apiRequest(`project/detail/${projectId}`, 'GET');
+      const phases = res.data?.phases || [];
+      set({ phases: phases });
+      return phases;
     },
+    getLevels: async (projectId) => {
+      const res = await apiRequest(`project/detail/${projectId}`, 'GET');
+      const levels = res.data?.levels || [];
+      set({ levels: levels });
+      return levels;
+    }
   })
   )
 );
