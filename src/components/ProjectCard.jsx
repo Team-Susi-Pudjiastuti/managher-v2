@@ -21,10 +21,6 @@ export default function ProjectCard({ project, onClick }) {
   const progress = Math.min(100, Math.floor((completedLevels / totalLevels) * 100));
   const isCompleted = completedLevels === totalLevels;
 
-  console.log(project.title);
-  console.log(totalLevels);
-
-
   return (
     <div
       onClick={onClick}

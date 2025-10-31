@@ -44,7 +44,11 @@ const useProjectStore = create(
         user,
         title,
       });
-      set((state) => ({ projects: [...state.projects, res.data] }));
+      const newProject = res.data;
+
+      set((state) => ({ projects: [...state.projects, newProject] }));
+
+      return newProject;
     },
     // updateProject: (id, updates) =>
     //   set((state) => ({

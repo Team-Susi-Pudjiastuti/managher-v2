@@ -14,6 +14,7 @@ export default function OnboardingPage() {
   const id = params.id;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectName, setProjectName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const { projects, getAllprojects, addProject } = useProjectStore();
   const router = useRouter();
 
@@ -21,7 +22,7 @@ export default function OnboardingPage() {
       if (id) {
         getAllprojects(id);
       }
-  }, [id]);
+  }, []);
 
   const openModal = () => {
     setProjectName('');
@@ -34,10 +35,16 @@ export default function OnboardingPage() {
 
   const handleCreate = async () => {
     if (!projectName.trim()) return;
-    
+
+    setIsCreating(true);
     await addProject(id, projectName);
+    setIsCreating(false);
     setIsModalOpen(false);
+    await getAllprojects(id);
+
   };
+
+
 
   return (
     <div className="min-h-screen bg-white font-[Poppins] p-3 sm:p-4 md:p-6 flex flex-col">
@@ -90,13 +97,16 @@ export default function OnboardingPage() {
               Proyekmu
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full max-w-2xl px-1">
-              {projects.map((project) => (
+            {projects
+              .filter((p) => p && p._id)
+              .map((project, index) => (
                 <ProjectCard
-                  key={project._id}
+                  key={project._id || `temp-${index}`}
                   project={project}
                   onClick={() => router.push(`/dashboard/${project._id}`)}
                 />
               ))}
+
             </div>
           </>
         )}
@@ -158,7 +168,7 @@ export default function OnboardingPage() {
               </button>
               <button
                 onClick={handleCreate}
-                disabled={!projectName.trim()}
+                disabled={!projectName.trim() || isCreating}
                 className={`flex-1 py-1.5 sm:py-2 font-medium rounded-lg border-t border-l transition-all text-xs sm:text-sm
                   ${projectName.trim()
                     ? 'bg-[#f02d9c] text-white border-black hover:bg-[#d7488e] hover:translate-x-0.5 hover:translate-y-0.5 shadow-[2px_2px_0_0_#8acfd1]'
