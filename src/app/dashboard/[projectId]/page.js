@@ -12,18 +12,18 @@ import {
 } from 'lucide-react';
 
 const LEVELS = [
-  { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb },
-  { id: 2, title: "RWW Analysist", phase: "plan", xp: 10, icon: CheckCircle },
-  { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette },
-  { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText },
-  { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box },
-  { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users },
-  { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket },
-  { id: 8, title: "Product", phase: "sell", xp: 10, icon: Package },
-  { id: 9, title: "Customer", phase: "sell", xp: 10, icon: User },
-  { id: 10, title: "Order", phase: "sell", xp: 10, icon: ShoppingBag },
-  { id: 11, title: "Laba Rugi", phase: "sell", xp: 10, icon: BarChart3 },
-  { id: 12, title: "Scale Up", phase: "scaleUp", xp: 10, icon: TrendingUp },
+  { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb, badge: "AI Innovator" },
+  { id: 2, title: "RWW Analysis", phase: "plan", xp: 10, icon: CheckCircle, badge: "Validator Pro" },
+  { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette, badge: "Brand Builder" },
+  { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText, badge: "Canvas Master" },
+  { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box, badge: "MVP Maker" },
+  { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users, badge: "Tester Hero" },
+  { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket, badge: "Launch Ready" },
+  { id: 8, title: "Product", phase: "sell", xp: 10, icon: Package, badge: "Product Manager" },
+  { id: 9, title: "Customer", phase: "sell", xp: 10, icon: User, badge: "Customer Care" },
+  { id: 10, title: "Order", phase: "sell", xp: 10, icon: ShoppingBag, badge: "Order Ninja" },
+  { id: 11, title: "Laba Rugi", phase: "sell", xp: 10, icon: BarChart3, badge: "Finance Guru" },
+  { id: 12, title: "Scale Up", phase: "scaleUp", xp: 10, icon: TrendingUp, badge: "CEO Mode" },
 ];
 
 const TOTAL_XP = LEVELS.reduce((sum, level) => sum + level.xp, 0);
@@ -104,6 +104,15 @@ export default function DashboardPage() {
         <span className="mt-0.5 text-[8px] font-semibold">
           +{level.xp} XP
         </span>
+        {level.badge && (
+          <span className={`mt-1 px-1.5 py-0.5 rounded text-[7px] font-bold ${
+            isCompleted 
+              ? 'bg-[#fbe2a7] text-black' 
+              : 'bg-gray-300 text-gray-700'
+          }`}>
+            {level.badge}
+          </span>
+        )}
       </div>
     );
   };
