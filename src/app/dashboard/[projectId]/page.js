@@ -4,43 +4,36 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import useProjectStore from '@/store/useProjectStore';
+import { Lock, HelpCircle } from "lucide-react"
+import * as Icons from 'lucide-react';
 
-import { 
-  Lightbulb, CheckCircle, Palette, FileText, Box, Users, Rocket,
-  Package, User, ShoppingBag, BarChart3,
-  TrendingUp, Lock, Sparkle
-} from 'lucide-react';
+// const LEVELS = [
+//   { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb, badge: "AI Innovator" },
+//   { id: 2, title: "RWW Analysis", phase: "plan", xp: 10, icon: CheckCircle, badge: "Validator Pro" },
+//   { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette, badge: "Brand Builder" },
+//   { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText, badge: "Canvas Master" },
+//   { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box, badge: "MVP Maker" },
+//   { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users, badge: "Tester Hero" },
+//   { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket, badge: "Launch Ready" },
+//   { id: 8, title: "Product", phase: "sell", xp: 10, icon: Package, badge: "Product Manager" },
+//   { id: 9, title: "Customer", phase: "sell", xp: 10, icon: User, badge: "Customer Care" },
+//   { id: 10, title: "Order", phase: "sell", xp: 10, icon: ShoppingBag, badge: "Order Ninja" },
+//   { id: 11, title: "Laba Rugi", phase: "sell", xp: 10, icon: BarChart3, badge: "Finance Guru" },
+//   { id: 12, title: "Scale Up", phase: "scaleUp", xp: 10, icon: TrendingUp, badge: "CEO Mode" },
+// ];
 
-const LEVELS = [
-  { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb, badge: "AI Innovator" },
-  { id: 2, title: "RWW Analysis", phase: "plan", xp: 10, icon: CheckCircle, badge: "Validator Pro" },
-  { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette, badge: "Brand Builder" },
-  { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText, badge: "Canvas Master" },
-  { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box, badge: "MVP Maker" },
-  { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users, badge: "Tester Hero" },
-  { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket, badge: "Launch Ready" },
-  { id: 8, title: "Product", phase: "sell", xp: 10, icon: Package, badge: "Product Manager" },
-  { id: 9, title: "Customer", phase: "sell", xp: 10, icon: User, badge: "Customer Care" },
-  { id: 10, title: "Order", phase: "sell", xp: 10, icon: ShoppingBag, badge: "Order Ninja" },
-  { id: 11, title: "Laba Rugi", phase: "sell", xp: 10, icon: BarChart3, badge: "Finance Guru" },
-  { id: 12, title: "Scale Up", phase: "scaleUp", xp: 10, icon: TrendingUp, badge: "CEO Mode" },
-];
-
-const TOTAL_XP = LEVELS.reduce((sum, level) => sum + level.xp, 0);
 
 export default function DashboardPage() {
   const { projectId } = useParams();
-  const [project, setProject] = useState(null);
-  const projects = useProjectStore((state) => state.projects);
+  const { getLevels, levels, projects, planLevels, sellLevels, scaleUpLevels } = useProjectStore((state) => state);
 
   useEffect(() => {
     if (projectId) {
-      const found = projects.find((p) => p.id === projectId);
-      setProject(found);
+      getLevels(projectId);
     }
-  }, [projectId, projects]);
+  }, [projectId]);
 
-  if (!projectId || !project) {
+  if (!projectId || !levels) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white p-4">
         Memuat proyek...
@@ -48,22 +41,19 @@ export default function DashboardPage() {
     );
   }
 
-  const enrichedLevels = LEVELS.map(level => {
-    const existing = project?.levels?.find(l => l.id === level.id);
+  const enrichedLevels = levels.map(level => {
+    const existing = levels?.find(l => l.id === level._id);
     return {
       ...level,
       completed: existing?.completed || false,
     };
   });
 
+  const TOTAL_XP = levels.reduce((sum, level) => sum + level.xp, 0);
   const completedLevels = enrichedLevels.filter(l => l.completed);
   const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
   const globalProgress = Math.min(100, Math.floor((currentXp / TOTAL_XP) * 100));
   const currentLevel = enrichedLevels.find(l => !l.completed) || enrichedLevels[enrichedLevels.length - 1];
-
-  const planLevels = enrichedLevels.filter(l => l.phase === 'plan');
-  const sellLevels = enrichedLevels.filter(l => l.phase === 'sell');
-  const scaleUpLevels = enrichedLevels.filter(l => l.phase === 'scaleUp');
 
   // Fase Sell & Scale Up selalu dikunci
   const isPlanCompleted = false; 
@@ -71,9 +61,9 @@ export default function DashboardPage() {
 
   const renderLevelBadge = (level) => {
     // Fase Sell & Scale Up selalu dianggap "belum selesai"
-    const isLockedPhase = level.phase !== 'plan';
+    const isLockedPhase = level.phase.name !== 'plan';
     const isCompleted = !isLockedPhase && level.completed;
-    const isActive = !isLockedPhase && level.id === currentLevel.id && !isCompleted;
+    const isActive = !isLockedPhase && level._id === currentLevel._id && !isCompleted;
 
     let bgColor, textColor, borderColor, badgeBg;
     if (isLockedPhase || (!isCompleted && !isActive)) {
@@ -96,18 +86,34 @@ export default function DashboardPage() {
       badgeBg = 'bg-[#8acfd1] text-white';
     }
 
-    const Icon = level.icon;
+    const iconMap = {
+      Lightbulb: Icons.Lightbulb,
+      CheckCircle: Icons.CheckCircle,
+      Palette: Icons.Palette,
+      FileText: Icons.FileText,
+      Box: Icons.Box,
+      Users: Icons.Users,
+      Rocket: Icons.Rocket,
+      Package: Icons.Package,
+      User: Icons.User,
+      ShoppingBag: Icons.ShoppingBag,
+      BarChart3: Icons.BarChart3,
+      TrendingUp: Icons.TrendingUp,
+    };
+
+
+    const Icon = iconMap[level.icon] || Icons.HelpCircle;
 
     return (
       <div
-        key={level.id}
+        key={level._id}
         className={`w-[120px] h-[130px] rounded-lg border ${borderColor} ${bgColor} ${textColor} p-2 flex flex-col items-center justify-between`}
       >
         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white border-2 border-[#f02d9c]">
           <Icon size={16} className="text-[#f02d9c]" />
         </div>
         <div className="text-center mt-1">
-          <h4 className="font-bold text-xs">L{level.id}</h4>
+          <h4 className="font-bold text-xs">L{level.id}</h4> 
           <p className="text-[10px] mt-0.5">{level.title}</p>
           <span className="block text-[8px] font-semibold mt-1">+{level.xp} XP</span>
         </div>
@@ -146,7 +152,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-white p-3 sm:p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#5b5b5b] mb-4 sm:mb-6">Dashboard: {project.name}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#5b5b5b] mb-4 sm:mb-6">Dashboard: {projects.find(p => p.id === projectId)?.title || 'Proyek'}</h1>
 
         {/* Global XP & Progress */}
         <div className="mb-6 sm:mb-8 p-4 sm:p-5 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-200">
@@ -154,7 +160,7 @@ export default function DashboardPage() {
             <div>
               <span className="font-bold text-[#5b5b5b] text-sm sm:text-base">Total XP: {currentXp} / {TOTAL_XP}</span>
               <div className="text-xs sm:text-sm text-[#7a7a7a] mt-1">
-                Level: {currentLevel.id} • {currentLevel.title}
+                Level: {currentLevel._id} • {currentLevel.title}
               </div>
             </div>
             <span className="font-bold text-[#f02d9c] text-sm sm:text-base">{globalProgress}%</span>
@@ -177,7 +183,7 @@ export default function DashboardPage() {
 
           <p className="text-xs sm:text-sm text-[#7a7a7a] mt-3">
             {currentXp < TOTAL_XP
-              ? `Kumpulkan ${LEVELS.find(l => l.id === currentLevel.id)?.xp || 10} XP lagi untuk naik level`
+              ? `Kumpulkan ${levels.find(l => l.id === currentLevel._id)?.xp || 10} XP lagi untuk naik level`
               : (
                 <span className="flex items-center gap-1">
                   <Sparkle size={14} className="text-[#f02d9c]" />
