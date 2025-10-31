@@ -65,26 +65,35 @@ export default function DashboardPage() {
   const sellLevels = enrichedLevels.filter(l => l.phase === 'sell');
   const scaleUpLevels = enrichedLevels.filter(l => l.phase === 'scaleUp');
 
-  const isPlanCompleted = planLevels.every(l => l.completed);
-  const isSellCompleted = sellLevels.every(l => l.completed);
+  // Fase Sell & Scale Up selalu dikunci
+  const isPlanCompleted = false; 
+  const isSellCompleted = false;
 
   const renderLevelBadge = (level) => {
-    const isCompleted = level.completed;
-    const isActive = level.id === currentLevel.id && !isCompleted;
+    // Fase Sell & Scale Up selalu dianggap "belum selesai"
+    const isLockedPhase = level.phase !== 'plan';
+    const isCompleted = !isLockedPhase && level.completed;
+    const isActive = !isLockedPhase && level.id === currentLevel.id && !isCompleted;
 
-    let bgColor, textColor, borderColor;
-    if (isActive) {
-      bgColor = 'bg-[#f02d9c]';
-      textColor = 'text-white';
-      borderColor = 'border-black';
-    } else if (isCompleted) {
-      bgColor = 'bg-[#8acfd1]';
-      textColor = 'text-[#0a5f61]';
-      borderColor = 'border-black';
-    } else {
+    let bgColor, textColor, borderColor, badgeBg;
+    if (isLockedPhase || (!isCompleted && !isActive)) {
+      // Abu-abu untuk: locked phase, atau plan belum selesai
       bgColor = 'bg-gray-200';
       textColor = 'text-gray-500';
       borderColor = 'border-gray-300';
+      badgeBg = 'bg-gray-300 text-gray-700';
+    } else if (isCompleted) {
+      // Pink pucat + badge biru untuk level Plan yang selesai
+      bgColor = 'bg-[#fdf6f0]';
+      textColor = 'text-slate-800';
+      borderColor = 'border-[#f02d9c]/30';
+      badgeBg = 'bg-[#8acfd1] text-white';
+    } else {
+      // Active (sedang dikerjakan)
+      bgColor = 'bg-[#f02d9c]';
+      textColor = 'text-white';
+      borderColor = 'border-[#f02d9c]';
+      badgeBg = 'bg-[#8acfd1] text-white';
     }
 
     const Icon = level.icon;
@@ -92,24 +101,18 @@ export default function DashboardPage() {
     return (
       <div
         key={level.id}
-        className={`px-2.5 py-1.5 rounded-lg font-medium text-xs border ${bgColor} ${textColor} ${borderColor} flex flex-col items-center min-w-20`}
+        className={`w-[120px] h-[130px] rounded-lg border ${borderColor} ${bgColor} ${textColor} p-2 flex flex-col items-center justify-between`}
       >
-        <div className="flex items-center justify-center w-5 h-5 mb-1">
-          <Icon size={12} />
+        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white border-2 border-[#f02d9c]">
+          <Icon size={16} className="text-[#f02d9c]" />
         </div>
-        <span className="font-bold text-[10px]">L{level.id}</span>
-        <span className="mt-0.5 text-center text-[8px] leading-tight">
-          {level.title}
-        </span>
-        <span className="mt-0.5 text-[8px] font-semibold">
-          +{level.xp} XP
-        </span>
+        <div className="text-center mt-1">
+          <h4 className="font-bold text-xs">L{level.id}</h4>
+          <p className="text-[10px] mt-0.5">{level.title}</p>
+          <span className="block text-[8px] font-semibold mt-1">+{level.xp} XP</span>
+        </div>
         {level.badge && (
-          <span className={`mt-1 px-1.5 py-0.5 rounded text-[7px] font-bold ${
-            isCompleted 
-              ? 'bg-[#fbe2a7] text-black' 
-              : 'bg-gray-300 text-gray-700'
-          }`}>
+          <span className={`mt-1 px-1.5 py-0.5 rounded text-[7px] font-bold whitespace-nowrap ${badgeBg}`}>
             {level.badge}
           </span>
         )}
@@ -199,7 +202,9 @@ export default function DashboardPage() {
                 phaseColor: '#f02d9c'
               })}
             </div>
-            <div className="flex flex-wrap gap-2 sm:gap-3">{planLevels.map(renderLevelBadge)}</div>
+            <div className="flex flex-wrap gap-2 justify-start">
+              {planLevels.map(renderLevelBadge)}
+            </div>
           </div>
         </div>
 
@@ -214,11 +219,13 @@ export default function DashboardPage() {
               <h3 className="font-bold text-[#0a5f61] text-lg">Fase: Sell</h3>
               {renderSmallPhaseButton({
                 href: `/dashboard/${projectId}/sell`,
-                isLocked: !isPlanCompleted,
+                isLocked: true, 
                 phaseColor: '#8acfd1'
               })}
             </div>
-            <div className="flex flex-wrap gap-2 sm:gap-3">{sellLevels.map(renderLevelBadge)}</div>
+            <div className="flex flex-wrap gap-2 justify-start">
+              {sellLevels.map(renderLevelBadge)}
+            </div>
           </div>
         </div>
 
@@ -233,11 +240,13 @@ export default function DashboardPage() {
               <h3 className="font-bold text-[#5a3a8c] text-lg">Fase: Scale Up</h3>
               {renderSmallPhaseButton({
                 href: `/dashboard/${projectId}/scale-up`,
-                isLocked: !isSellCompleted,
+                isLocked: true, 
                 phaseColor: '#c5a8e0'
               })}
             </div>
-            <div className="flex flex-wrap gap-2 sm:gap-3">{scaleUpLevels.map(renderLevelBadge)}</div>
+            <div className="flex flex-wrap gap-2 justify-start">
+              {scaleUpLevels.map(renderLevelBadge)}
+            </div>
           </div>
         </div>
       </div>
