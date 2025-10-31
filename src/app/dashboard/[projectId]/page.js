@@ -202,7 +202,7 @@ export default function DashboardPage() {
                 phaseColor: '#f02d9c'
               })}
             </div>
-            <div className="flex flex-wrap gap-2 justify-start">
+            <div className="flex flex-wrap gap-4 justify-start">
               {planLevels.map(renderLevelBadge)}
             </div>
           </div>
