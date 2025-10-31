@@ -30,12 +30,11 @@ const TOTAL_XP = LEVELS.reduce((sum, level) => sum + level.xp, 0);
 
 export default function DashboardPage() {
   const { projectId } = useParams();
-  const [project, setProject] = useState(null);
-  const { getProject, projects, phases, levels } = useProjectStore((state) => state);
+  const { getLevels, phases, levels, planLevels, sellLevels, scaleUpLevels } = useProjectStore();
 
   useEffect(() => {
     if (projectId) {
-      getProject(projectId);
+      getLevels(projectId);
     }
   }, [projectId]);
 
@@ -46,9 +45,8 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const enrichedLevels = LEVELS.map(level => {
-    const existing = project?.levels?.find(l => l.id === level.id);
+  const enrichedLevels = levels.map(level => {
+    const existing = levels?.find(l => l.id === level.id);
     return {
       ...level,
       completed: existing?.completed || false,
@@ -59,10 +57,7 @@ export default function DashboardPage() {
   const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
   const globalProgress = Math.min(100, Math.floor((currentXp / TOTAL_XP) * 100));
   const currentLevel = enrichedLevels.find(l => !l.completed) || enrichedLevels[enrichedLevels.length - 1];
-
-  const planLevels = enrichedLevels.filter(l => l.phase === 'plan');
-  const sellLevels = enrichedLevels.filter(l => l.phase === 'sell');
-  const scaleUpLevels = enrichedLevels.filter(l => l.phase === 'scaleUp');
+  console.log('currentLevel', currentLevel);
 
   const isPlanCompleted = planLevels.every(l => l.completed);
   const isSellCompleted = sellLevels.every(l => l.completed);
@@ -141,7 +136,7 @@ export default function DashboardPage() {
             <div>
               <span className="font-bold text-[#5b5b5b] text-sm sm:text-base">Total XP: {currentXp} / {TOTAL_XP}</span>
               <div className="text-xs sm:text-sm text-[#7a7a7a] mt-1">
-                Level: {currentLevel.id} • {currentLevel.title}
+                Level: {currentLevel._id} • {currentLevel.title}
               </div>
             </div>
             <span className="font-bold text-[#f02d9c] text-sm sm:text-base">{globalProgress}%</span>

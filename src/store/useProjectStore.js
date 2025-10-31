@@ -30,6 +30,9 @@ const useProjectStore = create(
     projects: [],
     phases: [],
     levels:[],
+    planLevels: [],
+    sellLevels: [],
+    scaleUpLevels: [],
     getAllprojects: async (userId) => {
       try {
         const res = await apiRequest(`project/${userId}`, 'GET');
@@ -47,7 +50,11 @@ const useProjectStore = create(
       const newProject = res.data;
 
       set((state) => ({ projects: [...state.projects, newProject] }));
-
+      set((state) => ({ levels: [...state.levels, ...newProject.levels] }));
+      set((state) => ({ phases: [...state.phases, ...newProject.phases] }));
+      set((state) => ({ planLevels: [...state.planLevels, ...newProject.levels.filter(l => l.phase === 'plan')] }));
+      set((state) => ({ sellLevels: [...state.sellLevels, ...newProject.levels.filter(l => l.phase === 'sell')] }));
+      set((state) => ({ scaleUpLevels: [...state.scaleUpLevels, ...newProject.levels.filter(l => l.phase === 'scaleUp')] }));
       return newProject;
     },
     // updateProject: (id, updates) =>
@@ -58,10 +65,7 @@ const useProjectStore = create(
     //   })),
     // getProject: async (projectId) => {
     //   const res = await apiRequest(`project/detail/${projectId}`, 'GET');
-    //   set({ phases: res.data?.phases || [] });
-    //   console.log('phases:', res.data?.phases || []);
-    //   set({ levels: res.data?.levels || [] });
-    //   console.log('levels:', res.data?.levels || []);
+    //   set 
     //   return res.data || {};
     // },
     getPhases: async (projectId) => {
