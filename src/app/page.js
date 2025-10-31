@@ -1,253 +1,431 @@
-'use client'
-import { useState } from "react";
+'use client';
 
-export default function Home() {
-  const [selectedEmail, setSelectedEmail] = useState(0);
-  
-  // Sample email data
-  const emails = [
+import React, { useEffect, useState, useMemo } from 'react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import {
+  Menu,
+  X,
+  Sparkle,
+  Gamepad2,
+  Target,
+  CheckCircle,
+  Users,
+  FileText,
+  Trophy,
+  Lightbulb,
+  Palette,
+  Box,
+  ClipboardCheck,
+  TrendingUp,
+  Award,
+  Brain
+} from 'lucide-react';
+import Image from 'next/image';
+
+export default function LandingPage() {
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  const phases = [
     {
-      id: 1,
-      sender: "William Smith",
-      subject: "Meeting Tomorrow",
-      time: "Oct 22, 2023, 9:00:00 AM",
-      reply: "To: williamsmith@example.com",
-      content: "Hi, let's have a meeting tomorrow to discuss the project. I've been reviewing the project details and have some ideas I'd like to share. It's crucial that we align on our next steps to ensure the project's success.",
-      tags: ["meeting", "work", "important"],
-      read: false
+      id: 'plan',
+      title: 'Plan',
+      subtitle: 'New Product Development Process',
+      color: '#8acfd1',
+      levels: [
+        { id: 1, name: 'AI Idea & VPC Generator', desc: 'Pakai Gemini API untuk generate ide & VPC', xp: 10, badge: 'AI Innovator', icon: Lightbulb },
+        { id: 2, name: 'RWW Analysis', desc: 'Validasi: Real? Win? Worth It?', xp: 10, badge: 'Validator Pro', icon: CheckCircle },
+        { id: 3, name: 'Brand Identity', desc: 'Buat identitas brand yang konsisten', xp: 10, badge: 'Brand Builder', icon: Palette },
+        { id: 4, name: 'Lean Canvas', desc: 'Rancang model bisnis dalam 1 halaman', xp: 10, badge: 'Canvas Master', icon: FileText },
+        { id: 5, name: 'MVP', desc: 'Bangun versi minimal produkmu', xp: 10, badge: 'MVP Maker', icon: Box },
+        { id: 6, name: 'Beta Testing', desc: 'Uji ke pelanggan nyata', xp: 10, badge: 'Tester Hero', icon: Users },
+        { id: 7, name: 'Persiapan Launching', desc: 'Checklist & aset siap rilis', xp: 10, badge: 'Launch Ready', icon: ClipboardCheck }
+      ]
     },
     {
-      id: 2,
-      sender: "Alice Smith",
-      subject: "Re: Project Update",
-      time: "about 2 years ago",
-      content: "Thank you for the project update. It looks great! I've gone through the report, and the progress is impressive. The team has done a fantastic job.",
-      tags: ["work", "important"],
-      read: true
+      id: 'sell',
+      title: 'Sell',
+      subtitle: 'Mini ERP untuk UMKM',
+      color: '#f02d9c',
+      levels: [
+        { id: 8, name: 'Product', desc: 'Kelola stok & varian produk', xp: 10, badge: 'Product Manager', icon: Box },
+        { id: 9, name: 'Customer', desc: 'Catat & kelola data pelanggan', xp: 10, badge: 'Customer Care', icon: Users },
+        { id: 10, name: 'Order', desc: 'Proses transaksi & pengiriman', xp: 10, badge: 'Order Ninja', icon: ClipboardCheck },
+        { id: 11, name: 'Laba Rugi', desc: 'Pantau keuangan harian', xp: 10, badge: 'Finance Guru', icon: TrendingUp }
+      ]
     },
     {
-      id: 3,
-      sender: "Bob Johnson",
-      subject: "Weekend Plans",
-      time: "over 2 years ago",
-      content: "Any plans for the weekend? I was thinking of going hiking in the nearby mountains. It's been a while since we had some outdoor fun. If you're interested, let me know!",
-      tags: ["personal"],
-      read: true
-    },
-    {
-      id: 4,
-      sender: "Emily Davis",
-      subject: "Re: Question about Budget",
-      time: "over 2 years ago",
-      content: "I have a question about the budget for the upcoming project. It seems like there's a discrepancy in the allocation of resources. I've reviewed the documents and found some inconsistencies.",
-      tags: ["work", "budget"],
-      read: true
-    },
-    {
-      id: 5,
-      sender: "Michael Wilson",
-      subject: "Important Announcement",
-      time: "over 2 years ago",
-      content: "I have an important announcement to make during our team meeting. It pertains to a strategic shift in our approach to the upcoming project.",
-      tags: ["work", "important"],
-      read: true
+      id: 'scale',
+      title: 'Scale Up',
+      subtitle: 'Ekspansi & Pertumbuhan',
+      color: '#8acfd1',
+      levels: [
+        { id: 12, name: 'Scale Up', desc: 'Siapkan strategi ekspansi', xp: 20, badge: 'CEO Mode', icon: Award }
+      ]
     }
   ];
 
+  const usps = [
+    {
+      title: 'AI di Level 1',
+      desc: 'Dapatkan ide bisnis & Value Proposition Canvas (VPC) otomatis dari AI berbasis Gemini API.',
+      icon: Brain
+    },
+    {
+      title: 'Framework Bisnis Teruji',
+      desc: 'Gunakan NPD Process, VPC, RWW Analysis, dan Lean Canvas dalam satu alur terstruktur.',
+      icon: Target
+    },
+    {
+      title: 'Gamifikasi Lengkap',
+      desc: 'Fase, level, XP, badges, dan progress bar membuat perjalanan bisnismu menyenangkan seperti game.',
+      icon: Gamepad2
+    }
+  ];
+
+  const totalXP = useMemo(() => {
+    return phases.reduce((acc, p) => acc + p.levels.reduce((s, l) => s + (l.xp || 0), 0), 0);
+  }, [phases]);
+
+  const [currentXP, setCurrentXP] = useState(75);
+  const progressPercent = Math.min(100, Math.round((currentXP / totalXP) * 100));
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <div className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-        <div className="p-4">
-          <div className="flex items-center space-x-2 mb-6">
-            <select className="w-full p-2 bg-sidebar text-sidebar-foreground border border-sidebar-border rounded">
-              <option>Alicia Koch</option>
-            </select>
+    <div className="min-h-screen bg-white text-black font-sans antialiased">
+      {/* NAVBAR */}
+      <header
+        className={`fixed top-0 w-full z-40 transition-all duration-300 ${scrolled ? 'backdrop-blur-md bg-white/80 shadow-sm' : 'bg-white/95'}`}
+      >
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-[#f02d9c]">
+              <Sparkle size={22} className="text-[#f02d9c]" />
+            </div>
+            <div className="hidden sm:flex flex-col leading-tight">
+              <span className="font-extrabold text-lg text-black">
+                Manag<span className="text-[#f02d9c]">Her</span>
+              </span>
+              <span className="text-[11px] text-slate-500">From Zero to CEO</span>
+            </div>
           </div>
-          
-          {/* Sidebar menu */}
-          <nav className="space-y-1">
-            <div className="flex items-center justify-between p-2 bg-sidebar-primary text-sidebar-primary-foreground rounded">
-              <span>Inbox</span>
-              <span className="bg-white text-sidebar-primary px-2 rounded-full text-xs">128</span>
-            </div>
-            <div className="flex items-center justify-between p-2">
-              <span>Drafts</span>
-              <span className="text-xs">9</span>
-            </div>
-            <div className="flex items-center justify-between p-2">
-              <span>Sent</span>
-              <span className="text-xs"></span>
-            </div>
-            <div className="flex items-center justify-between p-2">
-              <span>Junk</span>
-              <span className="text-xs">23</span>
-            </div>
-            <div className="flex items-center justify-between p-2">
-              <span>Trash</span>
-              <span className="text-xs"></span>
-            </div>
-            <div className="flex items-center justify-between p-2">
-              <span>Archive</span>
-              <span className="text-xs"></span>
-            </div>
+
+          <nav className="hidden md:flex items-center gap-6">
+            <Link href="#how-it-works" className="text-sm font-medium hover:text-black">Cara Kerja</Link>
+            <Link href="#usp" className="text-sm font-medium hover:text-black">Keunggulan</Link>
+            <Link href="#features" className="text-sm font-medium hover:text-black">Fitur</Link>
+            <Link href="/auth/register" className="inline-flex items-center gap-2 px-4 py-2 bg-[#f02d9c] text-white font-semibold rounded-full hover:brightness-95 transition">
+              <Gamepad2 size={16} /> Mulai
+            </Link>
           </nav>
-          
-          <div className="mt-6 pt-6 border-t border-sidebar-border">
-            <nav className="space-y-1">
-              <div className="flex items-center justify-between p-2">
-                <span>Social</span>
-                <span className="text-xs">672</span>
-              </div>
-              <div className="flex items-center justify-between p-2">
-                <span>Updates</span>
-                <span className="text-xs">342</span>
-              </div>
-              <div className="flex items-center justify-between p-2">
-                <span>Forums</span>
-                <span className="text-xs">128</span>
-              </div>
-              <div className="flex items-center justify-between p-2">
-                <span>Shopping</span>
-                <span className="text-xs">8</span>
-              </div>
-              <div className="flex items-center justify-between p-2">
-                <span>Promotions</span>
-                <span className="text-xs">21</span>
-              </div>
-            </nav>
-          </div>
+
+          <button
+            className="md:hidden p-2 rounded-md border border-slate-200 bg-white/70"
+            onClick={() => setOpen(!open)}
+            aria-label="Toggle menu"
+          >
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
-      </div>
-      
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="border-b border-border p-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-medium">Inbox</h1>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 bg-muted text-muted-foreground rounded">All mail</button>
-              <button className="px-3 py-1 bg-primary text-primary-foreground rounded">Unread</button>
+
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="md:hidden bg-white border-t border-slate-100 px-6 py-4 flex flex-col gap-3"
+          >
+            <Link href="#how-it-works" onClick={() => setOpen(false)}>Cara Kerja</Link>
+            <Link href="#usp" onClick={() => setOpen(false)}>Keunggulan</Link>
+            <Link href="#features" onClick={() => setOpen(false)}>Fitur</Link>
+            <Link href="/auth/register" onClick={() => setOpen(false)} className="inline-flex items-center gap-2 px-4 py-2 bg-[#f02d9c] text-white font-semibold rounded-full">Mulai</Link>
+          </motion.div>
+        )}
+      </header>
+
+      <main className="mt-20">
+        {/* HERO */}
+        <section className="relative min-h-[calc(100vh-120px)] bg-white pt-16 pb-12 flex items-center">
+          <div className="max-w-6xl mx-auto px-4 w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="max-w-lg"
+            >
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f02d9c]/10 text-[#f02d9c] mb-5 text-sm font-medium">
+                <Sparkle size={16} /> Empowering Female Founders
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl font-extrabold mb-3 text-black">
+                Bangun Bisnismu <span className="text-[#f02d9c]">seperti Bermain Game</span>
+              </h1>
+
+              <p className="text-base text-slate-700 mb-5">
+                Platform step-by-step roadmap business untuk founder perempuan, ManagHer membagi perjalanan bisnis menjadi tiga fase: PLAN (NPD Process) dan SELL (Mini ERP) serta fase SCALE UP yang akan memastikan setiap langkah diambil dengan strategi yang valid.
+              </p>
+
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold text-black">From Zero</span>
+                  <span className="text-xs font-semibold text-black">To CEO</span>
+                </div>
+                <div className="relative w-full h-2 bg-black/10 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPercent}%` }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
+                    className="absolute top-0 left-0 h-full rounded-full bg-[#f02d9c]"
+                  />
+                </div>
+                <div className="flex justify-between mt-1.5 text-[11px]">
+                  <span className="text-[#f02d9c] font-medium">{progressPercent}% Complete</span>
+                  <span className="text-slate-600">{currentXP} / {totalXP} XP</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/auth/register"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f02d9c] text-white rounded-full font-semibold shadow-[0_4px_12px_rgba(240,45,156,0.15)] hover:scale-[1.02] transition-transform text-sm"
+                >
+                  <Gamepad2 size={16} /> Mulai Sekarang
+                </Link>
+                <Link
+                  href="#features"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border-2 border-black text-black font-semibold hover:bg-black/5 transition text-sm"
+                >
+                  Lihat Fitur
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Mockup dalam frame desktop */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8 }}
+              className="flex justify-center lg:justify-end"
+            >
+              <div className="relative w-full max-w-md">
+                <div className="relative w-full aspect-video rounded-t-xl rounded-b-lg overflow-hidden border-4 border-[#f02d9c] shadow-[0_8px_24px_rgba(240,45,156,0.2)]">
+                  <div className="absolute top-0 left-0 right-0 h-8 bg-[#f02d9c] flex items-center px-3">
+                    <div className="w-3 h-3 rounded-full bg-red-400 mr-2"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-400 mr-2"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                    <span className="ml-4 text-white text-xs font-medium">managher.app</span>
+                  </div>
+                  <div className="absolute inset-0 pt-8 bg-white">
+                    <Image
+                      src="/managher.jpeg"
+                      alt="ManagHer Dashboard"
+                      fill
+                      className="object-fill"
+                      priority
+                    />
+                  </div>
+                </div>
+                <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-[#fbe2a7] rounded-full flex items-center justify-center">
+                  <Sparkle size={10} className="text-[#f02d9c]" />
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* CARA KERJA */}
+        <section id="how-it-works" className="py-20 bg-white">
+          <div className="max-w-6xl mx-auto px-4 text-center">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-2xl font-bold text-black mb-3"
+            >
+              Cara Kerja
+            </motion.h2>
+            <p className="text-slate-600 mb-8 max-w-xl mx-auto text-sm">
+              Ikuti 3 langkah utama untuk membangun bisnismu dari nol hingga siap scale up.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {[
+                { step: 1, title: 'Plan', desc: 'Mulai dari ide, validasi, hingga persiapan launching.', icon: Lightbulb },
+                { step: 2, title: 'Sell', desc: 'Kelola produk, pelanggan, order, dan keuangan.', icon: Box },
+                { step: 3, title: 'Scale Up', desc: 'Siapkan strategi ekspansi & pertumbuhan.', icon: Award }
+              ].map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="bg-white rounded-xl p-5 border border-[#f02d9c]/20 shadow-[0_4px_12px_rgba(240,45,156,0.15)] hover:shadow-md transition"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[#fdf6f0] flex items-center justify-center mx-auto mb-3 border-2 border-[#f02d9c]">
+                      <Icon size={20} className="text-[#f02d9c]" />
+                    </div>
+                    <h3 className="font-bold text-lg text-black mb-1.5">{item.step}. {item.title}</h3>
+                    <p className="text-xs text-slate-700">{item.desc}</p>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
-        </header>
-        
-        {/* Email list and detail view */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Email list */}
-          <div className="w-1/2 border-r border-border overflow-y-auto">
-            <div className="p-4">
-              <div className="relative mb-4">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="w-full p-2 pl-8 border border-input rounded bg-background"
-                />
-                <svg
-                  className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-              
-              {/* Email items */}
-              {emails.map((email, index) => (
-                <div
-                  key={email.id}
-                  className={`p-4 border-b border-border cursor-pointer ${
-                    selectedEmail === index ? "bg-muted" : ""
-                  }`}
-                  onClick={() => setSelectedEmail(index)}
-                >
-                  <div className="flex justify-between mb-1">
-                    <h3 className="font-medium">{email.sender}</h3>
-                    <span className="text-xs text-muted-foreground">{email.time}</span>
-                  </div>
-                  <h4 className="font-medium mb-1">{email.subject}</h4>
-                  <p className="text-sm text-muted-foreground truncate">{email.content}</p>
-                  
-                  {email.tags && (
-                    <div className="flex mt-2 space-x-2">
-                      {email.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className={`px-2 py-0.5 text-xs rounded ${
-                            tag === "work" ? "bg-secondary text-secondary-foreground" :
-                            tag === "important" ? "bg-primary text-primary-foreground" :
-                            tag === "personal" ? "bg-accent text-accent-foreground" :
-                            tag === "meeting" ? "bg-muted text-muted-foreground" :
-                            tag === "budget" ? "bg-accent text-accent-foreground" :
-                            "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {tag}
-                        </span>
-                      ))}
+        </section>
+
+        {/* KEUNGGULAN UTAMA (USP) */}
+        <section id="usp" className="py-20 bg-white">
+          <div className="max-w-6xl mx-auto px-4 text-center">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-2xl font-bold text-black mb-3"
+            >
+              Keunggulan Utama ManagHer
+            </motion.h2>
+            <p className="text-slate-600 mb-8 max-w-2xl mx-auto text-sm">
+              Dibangun untuk founder perempuan dengan fitur yang mempermudah perjalanan bisnis dari nol.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {usps.map((usp, i) => {
+                const Icon = usp.icon;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="bg-white rounded-xl p-6 border border-[#f02d9c]/20 shadow-[0_4px_12px_rgba(240,45,156,0.15)] hover:shadow-md transition"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-[#fdf6f0] flex items-center justify-center mx-auto mb-4 border-2 border-[#f02d9c]">
+                      <Icon size={24} className="text-[#f02d9c]" />
                     </div>
-                  )}
-                </div>
+                    <h3 className="font-bold text-lg text-black mb-2">{usp.title}</h3>
+                    <p className="text-sm text-slate-700">{usp.desc}</p>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* FEATURES */}
+        <section id="features" className="py-20 bg-white">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="text-center mb-12">
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-2xl font-bold text-black mb-3"
+              >
+                Fitur Utama: 3 Fase, 12 Level
+              </motion.h2>
+              <p className="text-slate-600 max-w-xl mx-auto text-sm">
+                Setiap level adalah quest yang memberimu XP & Badge.
+              </p>
+            </div>
+
+            <div className="space-y-12">
+              {phases.map((phase, i) => (
+                <motion.div
+                  key={phase.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="bg-white rounded-xl p-5 border border-[#f02d9c]/20 shadow-[0_4px_12px_rgba(240,45,156,0.15)]"
+                >
+                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-5">
+                    <div>
+                      <h3 className="text-xl font-bold" style={{ color: phase.color }}>{phase.title}</h3>
+                      <p className="text-slate-600 mt-1 text-sm">{phase.subtitle}</p>
+                    </div>
+                    <div className="mt-2 md:mt-0">
+                      <span className="inline-block px-3 py-1.5 bg-[#fdf6f0] border border-[#f02d9c] rounded-full text-xs font-bold text-black">
+                        {phase.levels.length} Level • {phase.levels.reduce((s, l) => s + l.xp, 0)} XP
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {phase.levels.map((lvl) => {
+                      const Icon = lvl.icon;
+                      return (
+                        <motion.div
+                          key={lvl.id}
+                          whileHover={{ y: -3 }}
+                          className="bg-[#fdf6f0] rounded-lg border border-[#f02d9c]/30 p-3 shadow-[0_2px_8px_rgba(240,45,156,0.1)] hover:shadow-sm transition"
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center border-2 border-[#f02d9c]">
+                              <Icon size={14} className="text-[#f02d9c]" />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-xs text-black">Level {lvl.id}</h4>
+                              <p className="font-medium text-[10px] text-slate-800 mt-0.5">{lvl.name}</p>
+                              <div className="flex gap-1 mt-1.5 flex-wrap">
+                                <span className="px-1.5 py-0.5 bg-[#fbe2a7] text-black text-[9px] font-bold rounded">
+                                  +{lvl.xp} XP
+                                </span>
+                                <span className="px-1.5 py-0.5 bg-[#8acfd1] text-white text-[9px] font-bold rounded">
+                                  {lvl.badge}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
               ))}
             </div>
           </div>
-          
-          {/* Email detail */}
-          <div className="w-1/2 overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center mb-6">
-                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-medium mr-4">
-                  {emails[selectedEmail].sender.split(" ").map(name => name[0]).join("")}
-                </div>
-                <div>
-                  <h2 className="font-medium">{emails[selectedEmail].sender}</h2>
-                  <p className="text-sm text-muted-foreground">{emails[selectedEmail].subject}</p>
-                  {emails[selectedEmail].reply && (
-                    <p className="text-xs text-muted-foreground">{emails[selectedEmail].reply}</p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="prose max-w-none">
-                <p>{emails[selectedEmail].content}</p>
-                {selectedEmail === 0 && (
-                  <>
-                    <p className="mt-4">Please come prepared with any questions or insights you may have. Looking forward to our meeting!</p>
-                    <p className="mt-4">Best regards,<br />William</p>
-                  </>
-                )}
-              </div>
-              
-              <div className="mt-8">
-                <div className="flex items-center space-x-2 mb-4">
-                  <input type="checkbox" id="mute" className="rounded border-input" />
-                  <label htmlFor="mute" className="text-sm">Mute this thread</label>
-                </div>
-                
-                <div className="border border-border rounded-lg p-4">
-                  <textarea
-                    placeholder="Reply William Smith..."
-                    className="w-full h-32 bg-background border-0 focus:ring-0 resize-none"
-                  ></textarea>
-                  <div className="flex justify-end mt-2">
-                    <button className="px-4 py-1 bg-primary text-primary-foreground rounded shadow-sm">
-                      Send
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+        </section>
+
+        {/* CTA */}
+        <section id="cta" className="py-20 bg-white">
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <Trophy size={40} className="mx-auto mb-4 text-[#f02d9c]" />
+              <h2 className="text-2xl font-bold text-black mb-4">
+                Siap Jadi CEO Berikutnya?
+              </h2>
+              <p className="text-slate-700 mb-6 max-w-lg mx-auto text-sm">
+                Gabung ribuan perempuan yang membangun bisnis dari nol — dengan panduan, komunitas, dan semangat.
+              </p>
+              <Link
+                href="/auth/register"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#f02d9c] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(240,45,156,0.25)] hover:scale-[1.02] transition-transform text-sm"
+              >
+                Daftar Sekarang
+              </Link>
+            </motion.div>
           </div>
-        </div>
-      </div>
+        </section>
+
+        {/* FOOTER */}
+        <footer className="py-6 bg-white text-center text-slate-500 text-xs">
+          <p>© {new Date().getFullYear()} ManagHer. Dibuat dengan ❤️ untuk perempuan Indonesia.</p>
+          <p className="mt-0.5">Proyek Akhir • Perempuan Inovasi Scholarship</p>
+        </footer>
+      </main>
     </div>
   );
 }
