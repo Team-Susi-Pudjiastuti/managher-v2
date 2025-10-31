@@ -61,14 +61,14 @@ const useProjectStore = create(
     //   return res.data || {};
     // },
     getPhases: async (projectId) => {
-      const res = await apiRequest(`project/detail/${projectId}`, 'GET');
-      const phases = res.data?.phases || [];
+      const res = await apiRequest(`phase/${projectId}`, 'GET');
+      const phases = res.data || [];
       set({ phases: phases });
       return phases;
     },
     getLevels: async (projectId) => {
-      const res = await apiRequest(`project/detail/${projectId}`, 'GET');
-      const levels = res.data?.levels || [];
+      const res = await apiRequest(`level/${projectId}`, 'GET');
+      const levels = res.data || [];
       set({ levels: levels });
       return levels;
     }

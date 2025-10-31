@@ -1,6 +1,7 @@
 'use client';
 
 import useProjectStore from '@/store/useProjectStore';
+import { useEffect } from 'react';
 import { CheckCircle } from 'lucide-react';
 
 export default function ProjectCard({ project, onClick }) {
@@ -8,13 +9,20 @@ export default function ProjectCard({ project, onClick }) {
   // const completedLevels = project.levels.filter((l) => l.completed).length;
   // const progress = Math.min(100, Math.floor((completedLevels / totalLevels) * 100));
   // const isCompleted = completedLevels === totalLevels;
+  const id = project._id;
+  const { getLevels, levels} = useProjectStore();
 
-  const { levels } = useProjectStore();
+  useEffect(() => {
+    getLevels(id);
+  }, [id]);
 
   const totalLevels = levels.length;
   const completedLevels = levels.filter((l) => l.completed).length;
   const progress = Math.min(100, Math.floor((completedLevels / totalLevels) * 100));
   const isCompleted = completedLevels === totalLevels;
+
+  console.log(project.title);
+  console.log(totalLevels);
 
 
   return (
@@ -33,13 +41,12 @@ export default function ProjectCard({ project, onClick }) {
       >
         {/* Judul Proyek */}
         <h3 className="font-bold text-[#5b5b5b] text-lg mb-2 truncate font-[Poppins]">
-          {project.name}
+          {project.title}
         </h3>
 
         {/* Status Level: 0/12 */}
         <p className="text-[#7a7a7a] text-sm mb-3 font-[Poppins]">
           Level: <span className="font-semibold">
-            1
           {completedLevels}/{totalLevels}
           </span> 
         </p>
@@ -55,11 +62,7 @@ export default function ProjectCard({ project, onClick }) {
         {/* Persentase & Status */}
         <div className="flex justify-between items-center">
           <span className="text-[#7a7a7a] text-xs font-[Poppins]">
-            10%
             {progress}%
-          </span>
-          <span className="text-[#f02d9c] text-xs font-semibold font-[Poppins]">
-              Lanjutkan
           </span>
           {isCompleted ? (
             <span className="flex items-center gap-1 text-[#8acfd1] text-xs font-semibold font-[Poppins]">
