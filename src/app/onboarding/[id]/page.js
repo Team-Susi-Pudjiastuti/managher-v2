@@ -16,7 +16,6 @@ export default function OnboardingPage() {
   const [projectName, setProjectName] = useState('');
   const { projects, getAllprojects, addProject } = useProjectStore();
   const router = useRouter();
-  console.log(projects);
 
   useEffect(() => {
       if (id) {

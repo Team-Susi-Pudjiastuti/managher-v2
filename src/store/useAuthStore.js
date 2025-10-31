@@ -50,7 +50,6 @@ const useAuthStore = create(
 
           // { message, data: { username, email } }
           const userData = res.data;
-
           if (!userData) throw new Error('Invalid response from server');
 
           set({
