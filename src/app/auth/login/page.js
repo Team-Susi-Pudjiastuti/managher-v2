@@ -62,7 +62,7 @@ export default function LoginPage() {
             Masuk ke akun <span className="font-semibold">ManagHer</span> Anda
           </p>
 
-          {/* Input Email */}
+          {/* Input Username */}
           <div
             className="flex items-center gap-2 border-t border-l border-black rounded-lg px-3 py-2 mb-4"
             style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
@@ -78,8 +78,8 @@ export default function LoginPage() {
           >
             <Mail className="text-[#7a7a7a]" size={20} strokeWidth={2} />
             <input
-              type="email"
-              placeholder="Email"
+              type="text"
+              placeholder="Username"
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins]"
