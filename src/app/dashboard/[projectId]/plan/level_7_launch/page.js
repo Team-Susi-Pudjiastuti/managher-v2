@@ -32,14 +32,14 @@ import {
 
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
-import PlanSidebar from '@./components/PlanSidebar';
+import PlanSidebar from '@/components/PlanSidebar';
 
 // Daftar item checklist
 const CHECKLIST_ITEMS = [
   { id: 'social', label: 'Buat akun Instagram & WhatsApp bisnis', icon: Instagram },
-  { id: 'photos', label: 'Siapkan 5+ foto produk yang menarik', icon: Smartphone },
+  { id: 'photos', label: 'Siapkan foto produk yang menarik', icon: Smartphone },
   { id: 'payment', label: 'Siapkan metode pembayaran (QRIS, transfer)', icon: CreditCard },
-  { id: 'offer', label: 'Tawarkan ke 5 orang pertama (teman/keluarga)', icon: MessageCircle },
+  { id: 'offer', label: 'Tawarkan ke orang terdekat (teman/keluarga)', icon: MessageCircle },
   { id: 'delivery', label: 'Uji coba proses pengiriman/pengambilan', icon: Truck },
   { id: 'price', label: 'Tentukan harga & paket (misal: bundle hemat)', icon: Store },
   { id: 'feedback', label: 'Kumpulkan 3 testimoni awal', icon: Users },

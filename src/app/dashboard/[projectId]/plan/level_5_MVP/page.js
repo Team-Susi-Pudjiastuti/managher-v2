@@ -18,6 +18,7 @@ import {
   Camera,
   FileText,
   Trash2,
+  DollarSign,
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
@@ -30,14 +31,15 @@ export default function Level5Page() {
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
 
-  const [products, setProducts] = useState([{ id: Date.now(), name: '', concept: '', previewUrl: '' }]);
+  const [products, setProducts] = useState([
+    { id: Date.now(), name: '', concept: '', price: '', previewUrl: '' }
+  ]);
   const [isEditing, setIsEditing] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const [project, setProject] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Ref untuk input file tiap produk
   const fileInputRefs = useRef({});
 
   useEffect(() => {
@@ -64,11 +66,12 @@ export default function Level5Page() {
               id: Date.now() + i,
               name: item.name || '',
               concept: item.concept || '',
+              price: item.price || '',
               previewUrl: item.previewUrl || '',
             }))
           );
         } catch (e) {
-          console.warn('Failed to parse saved MVP data', e);
+          console.warn('Failed to parse saved Prototype data', e);
         }
       }
     }
@@ -76,19 +79,24 @@ export default function Level5Page() {
 
   const addProduct = () => {
     if (products.length >= 5) return;
-    setProducts((prev) => [...prev, { id: Date.now(), name: '', concept: '', previewUrl: '' }]);
+    setProducts((prev) => [
+      ...prev,
+      { id: Date.now(), name: '', concept: '', price: '', previewUrl: '' }
+    ]);
   };
 
   const updateProductName = (id, value) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, name: value } : p))
-    );
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, name: value } : p)));
   };
 
   const updateConcept = (id, value) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, concept: value } : p))
-    );
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, concept: value } : p)));
+  };
+
+  const updatePrice = (id, value) => {
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, price: value } : p)));
+    }
   };
 
   const handleImageUpload = (id, e) => {
@@ -126,6 +134,7 @@ export default function Level5Page() {
     const dataToSave = products.map((p) => ({
       name: p.name,
       concept: p.concept,
+      price: p.price,
       previewUrl: p.previewUrl,
     }));
 
@@ -144,14 +153,14 @@ export default function Level5Page() {
       updateProject(projectId, { levels: updatedLevels });
     }
 
-    alert('MVP berhasil disimpan! ✅');
-    setIsEditing(false); // ✅ Otomatis ke mode preview setelah simpan
+    alert('Prototype berhasil disimpan! ✅');
+    setIsEditing(false);
   };
 
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },
     { href: `/dashboard/${projectId}/plan`, label: 'Fase Plan' },
-    { label: 'Level 5: MVP' },
+    { label: 'Level 5: Prototype' },
   ];
 
   if (!isMounted) {
@@ -173,7 +182,7 @@ export default function Level5Page() {
           >
             <Menu size={20} className="text-[#5b5b5b]" />
           </button>
-          <h1 className="ml-2 font-bold text-[#5b5b5b] text-base">Level 5: MVP</h1>
+          <h1 className="ml-2 font-bold text-[#5b5b5b] text-base">Level 5: Prototype</h1>
         </header>
       )}
 
@@ -196,7 +205,7 @@ export default function Level5Page() {
                   style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                 >
                   <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-4 sm:mb-6">
-                    Level 5: MVP
+                    Level 5: Prototype
                   </h1>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -246,10 +255,22 @@ export default function Level5Page() {
                                 rows={3}
                               />
 
+                              <label className="block text-xs font-medium text-[#5b5b5b] mt-3 mb-1 flex items-center gap-1">
+                                <DollarSign size={14} />
+                                Harga (Rp)
+                              </label>
+                              <input
+                                type="text"
+                                value={product.price}
+                                onChange={(e) => updatePrice(product.id, e.target.value)}
+                                placeholder="Contoh: 25000"
+                                className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c] mb-3"
+                              />
+
                               <div className="mt-3">
                                 <label className="block text-xs font-medium text-[#5b5b5b] mb-1 flex items-center gap-1">
                                   <Camera size={14} />
-                                  Upload Gambar MVP
+                                  Upload Gambar Prototype
                                 </label>
                                 <div
                                   className="mt-1 border-2 border-dashed border-[#7a7a7a] rounded-lg p-3 text-center cursor-pointer hover:border-[#f02d9c]"
@@ -309,14 +330,14 @@ export default function Level5Page() {
                             >
                               <div className="p-4" style={{ backgroundColor: '#fdf6f0' }}>
                                 <h4 className="text-xs font-semibold text-[#5b5b5b] mb-2">
-                                  Product Preview {products.length > 1 ? `#${idx + 1}` : ''}
+                                  Prototype Preview {products.length > 1 ? `#${idx + 1}` : ''}
                                 </h4>
                                 <div className="flex items-start gap-3">
                                   <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
                                     {product.previewUrl ? (
                                       <img
                                         src={product.previewUrl}
-                                        alt="MVP"
+                                        alt="Prototype"
                                         className="w-full h-full object-contain"
                                       />
                                     ) : (
@@ -330,6 +351,11 @@ export default function Level5Page() {
                                     <p className="text-xs text-[#5b5b5b] mt-1 whitespace-pre-line line-clamp-2">
                                       {product.concept || 'Belum ada deskripsi'}
                                     </p>
+                                    {product.price && (
+                                      <p className="text-xs font-medium text-green-600 mt-1">
+                                        Harga: Rp{Number(product.price).toLocaleString('id-ID')}
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -376,8 +402,8 @@ export default function Level5Page() {
                           Tujuan Level 5
                         </h3>
                         <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                          <li>Membangun versi paling sederhana dari produkmu (MVP)</li>
-                          <li>Memvisualisasikan bentuk fisik/digital MVP</li>
+                          <li>Membangun versi paling sederhana dari produkmu (Prototype)</li>
+                          <li>Memvisualisasikan bentuk fisik/digital Prototype</li>
                           <li>Menyiapkan aset untuk uji coba ke pelanggan awal</li>
                         </ul>
                       </div>
@@ -389,10 +415,10 @@ export default function Level5Page() {
                         </h3>
                         <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
                           <li>
-                            <strong>MVP tidak harus sempurna</strong> — cukup untuk menguji ide utama
+                            <strong>Prototype tidak harus sempurna</strong> — cukup untuk menguji ide utama
                           </li>
                           <li>
-                            Gunakan <strong>Canva, Figma, atau foto HP</strong> untuk visual MVP
+                            Gunakan <strong>Canva, Figma, atau foto HP</strong> untuk visual Prototype
                           </li>
                           <li>
                             Fokus pada <strong>1–2 fitur inti</strong> yang menyelesaikan masalah utama
@@ -433,7 +459,7 @@ export default function Level5Page() {
                               rel="noopener noreferrer"
                               className="text-[#f02d9c] hover:underline flex items-center gap-1"
                             >
-                              Workshop MVP untuk Pemula <ChevronRight size={12} />
+                              Workshop Prototype untuk Pemula <ChevronRight size={12} />
                             </a>
                           </li>
                         </ul>
