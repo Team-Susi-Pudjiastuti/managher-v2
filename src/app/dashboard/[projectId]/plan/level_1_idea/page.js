@@ -15,13 +15,13 @@ import {
   ChevronRight,
   CheckCircle,
   Eye,
-  Info,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
+import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 // === HELPER: Parse & Format Products & Services ===
 const parseProductsServices = (text) => {
@@ -90,6 +90,7 @@ const formatProductsServices = ({
 // === GENERATOR IDE DENGAN RINCIAN BIAYA ===
 const generateThreeIdeasFromInterest = (interest) => {
   const baseIdeas = [
+    // ... (data ide tetap sama seperti file Anda)
     {
       interest: 'kuliner',
       customerJobs: 'Ibu bekerja usia 28–45 tahun ingin menyediakan makanan sehat untuk keluarga setiap hari',
@@ -171,6 +172,7 @@ const generateThreeIdeasFromInterest = (interest) => {
       gainCreators: 'Tidak perlu bisa baca/tulis lancar\nLaporan harian & mingguan otomatis\nSiap untuk laporan pajak\nHarga: Rp49.000/bulan',
     },
   ];
+
   const normalized = interest.toLowerCase().trim();
   const matched = baseIdeas.find(
     (idea) =>
@@ -182,61 +184,13 @@ const generateThreeIdeasFromInterest = (interest) => {
   return result;
 };
 
-// === KOMPONEN PENJELASAN VPC ===
-const VpcExplanation = () => {
-  return (
-    <div className="mb-5 p-4 border border-gray-300 rounded-xl bg-[#f8fafc] shadow-sm">
-      <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-        <Info size={16} /> Apa itu Value Proposition Canvas (VPC)?
-      </h3>
-      <p className="text-xs text-[#5b5b5b] mb-3">
-        VPC adalah alat strategis dari <strong>Strategyzer</strong> dan <strong>Miro</strong> untuk memastikan produk Anda
-        benar-benar dibutuhkan pelanggan.
-      </p>
-      <div className="space-y-3 text-xs text-[#5b5b5b]">
-        <div>
-          <span className="font-bold text-[#f02d9c]">Customer Profile</span> menjawab:
-          <ul className="list-disc pl-5 mt-1 space-y-1">
-            <li>
-              <strong>Customer Jobs:</strong> Tugas utama yang ingin diselesaikan pelanggan.
-            </li>
-            <li>
-              <strong>Pains:</strong> Masalah/frustrasi yang mereka alami saat menyelesaikan tugas tersebut.
-            </li>
-            <li>
-              <strong>Gains:</strong> Hasil positif yang mereka harapkan.
-            </li>
-          </ul>
-        </div>
-        <div>
-          <span className="font-bold text-[#f02d9c]">Value Map</span> menjawab:
-          <ul className="list-disc pl-5 mt-1 space-y-1">
-            <li>
-              <strong>Products & Services:</strong> Apa yang Anda tawarkan.
-            </li>
-            <li>
-              <strong>Pain Relievers:</strong> Cara produk Anda mengurangi <em>Pains</em>.
-            </li>
-            <li>
-              <strong>Gain Creators:</strong> Cara produk Anda menciptakan <em>Gains</em>.
-            </li>
-          </ul>
-        </div>
-        <p className="mt-2">
-          Tujuan akhir: <strong>mencapai Product-Market Fit</strong> — produk Anda benar-benar cocok dengan kebutuhan
-          pasar.
-        </p>
-      </div>
-    </div>
-  );
-};
-
 // === KOMPONEN UTAMA ===
 export default function Level1Page() {
   const { projectId } = useParams();
   const router = useRouter();
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
+
   const [interest, setInterest] = useState('');
   const [vpcData, setVpcData] = useState({
     customerJobs: '',
@@ -252,7 +206,15 @@ export default function Level1Page() {
   const [project, setProject] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [isFinanceOpen, setIsFinanceOpen] = useState(false); // <-- State untuk dropdown keuangan
+  const [isFinanceOpen, setIsFinanceOpen] = useState(false);
+
+  // ✅ State untuk notifikasi (ini yang sebelumnya hilang!)
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationData, setNotificationData] = useState({
+    message: '',
+    xpGained: 0,
+    badgeName: '',
+  });
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -311,7 +273,7 @@ export default function Level1Page() {
       painRelievers: idea.painRelievers,
       gainCreators: idea.gainCreators,
     });
-    setIsFinanceOpen(false); // reset dropdown saat ganti ide
+    setIsFinanceOpen(false);
     setIsEditing(false);
   };
 
@@ -324,17 +286,24 @@ export default function Level1Page() {
       alert('Pilih salah satu ide produk terlebih dahulu.');
       return;
     }
+
     const updatedLevels = [...(project?.levels || [])];
     updatedLevels[0] = {
       id: 1,
       completed: true,
-      data: {
         interest: selectedIdea,
         ...vpcData,
-      },
     };
+
     updateProject(projectId, { levels: updatedLevels });
-    alert('VPC berhasil disimpan! ✅');
+
+    //  Set notifikasi dengan XP & badge Level 1
+    setNotificationData({
+      message: 'Ide berhasil disimpan!',
+      xpGained: 10,
+      badgeName: 'AI Innovator',
+    });
+    setShowNotification(true);
   };
 
   const breadcrumbItems = [
@@ -345,7 +314,6 @@ export default function Level1Page() {
 
   const ps = parseProductsServices(vpcData.productsServices);
 
-  // Parsing rincian modal & biaya bahan baku untuk ditampilkan lebih rapi
   const parseModalDetails = (text) => {
     if (!text) return [];
     const clean = text.replace('Biaya Modal: ', '').trim();
@@ -366,6 +334,7 @@ export default function Level1Page() {
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
         <Breadcrumb items={breadcrumbItems} />
       </div>
+
       {/* Mobile Header */}
       {isMobile && !mobileSidebarOpen && (
         <header className="p-3 flex items-center border-b border-gray-200 bg-white top-10 z-30">
@@ -379,6 +348,7 @@ export default function Level1Page() {
           <h1 className="ml-2 font-bold text-[#5b5b5b] text-base">Level 1: Ide Generator</h1>
         </header>
       )}
+
       <div className="flex mt-6">
         {/* Sidebar */}
         <PlanSidebar
@@ -388,6 +358,7 @@ export default function Level1Page() {
           mobileSidebarOpen={mobileSidebarOpen}
           setMobileSidebarOpen={setMobileSidebarOpen}
         />
+
         {/* Main Content */}
         <main className="flex-1">
           <div className="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto">
@@ -402,6 +373,7 @@ export default function Level1Page() {
                     Level 1: Ide Generator
                   </h1>
                 )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Kolom Kiri: Input & Preview */}
                   <div>
@@ -427,6 +399,7 @@ export default function Level1Page() {
                         </button>
                       </div>
                     </div>
+
                     {/* 3 Pilihan Ide */}
                     {generatedIdeas.length > 0 && !selectedIdea && (
                       <div className="mb-5">
@@ -449,50 +422,29 @@ export default function Level1Page() {
                         </div>
                       </div>
                     )}
+
                     {/* Brand & Product Preview */}
                     {selectedIdea && !isEditing && (
                       <>
                         <div className="mb-5 p-4 border border-gray-300 rounded-xl bg-white shadow-sm">
                           <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
-                            <Eye size={16} /> Brand & Product Preview
+                            <Eye size={16} /> Pratinjau Produk & Brand
                           </h3>
-                          {/* Product & Services */}
+
+                          {/* Produk & Layanan */}
                           <div className="p-3 mb-3 bg-[#f0f9f9] rounded border border-[#c2e9e8]">
                             <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
                               <Package size={14} /> Produk & Layanan
                             </h4>
                             <ul className="text-xs text-[#5b5b5b] space-y-1">
-                              <li>
-                                <span className="font-medium">Ide Produk:</span> {ps.ide || '-'}
-                              </li>
-                              {ps.jenis && (
-                                <li>
-                                  <span className="font-medium">Jenis:</span> {ps.jenis}
-                                </li>
-                              )}
-                              {ps.deskripsi && (
-                                <li>
-                                  <span className="font-medium">Deskripsi:</span> {ps.deskripsi}
-                                </li>
-                              )}
-                              {ps.fitur && (
-                                <li>
-                                  <span className="font-medium">Fitur Utama:</span> {ps.fitur}
-                                </li>
-                              )}
-                              {ps.manfaat && (
-                                <li>
-                                  <span className="font-medium">Manfaat:</span> {ps.manfaat}
-                                </li>
-                              )}
-                              {ps.harga && (
-                                <li>
-                                  <span className="font-medium">Harga:</span> {ps.harga}
-                                </li>
-                              )}
+                              <li><span className="font-medium">Ide Produk:</span> {ps.ide || '-'}</li>
+                              {ps.jenis && <li><span className="font-medium">Jenis:</span> {ps.jenis}</li>}
+                              {ps.deskripsi && <li><span className="font-medium">Deskripsi:</span> {ps.deskripsi}</li>}
+                              {ps.fitur && <li><span className="font-medium">Fitur Utama:</span> {ps.fitur}</li>}
+                              {ps.manfaat && <li><span className="font-medium">Manfaat:</span> {ps.manfaat}</li>}
+                              {ps.harga && <li><span className="font-medium">Harga:</span> {ps.harga}</li>}
                             </ul>
 
-                            {/* Dropdown Rincian Keuangan */}
                             <div className="mt-3">
                               <button
                                 onClick={() => setIsFinanceOpen(!isFinanceOpen)}
@@ -527,9 +479,7 @@ export default function Level1Page() {
                                     </div>
                                   )}
                                   {ps.hargaJual && (
-                                    <p className="font-medium">
-                                      Harga Jual: {ps.hargaJual.replace('Harga Jual: ', '')}
-                                    </p>
+                                    <p className="font-medium">Harga Jual: {ps.hargaJual.replace('Harga Jual: ', '')}</p>
                                   )}
                                   {ps.margin && (
                                     <p className="font-medium">Margin: {ps.margin.replace('Margin: ', '')}</p>
@@ -538,52 +488,43 @@ export default function Level1Page() {
                               )}
                             </div>
                           </div>
-                          {/* Customer Profile */}
+
+                          {/* Profil Pelanggan */}
                           <div className="p-3 mb-3 bg-[#fdf6f0] rounded border border-[#f0d5c2]">
                             <h4 className="font-bold text-[#0a5f61] text-sm mb-2 flex items-center gap-1">
-                              <Target size={14} /> Customer Profile
+                              <Target size={14} /> Profil Pelanggan
                             </h4>
                             <ul className="text-xs text-[#5b5b5b] space-y-1">
-                              <li>
-                                <span className="font-medium">Jobs:</span> {vpcData.customerJobs || '-'}
-                              </li>
-                              <li>
-                                <span className="font-medium">Pains:</span> {vpcData.pains || '-'}
-                              </li>
-                              <li>
-                                <span className="font-medium">Gains:</span> {vpcData.gains || '-'}
-                              </li>
+                              <li><span className="font-medium">Tugas Pelanggan:</span> {vpcData.customerJobs || '-'}</li>
+                              <li><span className="font-medium">Masalah/Masalah:</span> {vpcData.pains || '-'}</li>
+                              <li><span className="font-medium">Keuntungan yang Diinginkan:</span> {vpcData.gains || '-'}</li>
                             </ul>
                           </div>
-                          {/* Value Map */}
+
+                          {/* Nilai Produk */}
                           <div className="p-3 bg-[#f0f9f9] rounded border border-[#c2e9e8]">
                             <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
-                              <Zap size={14} /> Value Map
+                              <Zap size={14} /> Nilai Produk
                             </h4>
                             <ul className="text-xs text-[#5b5b5b] space-y-1">
-                              <li>
-                                <span className="font-medium">Pain Relievers:</span> {vpcData.painRelievers || '-'}
-                              </li>
-                              <li>
-                                <span className="font-medium">Gain Creators:</span> {vpcData.gainCreators || '-'}
-                              </li>
+                              <li><span className="font-medium">Solusi Masalah:</span> {vpcData.painRelievers || '-'}</li>
+                              <li><span className="font-medium">Pencipta Keuntungan:</span> {vpcData.gainCreators || '-'}</li>
                             </ul>
                           </div>
                         </div>
-                        {/* Penjelasan VPC */}
-                        <VpcExplanation />
                       </>
                     )}
-                    {/* Edit Mode */}
+
+                    {/* Mode Edit */}
                     {selectedIdea && isEditing && (
                       <div className="space-y-4">
                         <div className="border border-gray-300 rounded-xl p-4 bg-[#fdf6f0]">
                           <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                            <Target size={16} /> Customer Profile
+                            <Target size={16} /> Profil Pelanggan
                           </h3>
                           <div className="space-y-3">
                             <div>
-                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Customer Jobs</label>
+                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Tugas Pelanggan</label>
                               <textarea
                                 value={vpcData.customerJobs}
                                 onChange={(e) => handleVpcChange('customerJobs', e.target.value)}
@@ -592,7 +533,7 @@ export default function Level1Page() {
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Pains</label>
+                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Masalah/Masalah</label>
                               <textarea
                                 value={vpcData.pains}
                                 onChange={(e) => handleVpcChange('pains', e.target.value)}
@@ -601,7 +542,7 @@ export default function Level1Page() {
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Gains</label>
+                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Keuntungan yang Diinginkan</label>
                               <textarea
                                 value={vpcData.gains}
                                 onChange={(e) => handleVpcChange('gains', e.target.value)}
@@ -611,14 +552,13 @@ export default function Level1Page() {
                             </div>
                           </div>
                         </div>
+
                         <div className="border border-gray-300 rounded-xl p-4 bg-[#f0f9f9]">
                           <h3 className="font-bold text-[#f02d9c] mb-3 flex items-center gap-2">
-                            <Zap size={16} /> Value Map
+                            <Zap size={16} /> Nilai Produk
                           </h3>
                           <div className="mb-3">
-                            <label className="block text-xs font-medium text-[#5b5b5b] mb-2">
-                              Products & Services
-                            </label>
+                            <label className="block text-xs font-medium text-[#5b5b5b] mb-2">Produk & Layanan</label>
                             <div className="space-y-2 text-xs">
                               <input
                                 type="text"
@@ -724,7 +664,7 @@ export default function Level1Page() {
                           </div>
                           <div className="space-y-3">
                             <div>
-                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Pain Relievers</label>
+                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Solusi Masalah</label>
                               <textarea
                                 value={vpcData.painRelievers}
                                 onChange={(e) => handleVpcChange('painRelievers', e.target.value)}
@@ -733,7 +673,7 @@ export default function Level1Page() {
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Gain Creators</label>
+                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Pencipta Keuntungan</label>
                               <textarea
                                 value={vpcData.gainCreators}
                                 onChange={(e) => handleVpcChange('gainCreators', e.target.value)}
@@ -745,6 +685,7 @@ export default function Level1Page() {
                         </div>
                       </div>
                     )}
+
                     {/* Tombol Aksi */}
                     {selectedIdea && (
                       <div className="flex flex-wrap gap-2 mt-4">
@@ -752,70 +693,75 @@ export default function Level1Page() {
                           onClick={handleSave}
                           className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
                         >
-                          <CheckCircle size={16} />
-                          Simpan
+                          <CheckCircle size={16} /> Simpan
                         </button>
                         <button
                           onClick={() => setIsEditing(!isEditing)}
                           className="px-4 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1"
                         >
-                          <Edit3 size={16} />
-                          {isEditing ? 'Simpan Edit' : 'Edit'}
+                          <Edit3 size={16} /> {isEditing ? 'Simpan Edit' : 'Edit'}
                         </button>
                         <button
                           onClick={() => router.push(`/dashboard/${projectId}`)}
                           className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
                         >
-                          <ChevronLeft size={16} />
-                          Prev
+                          <ChevronLeft size={16} /> Prev
                         </button>
                         <Link
                           href={`/dashboard/${projectId}/plan/level_2_rww`}
                           className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
                         >
-                          Next
-                          <ChevronRight size={16} />
+                          Next <ChevronRight size={16} />
                         </Link>
                       </div>
                     )}
                   </div>
+
                   {/* Kolom Kanan: Tujuan, Tips, Resources */}
                   <div className="space-y-5">
+                    {/*  XP & Badge di atas kolom Tujuan */}
+                    <div className="flex items-center gap-3 mb-3">
+                    {/* XP */}
+                      <div className="bg-[#f02d9c]/10 border border-[#f02d9c]/30 rounded-xl p-3 text-center hover:scale-[1.02] transition-transform">
+                        <div className="flex items-center gap-1 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
+                          <Lightbulb size={14} />
+                          <span>+10 XP</span>
+                        </div>
+                      </div>
+
+                      {/* Badge */}
+                      <div className="bg-[#f02d9c]/10 border border-[#f02d9c]/30 rounded-xl p-3 text-center hover:scale-[1.02] transition-transform">
+                        <div className="flex items-center gap-1 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
+                          <Award size={14} />
+                          <span>AI Innovator</span>
+                        </div>
+                      </div>
+                    </div>
                     <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
                       <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                        <Lightbulb size={16} />
-                        Tujuan Level 1
+                        <Lightbulb size={16} /> Tujuan Level 1
                       </h3>
                       <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
                         <li>Pilih ide produk yang relevan dengan minatmu</li>
-                        <li>Definisikan Customer Profile & Value Map</li>
-                        <li>Capai product-market fit sejak awal</li>
-                        <li>Sertakan estimasi biaya & harga untuk validasi bisnis</li>
+                        <li>Definisikan siapa pelangganmu dan masalah yang mereka hadapi</li>
+                        <li>Buat solusi yang benar-benar membantu mereka dan memberi keuntungan</li>
+                        <li>Sertakan estimasi biaya & harga untuk memastikan ide kamu layak</li>
                       </ul>
                     </div>
+
                     <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
                       <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                        <Award size={16} />
-                        Tips dari Strategyzer & Miro
+                        <Award size={16} /> Tips dari Strategyzer & Miro
                       </h3>
                       <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                        <li>
-                          Fokus pada <strong>satu segmen pelanggan</strong>
-                        </li>
-                        <li>
-                          Gunakan <strong>Jobs-to-be-done</strong> sebagai dasar
-                        </li>
-                        <li>
-                          Pastikan <strong>Pain Relievers</strong> benar-benar mengurangi rasa sakit
-                        </li>
-                        <li>
-                          <strong>Gain Creators</strong> harus melebihi ekspektasi pelanggan
-                        </li>
-                        <li>
-                          Sertakan <strong>struktur biaya & harga</strong> sejak dini untuk uji kelayakan
-                        </li>
+                        <li>Fokus pada <strong>satu segmen pelanggan</strong> saja dulu</li>
+                        <li>Pikirkan <strong>apa yang ingin diselesaikan</strong> oleh pelanggan (bukan hanya produk)</li>
+                        <li>Pastikan <strong>solusi kamu benar-benar mengurangi masalah</strong> mereka</li>
+                        <li><strong>Keuntungan yang kamu tawarkan</strong> harus membuat pelanggan senang</li>
+                        <li>Sertakan <strong>struktur biaya & harga</strong> sejak awal agar kamu tahu apakah bisnisnya bisa untung</li>
                       </ul>
                     </div>
+
                     <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
                       <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
                         <BookOpen size={16} /> Resources Validasi Ide
@@ -860,6 +806,15 @@ export default function Level1Page() {
           </div>
         </main>
       </div>
+
+      {/*  Modal Notifikasi */}
+      <NotificationModalPlan
+        isOpen={showNotification}
+        type="success"
+        xpGained={notificationData.xpGained}
+        badgeName={notificationData.badgeName}
+        onClose={() => setShowNotification(false)}
+      />
     </div>
   );
 }

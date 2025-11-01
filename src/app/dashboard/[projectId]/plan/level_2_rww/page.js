@@ -21,9 +21,6 @@ import {
   AlertTriangle,
   BarChart3,
 } from 'lucide-react';
-import useProjectStore from '@/store/useProjectStore';
-import Breadcrumb from '@/components/Breadcrumb';
-import PlanSidebar from '@/components/PlanSidebar';
 import {
   PieChart,
   Pie,
@@ -35,7 +32,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-
+import useProjectStore from '@/store/useProjectStore';
+import Breadcrumb from '@/components/Breadcrumb';
+import PlanSidebar from '@/components/PlanSidebar';
+import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 const scaleLabels = ['Tidak Pernah', 'Pernah', 'Kadang', 'Sering', 'Sangat Sering'];
 const range5 = [1, 2, 3, 4, 5];
@@ -46,6 +46,14 @@ export default function RWW() {
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
 
+  // State notifikasi
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationData, setNotificationData] = useState({
+    xpGained: 0,
+    badgeName: '',
+  });
+
+  // Data responden
   const [respondenName, setRespondenName] = useState('');
   const [jenisKelamin, setJenisKelamin] = useState('');
   const [usia, setUsia] = useState('');
@@ -60,14 +68,17 @@ export default function RWW() {
   const [q7, setQ7] = useState(null);
   const [q8, setQ8] = useState(null);
   const [q9, setQ9] = useState(null);
-
   const [notes, setNotes] = useState({});
 
+  // UI state
   const [isEditing, setIsEditing] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [project, setProject] = useState(null);
   const [responses, setResponses] = useState([]);
+
+  // Data VPC dari Level 1
+  const [vpcDataFromLevel1, setVpcDataFromLevel1] = useState(null);
 
   // Deteksi mobile
   useEffect(() => {
@@ -77,13 +88,27 @@ export default function RWW() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load data dari store dan localStorage
+  // Load data dari store
   useEffect(() => {
     if (!projectId) return;
 
     const found = projects.find((p) => p.id === projectId);
     setProject(found);
 
+    // Ambil data VPC dari Level 1
+    const level1Data = found?.levels?.[0]?.data;
+    if (level1Data) {
+      setVpcDataFromLevel1({
+        customerJobs: level1Data.customerJobs || '',
+        pains: level1Data.pains || '',
+        gains: level1Data.gains || '',
+        productsServices: level1Data.productsServices || '',
+        painRelievers: level1Data.painRelievers || '',
+        gainCreators: level1Data.gainCreators || '',
+      });
+    }
+
+    // Ambil data RWW dari localStorage (hanya untuk respons RWW, bukan VPC)
     const saved = localStorage.getItem(`rww_data_${projectId}`);
     if (saved) {
       try {
@@ -196,7 +221,7 @@ export default function RWW() {
     };
     localStorage.setItem(`rww_data_${projectId}`, JSON.stringify(dataToSave));
 
-    // Simpan ke store juga
+    // Simpan ke store
     const updatedLevels = [...(project?.levels || [])];
     if (!updatedLevels[1]) updatedLevels[1] = { id: 2, completed: false, data: {} };
     updatedLevels[1] = {
@@ -206,7 +231,11 @@ export default function RWW() {
     };
     updateProject(projectId, { levels: updatedLevels });
 
-    alert('Data RWW berhasil disimpan!');
+    setNotificationData({
+      xpGained: 10,
+      badgeName: 'Validator Pro',
+    });
+    setShowNotification(true);
   };
 
   const breadcrumbItems = [
@@ -214,6 +243,12 @@ export default function RWW() {
     { href: `/dashboard/${projectId}/plan`, label: 'Fase Plan' },
     { label: 'Level 2: Validasi RWW' },
   ];
+
+  // Helper: Ambil nama produk dari productsServices
+  const getProductName = (ps) => {
+    if (!ps) return '—';
+    return ps.split('\n')[0] || '—';
+  };
 
   return (
     <div className="min-h-screen bg-white font-[Poppins]">
@@ -262,6 +297,28 @@ export default function RWW() {
                   <p className="text-[#5b5b5b] text-center mb-6 max-w-2xl mx-auto">
                     Kumpulkan masukan dari calon pengguna atau mentor menggunakan skala frekuensi: <strong>1–5</strong>.
                   </p>
+
+                  {/* Ringkasan Ide dari Level 1 */}
+                  {!vpcDataFromLevel1 ? (
+                    <div className="mb-6 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        ❗ Belum ada data dari Level 1. Silakan lengkapi <Link href={`/dashboard/${projectId}/plan/level_1_idea`} className="text-[#f02d9c] underline">Level 1</Link> terlebih dahulu.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mb-6 p-4 bg-[#f0f9f9] border border-[#c2e9e8] rounded-lg">
+                      <h3 className="font-bold text-[#0a5f61] mb-2">💡 Ide yang Akan Divalidasi</h3>
+                      <p className="text-sm">
+                        <strong>Produk:</strong> {getProductName(vpcDataFromLevel1.productsServices)}
+                      </p>
+                      <p className="text-sm">
+                        <strong>Masalah:</strong> {vpcDataFromLevel1.pains}
+                      </p>
+                      <p className="text-sm">
+                        <strong>Solusi:</strong> {vpcDataFromLevel1.painRelievers}
+                      </p>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Kolom Kiri: Form RWW */}
@@ -348,13 +405,6 @@ export default function RWW() {
                                     {q}. {questionText}
                                   </label>
                                   <RatingBox value={value} onChange={setValue} />
-                                  <textarea
-                                    value={notes[`q${q}`] || ''}
-                                    onChange={(e) => handleNoteChange(`q${q}`, e.target.value)}
-                                    placeholder="Opsional: Jelaskan..."
-                                    className="w-full mt-3 px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
-                                    style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                                  />
                                 </div>
                               );
                             })}
@@ -388,13 +438,6 @@ export default function RWW() {
                                     {q}. {questionText}
                                   </label>
                                   <RatingBox value={value} onChange={setValue} />
-                                  <textarea
-                                    value={notes[`q${q}`] || ''}
-                                    onChange={(e) => handleNoteChange(`q${q}`, e.target.value)}
-                                    placeholder="Opsional: Jelaskan..."
-                                    className="w-full mt-3 px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
-                                    style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                                  />
                                 </div>
                               );
                             })}
@@ -428,13 +471,6 @@ export default function RWW() {
                                     {q}. {questionText}
                                   </label>
                                   <RatingBox value={value} onChange={setValue} />
-                                  <textarea
-                                    value={notes[`q${q}`] || ''}
-                                    onChange={(e) => handleNoteChange(`q${q}`, e.target.value)}
-                                    placeholder="Opsional: Jelaskan..."
-                                    className="w-full mt-3 px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
-                                    style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                                  />
                                 </div>
                               );
                             })}
@@ -497,11 +533,11 @@ export default function RWW() {
                             {/* Tombol Navigasi */}
                             <div className="flex flex-wrap gap-2 justify-center">
                               <Link
-                                href={`/dashboard/${projectId}/level_1_idea`}
+                                href={`/dashboard/${projectId}/plan/level_1_idea`}
                                 className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
                               >
                                 <ChevronLeft size={16} />
-                                Preview
+                                Prev
                               </Link>
 
                               <button
@@ -535,6 +571,25 @@ export default function RWW() {
 
                     {/* Kolom Kanan: Edukasi */}
                     <div className="space-y-5">
+                      {/* ✅ XP & Badge Level 2 */}
+                      <div className="flex items-center gap-3 mb-3">
+                    {/* XP */}
+                      <div className="bg-[#f02d9c]/10 border border-[#f02d9c]/30 rounded-xl p-3 text-center hover:scale-[1.02] transition-transform">
+                        <div className="flex items-center gap-1 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
+                          <Lightbulb size={14} />
+                          <span>+10 XP</span>
+                        </div>
+                      </div>
+
+                      {/* Badge */}
+                      <div className="bg-[#f02d9c]/10 border border-[#f02d9c]/30 rounded-xl p-3 text-center hover:scale-[1.02] transition-transform">
+                        <div className="flex items-center gap-1 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
+                          <Award size={14} />
+                          <span>Validator Pro</span>
+                        </div>
+                      </div>
+                    </div>
+
                       {/* Tujuan Level */}
                       <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
                         <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
@@ -623,54 +678,54 @@ export default function RWW() {
                       </div>
 
                       {/* Daftar Responden */}
-                    <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd] mt-5">
-                      <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                        <Users size={16} /> Data Responden
-                      </h3>
+                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd] mt-5">
+                        <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
+                          <Users size={16} /> Data Responden
+                        </h3>
 
-                      {responses.length === 0 ? (
-                        <p className="text-sm text-[#7a7a7a] italic">Belum ada data responden yang ditambahkan.</p>
-                      ) : (
-                        <>
-                          {/* Tabel Responden */}
-                          <div className="overflow-x-auto mb-6">
-                            <table className="min-w-full border border-gray-300 text-sm">
-                              <thead className="bg-[#f02d9c] text-white">
-                                <tr>
-                                  <th className="py-2 px-3 border border-gray-300 text-left">Nama</th>
-                                  <th className="py-2 px-3 border border-gray-300 text-left">Jenis Kelamin</th>
-                                  <th className="py-2 px-3 border border-gray-300 text-left">Usia</th>
-                                  <th className="py-2 px-3 border border-gray-300 text-left">Aktivitas</th>
-                                  <th className="py-2 px-3 border border-gray-300 text-center">Total Skor</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {responses.map((r) => (
-                                  <tr key={r.id} className="odd:bg-white even:bg-[#f9f9f9]">
-                                    <td className="py-2 px-3 border border-gray-300">{r.name}</td>
-                                    <td className="py-2 px-3 border border-gray-300">{r.gender}</td>
-                                    <td className="py-2 px-3 border border-gray-300">{r.age}</td>
-                                    <td className="py-2 px-3 border border-gray-300">{r.activity}</td>
-                                    <td className="py-2 px-3 border border-gray-300 text-center font-bold text-[#f02d9c]">
-                                      {r.total}
-                                    </td>
+                        {responses.length === 0 ? (
+                          <p className="text-sm text-[#7a7a7a] italic">Belum ada data responden yang ditambahkan.</p>
+                        ) : (
+                          <>
+                            {/* Tabel Responden */}
+                            <div className="overflow-x-auto mb-6">
+                              <table className="min-w-full border border-gray-300 text-sm">
+                                <thead className="bg-[#f02d9c] text-white">
+                                  <tr>
+                                    <th className="py-2 px-3 border border-gray-300 text-left">Nama</th>
+                                    <th className="py-2 px-3 border border-gray-300 text-left">Jenis Kelamin</th>
+                                    <th className="py-2 px-3 border border-gray-300 text-left">Usia</th>
+                                    <th className="py-2 px-3 border border-gray-300 text-left">Aktivitas</th>
+                                    <th className="py-2 px-3 border border-gray-300 text-center">Total Skor</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+                                </thead>
+                                <tbody>
+                                  {responses.map((r) => (
+                                    <tr key={r.id} className="odd:bg-white even:bg-[#f9f9f9]">
+                                      <td className="py-2 px-3 border border-gray-300">{r.name}</td>
+                                      <td className="py-2 px-3 border border-gray-300">{r.gender}</td>
+                                      <td className="py-2 px-3 border border-gray-300">{r.age}</td>
+                                      <td className="py-2 px-3 border border-gray-300">{r.activity}</td>
+                                      <td className="py-2 px-3 border border-gray-300 text-center font-bold text-[#f02d9c]">
+                                        {r.total}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
 
-                          {/* Diagram Responden */}
-                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
+                            {/* Diagram Responden */}
+                            <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
                               <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Jenis Kelamin</h4>
                               <ResponsiveContainer width="100%" height={220}>
                                 <PieChart>
                                   <Pie
                                     dataKey="value"
                                     data={[
-                                      { name: 'Laki-laki', value: responses.filter(r => r.gender === 'Laki-laki').length, fill: '#4A90E2' }, // biru
-                                      { name: 'Perempuan', value: responses.filter(r => r.gender === 'Perempuan').length, fill: '#f02d9c' }, // pink
-                                      { name: 'Lainnya', value: responses.filter(r => r.gender === 'Lainnya').length, fill: '#C4C4C4' }, // abu
+                                      { name: 'Laki-laki', value: responses.filter(r => r.gender === 'Laki-laki').length, fill: '#4A90E2' },
+                                      { name: 'Perempuan', value: responses.filter(r => r.gender === 'Perempuan').length, fill: '#f02d9c' },
+                                      { name: 'Lainnya', value: responses.filter(r => r.gender === 'Lainnya').length, fill: '#C4C4C4' },
                                     ]}
                                     cx="50%"
                                     cy="50%"
@@ -680,11 +735,10 @@ export default function RWW() {
                                   <Tooltip />
                                 </PieChart>
                               </ResponsiveContainer>
-                          </div>
+                            </div>
 
-
-                          {/*Diagram Aktivitas*/}
-                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
+                            {/* Diagram Aktivitas */}
+                            <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
                               <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Rata-rata Skor per Aktivitas</h4>
                               <ResponsiveContainer width="100%" height={220}>
                                 <BarChart
@@ -706,41 +760,41 @@ export default function RWW() {
                                   <Bar dataKey="avg" fill="#8acfd1" />
                                 </BarChart>
                               </ResponsiveContainer>
-                          </div>
+                            </div>
 
-                          {/* Diagram Usia */}
-                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
-                            <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Usia Responden</h4>
-                            <ResponsiveContainer width="100%" height={250}>
-                              <BarChart
-                                data={Object.entries(
-                                  responses.reduce((acc, r) => {
-                                    const ageGroup =
-                                      r.age < 20
-                                        ? '<20'
-                                        : r.age <= 25
-                                        ? '21-25'
-                                        : r.age <= 30
-                                        ? '26-30'
-                                        : r.age <= 40
-                                        ? '31-40'
-                                        : '>40';
-                                    acc[ageGroup] = (acc[ageGroup] || 0) + 1;
-                                    return acc;
-                                  }, {})
-                                ).map(([range, count]) => ({ range, count }))}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="range" />
-                                <YAxis />
-                                <Tooltip />
-                                <Bar dataKey="count" fill="#f02d9c" />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                            {/* Diagram Usia */}
+                            <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
+                              <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Usia Responden</h4>
+                              <ResponsiveContainer width="100%" height={250}>
+                                <BarChart
+                                  data={Object.entries(
+                                    responses.reduce((acc, r) => {
+                                      const ageGroup =
+                                        r.age < 20
+                                          ? '<20'
+                                          : r.age <= 25
+                                          ? '21-25'
+                                          : r.age <= 30
+                                          ? '26-30'
+                                          : r.age <= 40
+                                          ? '31-40'
+                                          : '>40';
+                                      acc[ageGroup] = (acc[ageGroup] || 0) + 1;
+                                      return acc;
+                                    }, {})
+                                  ).map(([range, count]) => ({ range, count }))}
+                                >
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="range" />
+                                  <YAxis />
+                                  <Tooltip />
+                                  <Bar dataKey="count" fill="#f02d9c" />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -749,6 +803,15 @@ export default function RWW() {
           </div>
         </main>
       </div>
+
+      {/* Modal Notifikasi */}
+      <NotificationModalPlan
+        isOpen={showNotification}
+        type="success"
+        xpGained={notificationData.xpGained}
+        badgeName={notificationData.badgeName}
+        onClose={() => setShowNotification(false)}
+      />
     </div>
   );
 }
