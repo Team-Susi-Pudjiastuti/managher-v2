@@ -20,6 +20,7 @@ import {
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import useProjectStore from '@/store/useProjectStore';
+import NotificationModal from '@/components/NotificationModal';
 
 // Helper: get initials
 const getInitials = (name) => {
@@ -49,8 +50,15 @@ export default function Level3Page() {
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
 
+  const [showNotification, setShowNotification] = useState(false);
+    const [notificationData, setNotificationData] = useState({
+      xpGained: 0,
+      badgeName: '',
+    });
+
   const [brandName, setBrandName] = useState('');
   const [tagline, setTagline] = useState('');
+
   const [productName, setProductName] = useState('');
   const [productDesc, setProductDesc] = useState('');
   const [price, setPrice] = useState('');
@@ -93,9 +101,7 @@ export default function Level3Page() {
           const data = JSON.parse(saved);
           setBrandName(data.brandName || '');
           setTagline(data.tagline || '');
-          setProductName(data.productName || '');
-          setProductDesc(data.productDesc || '');
-          setPrice(data.price || '');
+          // Do NOT restore product fields — they are removed from UI
           setPalette(data.palette || ['#F6E8D6']);
           setLogoPreview(data.logoPreview || '');
         } catch (e) {
@@ -147,9 +153,7 @@ export default function Level3Page() {
     const data = {
       brandName,
       tagline,
-      productName,
-      productDesc,
-      price,
+      // productName, productDesc, price are omitted from save
       palette,
       logoPreview,
       updatedAt: new Date().toISOString(),
@@ -163,15 +167,18 @@ export default function Level3Page() {
       }
       updatedLevels[2] = {
         id: 3,
-        completed: !!brandName && !!productName,
+        completed: !!brandName, // Only require brand name now
         data: { concept: data },
       };
       updateProject(projectId, { levels: updatedLevels });
     }
 
-    alert('Konsep brand berhasil disimpan! ✅');
-    // Jika ingin otomatis ke preview setelah simpan, aktifkan baris berikut:
-    // setIsEditing(false);
+    setNotificationData({
+      message: 'Ide berhasil disimpan!',
+      xpGained: 10,
+      badgeName: 'Brand Builder',
+    });
+    setShowNotification(true);
   };
 
   const brandInitials = getInitials(brandName);
@@ -296,51 +303,6 @@ export default function Level3Page() {
                             </div>
                           </div>
 
-                          {/* Product Info */}
-                          <div className="border border-gray-300 rounded-xl p-4 bg-[#f0f9f9]">
-                            <h3 className="font-bold text-[#f02d9c] mb-3 flex items-center gap-2">
-                              <Zap size={16} /> Product Info
-                            </h3>
-                            <div className="space-y-3">
-                              <div>
-                                <label className="block text-xs font-medium text-[#5b5b5b] mb-1">
-                                  Nama Produk
-                                </label>
-                                <input
-                                  type="text"
-                                  value={productName}
-                                  onChange={(e) => setProductName(e.target.value)}
-                                  className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
-                                  placeholder="Contoh: Sourdough Intan"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-[#5b5b5b] mb-1">
-                                  Deskripsi Singkat
-                                </label>
-                                <textarea
-                                  value={productDesc}
-                                  onChange={(e) => setProductDesc(e.target.value)}
-                                  className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
-                                  rows={3}
-                                  placeholder="Contoh: Roti artisan dengan aroma gandum asli..."
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-[#5b5b5b] mb-1">
-                                  Harga (opsional)
-                                </label>
-                                <input
-                                  type="text"
-                                  value={price}
-                                  onChange={(e) => setPrice(e.target.value)}
-                                  className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
-                                  placeholder="Contoh: 150000"
-                                />
-                              </div>
-                            </div>
-                          </div>
-
                           {/* Palette Editor */}
                           <div className="border border-gray-300 rounded-xl p-4 bg-white">
                             <h3 className="font-bold text-[#f02d9c] mb-3">Palette Editor</h3>
@@ -381,10 +343,10 @@ export default function Level3Page() {
                           </div>
                         </div>
                       ) : (
-                        /* ✅ PREVIEW MODE BARU — BRAND + PRODUCT JADI SATU */
+                        /* ✅ PREVIEW MODE — hanya menampilkan brand + logo */
                         <div className="p-4 border border-gray-300 rounded-xl bg-white shadow-sm">
                           <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
-                            <Eye size={16} /> Brand & Product Preview
+                            <Eye size={16} /> Brand Preview
                           </h3>
 
                           <div
@@ -421,23 +383,6 @@ export default function Level3Page() {
 
                               {/* Tagline */}
                               <p className="text-sm opacity-90 mt-1">{tagline || 'Tagline Anda'}</p>
-
-                              <div className="w-full h-px bg-black/10 my-3"></div>
-
-                              {/* Product Name */}
-                              <p className="font-semibold text-base mt-1">{productName || 'Nama Produk'}</p>
-
-                              {/* Product Description */}
-                              <p className="text-sm opacity-90 mt-2 whitespace-pre-wrap break-words max-w-prose">
-                                {productDesc || 'Deskripsi produk...'}
-                              </p>
-
-                              {/* Price */}
-                              {price && (
-                                <p className="font-medium text-sm mt-2">
-                                  Rp {parseInt(price).toLocaleString('id-ID') || '0'}
-                                </p>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -477,6 +422,23 @@ export default function Level3Page() {
 
                     {/* Edukasi */}
                     <div className="space-y-5">
+                      <div className="flex items-center gap-3 mb-3">
+                    {/* XP */}
+                      <div className="bg-[#f02d9c]/10 border border-[#f02d9c]/30 rounded-xl p-3 text-center hover:scale-[1.02] transition-transform">
+                        <div className="flex items-center gap-1 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
+                          <Lightbulb size={14} />
+                          <span>+10 XP</span>
+                        </div>
+                      </div>
+
+                      {/* Badge */}
+                      <div className="bg-[#f02d9c]/10 border border-[#f02d9c]/30 rounded-xl p-3 text-center hover:scale-[1.02] transition-transform">
+                        <div className="flex items-center gap-1 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
+                          <Award size={14} />
+                          <span>Brand Builder</span>
+                        </div>
+                      </div>
+                    </div>
                       <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
                         <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
                           <Lightbulb size={16} />
@@ -484,7 +446,7 @@ export default function Level3Page() {
                         </h3>
                         <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
                           <li>Mengembangkan identitas visual brand yang konsisten</li>
-                          <li>Mendefinisikan nama, tagline, dan positioning produk</li>
+                          <li>Mendefinisikan nama, tagline, dan positioning brand</li>
                           <li>Menyusun elemen dasar brand untuk digunakan di tahap selanjutnya</li>
                         </ul>
                       </div>
@@ -500,7 +462,7 @@ export default function Level3Page() {
                             Tagline harus <strong>pendek, jelas, dan emosional</strong>
                           </li>
                           <li>
-                            Upload gambar prototype yang <strong>representatif</strong> (kemasan, UI, atau produk fisik)
+                            Upload gambar <strong>prototype</strong> yang representatif (kemasan, UI, atau produk fisik)
                           </li>
                         </ul>
                       </div>
@@ -551,6 +513,14 @@ export default function Level3Page() {
           </div>
         </main>
       </div>
+      {/* Notification */}
+      <NotificationModal
+       isOpen={showNotification}
+       type="success"
+       xpGained={notificationData.xpGained}
+       badgeName={notificationData.badgeName}
+       onClose={() => setShowNotification(false)}
+       />
     </div>
   );
 }

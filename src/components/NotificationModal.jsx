@@ -1,7 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Award, Star, Zap, Lightbulb, CheckCircle } from 'lucide-react';
+import { Award, 
+  Star, Zap, 
+  Lightbulb, 
+  CheckCircle,
+  PartyPopper, 
+} from 'lucide-react';
 
 // Pilih ikon Lucide berdasarkan nama badge
 const getBadgeIcon = (badgeName) => {
@@ -48,12 +53,12 @@ export default function NotificationModal({
       >
         {/* Ikon Sukses Utama */}
         <div className="w-12 h-12 rounded-full bg-[#d7488e] flex items-center justify-center mx-auto mb-3">
-          <CheckCircle className="w-6 h-6 text-white" />
+          <PartyPopper className="w-6 h-6 text-white" />
         </div>
 
         {/* Pesan Selamat */}
         <p className="font-bold text-lg mb-4">
-          Selamat! Kamu telah menyelesaikan Level 1.
+          Selamat! Kamu telah menyelesaikan Level ini.
         </p>
 
         {/* Badge */}

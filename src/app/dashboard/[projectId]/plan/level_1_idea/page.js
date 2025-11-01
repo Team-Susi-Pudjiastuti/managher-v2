@@ -807,7 +807,7 @@ export default function Level1Page() {
         </main>
       </div>
 
-      {/* ✅ Modal Notifikasi */}
+      {/*  Modal Notifikasi */}
       <NotificationModal
         isOpen={showNotification}
         type="success"
