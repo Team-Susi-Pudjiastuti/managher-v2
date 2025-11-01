@@ -101,7 +101,6 @@ export default function DashboardPage() {
       TrendingUp: Icons.TrendingUp,
     };
 
-
     const Icon = iconMap[level.icon] || Icons.HelpCircle;
 
     return (
@@ -113,7 +112,7 @@ export default function DashboardPage() {
           <Icon size={16} className="text-[#f02d9c]" />
         </div>
         <div className="text-center mt-1">
-          <h4 className="font-bold text-xs">L{level.id}</h4> 
+          <h4 className="font-bold text-xs">L{level.order}</h4> 
           <p className="text-[10px] mt-0.5">{level.title}</p>
           <span className="block text-[8px] font-semibold mt-1">+{level.xp} XP</span>
         </div>
@@ -125,6 +124,8 @@ export default function DashboardPage() {
       </div>
     );
   };
+
+  console.log(levels)
 
   const renderSmallPhaseButton = ({ href, isLocked, phaseColor }) => {
     if (isLocked) {
@@ -152,7 +153,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-white p-3 sm:p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#5b5b5b] mb-4 sm:mb-6">Dashboard: {projects.find(p => p.id === projectId)?.title || 'Proyek'}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#5b5b5b] mb-4 sm:mb-6">Dashboard: {levels[0].project?.title}</h1>
 
         {/* Global XP & Progress */}
         <div className="mb-6 sm:mb-8 p-4 sm:p-5 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-200">
@@ -160,7 +161,7 @@ export default function DashboardPage() {
             <div>
               <span className="font-bold text-[#5b5b5b] text-sm sm:text-base">Total XP: {currentXp} / {TOTAL_XP}</span>
               <div className="text-xs sm:text-sm text-[#7a7a7a] mt-1">
-                Level: {currentLevel._id} • {currentLevel.title}
+                Level: {currentLevel.order} • {currentLevel.title}
               </div>
             </div>
             <span className="font-bold text-[#f02d9c] text-sm sm:text-base">{globalProgress}%</span>

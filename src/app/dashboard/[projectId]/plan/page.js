@@ -5,21 +5,18 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
+import { Lock, Check, Sparkle } from 'lucide-react';
+import * as Icons from 'lucide-react';
 
-import { 
-  Lightbulb, CheckCircle, Palette, FileText, Box, Users, Rocket,
-  Lock, Check, Sparkle 
-} from 'lucide-react';
-
-const PLAN_LEVELS = [
-  { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb, path: "level_1_idea", badge: "AI Innovator" },
-  { id: 2, title: "RWW Analysis", phase: "plan", xp: 10, icon: CheckCircle, path: "level_2_rww", badge: "Validator Pro" },
-  { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette, path: "level_3_product_brand", badge: "Brand Builder" },
-  { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText, path: "level_4_lean_canvas", badge: "Canvas Master" },
-  { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box, path: "level_5_MVP", badge: "MVP Maker" },
-  { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users, path: "level_6_beta_testing", badge: "Tester Hero" },
-  { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket, path: "level_7_launch", badge: "Launch Ready" },
-];
+// const PLAN_LEVELS = [
+//   { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb, path: "level_1_idea", badge: "AI Innovator" },
+//   { id: 2, title: "RWW Analysis", phase: "plan", xp: 10, icon: CheckCircle, path: "level_2_rww", badge: "Validator Pro" },
+//   { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette, path: "level_3_product_brand", badge: "Brand Builder" },
+//   { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText, path: "level_4_lean_canvas", badge: "Canvas Master" },
+//   { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box, path: "level_5_MVP", badge: "MVP Maker" },
+//   { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users, path: "level_6_beta_testing", badge: "Tester Hero" },
+//   { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket, path: "level_7_launch", badge: "Launch Ready" },
+// ];
 
 export default function PlanLevelsPage() {
   const { projectId } = useParams();
@@ -40,7 +37,7 @@ export default function PlanLevelsPage() {
   }
 
   const enrichedLevels = planLevels.map(level => {
-    const existing = levels?.find(l => l.id === level.id);
+    const existing = levels?.find(l => l.id === level._id);
     return {
       ...level,
       completed: existing?.completed || false,
@@ -61,7 +58,7 @@ export default function PlanLevelsPage() {
 
   const renderLevelBadge = (level) => {
     const isCompleted = level.completed;
-    const isActive = level.id === firstIncompleteLevel?.id;
+    const isActive = level._id === firstIncompleteLevel?._id;
 
     let bgColor, textColor, borderColor, badgeBg;
     if (isCompleted) {
@@ -84,9 +81,25 @@ export default function PlanLevelsPage() {
       badgeBg = 'bg-gray-300 text-gray-700';
     }
 
-    const Icon = level.icon;
+    const iconMap = {
+        Lightbulb: Icons.Lightbulb,
+        CheckCircle: Icons.CheckCircle,
+        Palette: Icons.Palette,
+        FileText: Icons.FileText,
+        Box: Icons.Box,
+        Users: Icons.Users,
+        Rocket: Icons.Rocket,
+        Package: Icons.Package,
+        User: Icons.User,
+        ShoppingBag: Icons.ShoppingBag,
+        BarChart3: Icons.BarChart3,
+        TrendingUp: Icons.TrendingUp,
+      };
+      
+      const Icon = iconMap[level.icon] || Icons.HelpCircle;
 
-    return (
+      
+      return (
       <div
         className={`w-[120px] h-[130px] rounded-lg border ${borderColor} ${bgColor} ${textColor} p-2 flex flex-col items-center justify-between`}
       >
@@ -94,7 +107,7 @@ export default function PlanLevelsPage() {
           <Icon size={16} className="text-[#f02d9c]" />
         </div>
         <div className="text-center mt-1">
-          <h4 className="font-bold text-xs">L{level.id}</h4>
+          <h4 className="font-bold text-xs">L{level.order}</h4>
           <p className="text-[10px] mt-0.5">{level.title}</p>
           <span className="block text-[8px] font-semibold mt-1">+{level.xp} XP</span>
         </div>
@@ -107,7 +120,20 @@ export default function PlanLevelsPage() {
       </div>
     );
   };
+  
+  const pathMap = {
+    level_1_idea: "level_1_idea",
+    level_2_rww: "level_2_rww",
+    level_3_product_brand: "level_3_product_brand",
+    level_4_lean_canvas: "level_4_lean_canvas",
+    level_5_MVP: "level_5_MVP",
+    level_6_beta_testing: "level_6_beta_testing",
+    level_7_launch: "level_7_launch",
+  }
 
+const getLevelPath = (level) => {
+  return pathMap[level._id] || "level_1_idea";
+};
   return (
     <div className="min-h-screen bg-white">
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
@@ -140,11 +166,11 @@ export default function PlanLevelsPage() {
         <div className="space-y-4 sm:space-y-6">
           {enrichedLevels.map((level) => {
             const isCompleted = level.completed;
-            const isUnlocked = level.id <= (firstIncompleteLevel?.id || Infinity);
-            const isActive = level.id === firstIncompleteLevel?.id;
+            const isUnlocked = level._id <= (firstIncompleteLevel?._id || Infinity);
+            const isActive = level._id === firstIncompleteLevel?._id;
 
             return (
-              <div key={level.id} className="relative">
+              <div key={level._id} className="relative">
                 <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-xl sm:rounded-2xl"></div>
                 <div
                   className="relative bg-white rounded-xl sm:rounded-2xl border-t border-l border-black p-3 sm:p-5"
@@ -185,7 +211,8 @@ export default function PlanLevelsPage() {
                     <div className="shrink-0 mt-2 sm:mt-0">
                       {isCompleted || isUnlocked ? (
                         <Link 
-                          href={`/dashboard/${projectId}/plan/${level.path}`} 
+                          key={level._id}
+                          href={`/dashboard/${projectId}/${level.phase.name}/${getLevelPath(level)}`}
                           className="group relative inline-block"
                         >
                           <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-full"></div>
