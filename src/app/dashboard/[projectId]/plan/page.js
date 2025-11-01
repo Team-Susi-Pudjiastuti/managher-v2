@@ -12,13 +12,13 @@ import {
 } from 'lucide-react';
 
 const PLAN_LEVELS = [
-  { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb, path: "level_1_idea" },
-  { id: 2, title: "RWW Analysist", phase: "plan", xp: 10, icon: CheckCircle, path: "level_2_rww" },
-  { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette, path: "level_3_product_brand" },
-  { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText, path: "level_4_lean_canvas" },
-  { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box, path: "level_5_MVP" },
-  { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users, path: "level_6_beta_testing" },
-  { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket, path: "level_7_launch" },
+  { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb, path: "level_1_idea", badge: "AI Innovator" },
+  { id: 2, title: "RWW Analysis", phase: "plan", xp: 10, icon: CheckCircle, path: "level_2_rww", badge: "Validator Pro" },
+  { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette, path: "level_3_product_brand", badge: "Brand Builder" },
+  { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText, path: "level_4_lean_canvas", badge: "Canvas Master" },
+  { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box, path: "level_5_MVP", badge: "MVP Maker" },
+  { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users, path: "level_6_beta_testing", badge: "Tester Hero" },
+  { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket, path: "level_7_launch", badge: "Launch Ready" },
 ];
 
 export default function PlanLevelsPage() {
@@ -65,37 +65,47 @@ export default function PlanLevelsPage() {
     const isCompleted = level.completed;
     const isActive = level.id === firstIncompleteLevel?.id;
 
-    let bgColor, textColor, borderColor;
-    if (isActive) {
+    let bgColor, textColor, borderColor, badgeBg;
+    if (isCompleted) {
+      // Sudah selesai: pink pucat + badge biru
+      bgColor = 'bg-[#fdf6f0]';
+      textColor = 'text-slate-800';
+      borderColor = 'border-[#f02d9c]/30';
+      badgeBg = 'bg-[#8acfd1] text-white';
+    } else if (isActive) {
+      // Sedang dikerjakan: pink solid + badge biru
       bgColor = 'bg-[#f02d9c]';
       textColor = 'text-white';
-      borderColor = 'border-black';
-    } else if (isCompleted) {
-      bgColor = 'bg-[#8acfd1]';
-      textColor = 'text-[#0a5f61]';
-      borderColor = 'border-black';
+      borderColor = 'border-[#f02d9c]';
+      badgeBg = 'bg-[#8acfd1] text-white';
     } else {
+      // Belum selesai: abu-abu + badge abu-abu
       bgColor = 'bg-gray-200';
       textColor = 'text-gray-500';
       borderColor = 'border-gray-300';
+      badgeBg = 'bg-gray-300 text-gray-700';
     }
 
     const Icon = level.icon;
 
     return (
       <div
-        className={`px-2.5 py-1.5 rounded-lg font-medium text-xs border ${bgColor} ${textColor} ${borderColor} flex flex-col items-center min-w-20`}
+        className={`w-[120px] h-[130px] rounded-lg border ${borderColor} ${bgColor} ${textColor} p-2 flex flex-col items-center justify-between`}
       >
-        <div className="flex items-center justify-center w-5 h-5 mb-0.5">
-          <Icon size={12} />
+        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white border-2 border-[#f02d9c]">
+          <Icon size={16} className="text-[#f02d9c]" />
         </div>
-        <span className="font-bold text-[10px]">L{level.id}</span>
-        <span className="mt-0.5 text-center text-[8px] leading-tight">
-          {level.title}
-        </span>
-        <span className="mt-0.5 text-[8px] font-semibold">
-          +{level.xp} XP
-        </span>
+        <div className="text-center mt-1">
+          <h4 className="font-bold text-xs">L{level.id}</h4>
+          <p className="text-[10px] mt-0.5">{level.title}</p>
+          <span className="block text-[8px] font-semibold mt-1">+{level.xp} XP</span>
+        </div>
+        {/* Badge ditambahkan di sini */}
+        {level.badge && (
+          <span className={`mt-1 px-1.5 py-0.5 rounded text-[7px] font-bold whitespace-nowrap ${badgeBg}`}>
+            {level.badge}
+          </span>
+        )}
       </div>
     );
   };
@@ -109,6 +119,7 @@ export default function PlanLevelsPage() {
       <div className="max-w-4xl mx-auto mt-6 p-3 sm:p-4 md:p-6">
         <h1 className="text-xl sm:text-2xl font-bold text-[#5b5b5b] mb-4 sm:mb-6">Fase: Plan</h1>
 
+        {/* Progress Bar */}
         <div className="mb-5 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-200">
           <div className="flex justify-between items-center mb-2">
             <span className="font-bold text-[#5b5b5b] text-sm sm:text-base">XP Fase Plan: {currentXp} / {totalXp}</span>
@@ -127,6 +138,7 @@ export default function PlanLevelsPage() {
           </p>
         </div>
 
+        {/* DAFTAR LEVEL */}
         <div className="space-y-4 sm:space-y-6">
           {enrichedLevels.map((level) => {
             const isCompleted = level.completed;
@@ -141,7 +153,7 @@ export default function PlanLevelsPage() {
                   style={{ boxShadow: '1px 1px 0 0 #f02d9c' }}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
-                    <div className="shrink-0">
+                    <div className="shrink-0 hidden sm:block">
                       {renderLevelBadge(level)}
                     </div>
 
