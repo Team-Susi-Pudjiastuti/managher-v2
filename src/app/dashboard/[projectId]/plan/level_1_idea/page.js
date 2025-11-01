@@ -21,7 +21,7 @@ import {
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
-import NotificationModal from '@/components/NotificationModal';
+import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 // === HELPER: Parse & Format Products & Services ===
 const parseProductsServices = (text) => {
@@ -808,7 +808,7 @@ export default function Level1Page() {
       </div>
 
       {/*  Modal Notifikasi */}
-      <NotificationModal
+      <NotificationModalPlan
         isOpen={showNotification}
         type="success"
         xpGained={notificationData.xpGained}

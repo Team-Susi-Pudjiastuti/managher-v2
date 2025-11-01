@@ -35,7 +35,7 @@ import {
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
-import NotificationModal from '@/components/NotificationModal';
+import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 const scaleLabels = ['Tidak Pernah', 'Pernah', 'Kadang', 'Sering', 'Sangat Sering'];
 const range5 = [1, 2, 3, 4, 5];
@@ -805,7 +805,7 @@ export default function RWW() {
       </div>
 
       {/* Modal Notifikasi */}
-      <NotificationModal
+      <NotificationModalPlan
         isOpen={showNotification}
         type="success"
         xpGained={notificationData.xpGained}

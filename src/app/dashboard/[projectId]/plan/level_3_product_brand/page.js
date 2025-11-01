@@ -20,7 +20,7 @@ import {
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import useProjectStore from '@/store/useProjectStore';
-import NotificationModal from '@/components/NotificationModal';
+import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 // Helper: get initials
 const getInitials = (name) => {
@@ -514,7 +514,7 @@ export default function Level3Page() {
         </main>
       </div>
       {/* Notification */}
-      <NotificationModal
+      <NotificationModalPlan
        isOpen={showNotification}
        type="success"
        xpGained={notificationData.xpGained}

@@ -1,36 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Award, 
-  Star, Zap, 
-  Lightbulb, 
-  CheckCircle,
-  PartyPopper, 
-} from 'lucide-react';
 
-// Pilih ikon Lucide berdasarkan nama badge
-const getBadgeIcon = (badgeName) => {
-  switch (badgeName) {
-    case 'AI Innovator':
-      return <Lightbulb className="w-8 h-8 text-[#f02d9c]" />;
-    case 'Validator Pro':
-      return <CheckCircle className="w-8 h-8 text-[#f02d9c]" />;
-    case 'Brand Builder':
-      return <Star className="w-8 h-8 text-[#f02d9c]" />;
-    case 'Canvas Master':
-      return <Award className="w-8 h-8 text-[#f02d9c]" />;
-    default:
-      return <Award className="w-8 h-8 text-[#f02d9c]" />;
-  }
-};
-
-export default function NotificationModal({ 
-  isOpen, 
-  type = 'success',
-  onClose,
-  xpGained = null,
-  badgeName = null
-}) {
+export default function NotificationModal({ isOpen, message, type, onClose }) {
   if (!isOpen) return null;
 
   return (
@@ -51,40 +23,37 @@ export default function NotificationModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Ikon Sukses Utama */}
-        <div className="w-12 h-12 rounded-full bg-[#d7488e] flex items-center justify-center mx-auto mb-3">
-          <PartyPopper className="w-6 h-6 text-white" />
+        <div className="flex justify-center mb-3">
+          {type === 'success' ? (
+            <div className="w-12 h-12 rounded-full bg-[#d7488e] flex items-center justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="white"
+                className="w-6 h-6"
+              >
+                <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
+              </svg>
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="#f96f70"
+                className="w-6 h-6"
+              >
+                <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+              </svg>
+            </div>
+          )}
         </div>
 
-        {/* Pesan Selamat */}
-        <p className="font-bold text-lg mb-4">
-          Selamat! Kamu telah menyelesaikan Level ini.
-        </p>
-
-        {/* Badge */}
-        {badgeName && (
-          <div className="mb-4">
-            <div className="inline-flex flex-col items-center justify-center gap-2 bg-white/80 rounded-xl p-4 mx-auto">
-              {getBadgeIcon(badgeName)}
-              <span className="font-bold text-[#f02d9c] text-sm">Badge: {badgeName}</span>
-            </div>
-          </div>
-        )}
-
-        {/* XP */}
-        {xpGained && (
-          <div className="bg-[#d7488e] text-white px-4 py-2 rounded-full inline-block mb-4 font-bold">
-            +{xpGained} XP
-          </div>
-        )}
-
-        <p className="text-sm mb-4">
-          Lanjut ke level berikutnya untuk mengembangkan ide bisnismu!
-        </p>
+        <p className="font-semibold text-lg font-[Poppins]">{message}</p>
 
         <button
           onClick={onClose}
-          className={`px-4 py-2 rounded-lg font-medium border-t border-l font-[Poppins] ${
+          className={`mt-4 px-4 py-2 rounded-lg font-medium transition-transform hover:translate-x-0.5 hover:translate-y-0.5 border-t border-l font-[Poppins] ${
             type === 'success'
               ? 'bg-[#8acfd1] text-[#333333] border-black'
               : 'bg-white text-[#f96f70] border-white'
