@@ -462,7 +462,10 @@ export default function Level3Page() {
                             Tagline harus <strong>pendek, jelas, dan emosional</strong>
                           </li>
                           <li>
-                            Upload gambar <strong>prototype</strong> yang representatif (kemasan, UI, atau produk fisik)
+                            Logo sebaiknya sederhana, mudah dikenali, dan mencerminkan nilai brand
+                          </li>
+                          <li>
+                            Gunakan logo yang konsisten di semua platform — pastikan tetap terbaca bahkan dalam ukuran kecil
                           </li>
                         </ul>
                       </div>

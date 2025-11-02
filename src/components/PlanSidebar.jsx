@@ -6,19 +6,19 @@ import { useEffect, useState } from 'react';
 import { Menu as MenuIcon, X } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 
-import {
+import { 
   LayoutDashboard,
-  Lightbulb,
-  CheckCircle,
-  Palette,
-  FileText,
-  Box,
-  Users,
-  Rocket
+  Lightbulb, 
+  CheckCircle, 
+  Palette, 
+  FileText, 
+  Box, 
+  Users, 
+  Rocket 
 } from 'lucide-react';
 
-export default function PlanSidebar({
-  projectId,
+export default function PlanSidebar({ 
+  projectId, 
   currentLevelId = 'overview',
   isMobile = false,
   mobileSidebarOpen = false,
@@ -35,7 +35,6 @@ export default function PlanSidebar({
     return false;
   });
 
-  // Otomatis collapse sidebar saat di halaman level
   useEffect(() => {
     const isInLevelPage = /\/plan\/level_[1-7]_[a-z]/.test(pathname);
     if (isInLevelPage) {
@@ -57,7 +56,7 @@ export default function PlanSidebar({
   const sidebarItems = [
     { id: 'overview', title: 'Overview', icon: LayoutDashboard, href: `/dashboard/${projectId}` },
     { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level_1_idea` },
-    { id: 2, title: 'RWW Analysist', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww` },
+    { id: 2, title: 'RWW Analysis', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww` },
     { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level_3_product_brand` },
     { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas` },
     { id: 5, title: 'MVP', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP` },
@@ -85,7 +84,7 @@ export default function PlanSidebar({
   return (
     <>
       {isMobile && mobileSidebarOpen && (
-        <div
+        <div 
           className="fixed inset-0 bg-black/40 z-30 lg:hidden"
           onClick={closeMobileSidebar}
         />
@@ -93,8 +92,8 @@ export default function PlanSidebar({
 
       <div
         className={`${
-          isMobile
-            ? 'fixed inset-y-0 left-0 z-40 w-64'
+          isMobile 
+            ? 'fixed inset-y-0 left-0 z-40 w-64' 
             : 'lg:sticky lg:top-0 lg:z-0'
         }
         bg-white transition-all duration-300 ease-in-out
@@ -108,7 +107,7 @@ export default function PlanSidebar({
                 ? 'w-10 h-10 justify-center'
                 : 'p-3 justify-between'
             }`}
-            style={{
+            style={{ 
               boxShadow: '1px 1px 0 0 #fbe2a7',
             }}
           >
@@ -155,14 +154,15 @@ export default function PlanSidebar({
             const active = isActive(item.id);
 
             let bgColor, textColor, borderColor;
-            if (active) {
+
+            if (completed) {
               bgColor = 'bg-[#f02d9c]';
               textColor = 'text-white';
-              borderColor = 'border-black';
-            } else if (completed) {
-              bgColor = 'bg-[#8acfd1]';
-              textColor = 'text-[#0a5f61]';
-              borderColor = 'border-black';
+              borderColor = 'border-[#f02d9c]';
+            } else if (active) {
+              bgColor = 'bg-[#fdf6f0]';
+              textColor = 'text-slate-800';
+              borderColor = 'border-[#f02d9c]/30';
             } else {
               bgColor = 'bg-gray-100';
               textColor = 'text-gray-500';
@@ -185,9 +185,9 @@ export default function PlanSidebar({
                   }
                 `}
               >
-                <Icon
-                  size={!showText ? 16 : 18}
-                  className="shrink-0"
+                <Icon 
+                  size={!showText ? 16 : 18} 
+                  className="shrink-0" 
                 />
                 {showText && (
                   <span className="ml-3 font-medium truncate">{item.title}</span>
