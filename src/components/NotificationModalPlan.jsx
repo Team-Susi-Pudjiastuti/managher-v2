@@ -1,7 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Award, Star, Lightbulb, CheckCircle, PartyPopper } from 'lucide-react';
+import { 
+  Award, 
+  Star, 
+  Lightbulb, 
+  CheckCircle, 
+  PartyPopper,
+  Rocket,
+  Box,
+  Palette,
+  FileText,
+  Users
+ } from 'lucide-react';
 
 const getBadgeIcon = (badgeName) => {
   switch (badgeName) {
@@ -10,11 +21,15 @@ const getBadgeIcon = (badgeName) => {
     case 'Validator Pro':
       return <CheckCircle className="w-8 h-8 text-[#f02d9c]" />;
     case 'Brand Builder':
-      return <Star className="w-8 h-8 text-[#f02d9c]" />;
+      return <Palette className="w-8 h-8 text-[#f02d9c]" />;
     case 'Canvas Master':
-      return <Award className="w-8 h-8 text-[#f02d9c]" />;
-    default:
-      return <Award className="w-8 h-8 text-[#f02d9c]" />;
+      return <FileText className="w-8 h-8 text-[#f02d9c]" />;
+    case 'Product Maker':
+      return <Box className="w-8 h-8 text-[#f02d9c]" />;
+    case 'Marketing Hero':
+      return <Users className="w-8 h-8 text-[#f02d9c]" />;
+    case 'Launch Star':
+      return <Rocket className="w-8 h-8 text-[#f02d9c]" />;   
   }
 };
 

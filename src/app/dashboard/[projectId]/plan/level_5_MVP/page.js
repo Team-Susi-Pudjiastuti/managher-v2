@@ -19,11 +19,13 @@ import {
   FileText,
   Trash2,
   DollarSign,
+  Award,
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import useProjectStore from '@/store/useProjectStore';
+import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 export default function Level5Page() {
   const { projectId } = useParams();
@@ -39,6 +41,11 @@ export default function Level5Page() {
   const [project, setProject] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationData, setNotificationData] = useState({
+    xpGained: 0,
+    badgeName: '',
+  });
 
   const fileInputRefs = useRef({});
 
@@ -153,8 +160,11 @@ export default function Level5Page() {
       updateProject(projectId, { levels: updatedLevels });
     }
 
-    alert('Prototype berhasil disimpan! ✅');
-    setIsEditing(false);
+    setNotificationData({
+      xpGained: 10,
+      badgeName: 'Product Maker',
+    });
+    setShowNotification(true);
   };
 
   const breadcrumbItems = [
@@ -395,51 +405,73 @@ export default function Level5Page() {
                       </div>
                     </div>
 
+                    {/* === KOLOM KANAN — DISESUAIKAN DENGAN GAYA LEVEL 1 === */}
                     <div className="space-y-5">
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                          <Target size={16} />
-                          Tujuan Level 5
+                      {/* === PENCAPAIAN === */}
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                        <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
+                          <Award size={16} className="text-[#f02d9c]" />
+                          Pencapaian
                         </h3>
-                        <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                          <li>Membangun versi paling sederhana dari produkmu (Prototype)</li>
-                          <li>Memvisualisasikan bentuk fisik/digital Prototype</li>
-                          <li>Menyiapkan aset untuk uji coba ke pelanggan awal</li>
-                        </ul>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-3 py-1.5 bg-[#f02d9c] text-white text-xs font-bold rounded-full flex items-center gap-1">
+                            <Lightbulb size={12} /> +10 XP
+                          </span>
+                          <span className="px-3 py-1.5 bg-[#8acfd1] text-[#0a5f61] text-xs font-bold rounded-full flex items-center gap-1">
+                            <Award size={12} /> Product Maker
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs text-[#5b5b5b]">
+                          Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
+                        </p>
                       </div>
 
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                          <Lightbulb size={16} />
-                          Tips & Best Practice
+                      {/* === PETUNJUK === */}
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                        <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
+                          <BookOpen size={16} className="text-[#f02d9c]" />
+                          Petunjuk
                         </h3>
-                        <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                          <li>
-                            <strong>Prototype tidak harus sempurna</strong> — cukup untuk menguji ide utama
-                          </li>
-                          <li>
-                            Gunakan <strong>Canva, Figma, atau foto HP</strong> untuk visual Prototype
-                          </li>
-                          <li>
-                            Fokus pada <strong>1–2 fitur inti</strong> yang menyelesaikan masalah utama
-                          </li>
-                        </ul>
+                        <div className="space-y-2">
+                          {[
+                            'Isi nama produk dan deskripsi singkat',
+                            'Tentukan harga jual (opsional)',
+                            'Upload gambar prototype (JPG/PNG/GIF, max 5MB)',
+                            'Klik “Simpan” untuk menyimpan konsep produk',
+                            'Klik “Lihat Preview” untuk melihat hasil sebelum lanjut ke Level 6',
+                          ].map((text, i) => (
+                            <div key={i} className="flex items-start gap-2 text-sm text-[#5b5b5b]">
+                              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#f02d9c] text-white text-xs font-bold mt-0.5">
+                                {i + 1}
+                              </span>
+                              {text}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <span className="px-2.5 py-1.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full flex items-center gap-1">
+                            <Lightbulb size={12} /> Tujuan: Buat versi sederhana produkmu untuk uji coba
+                          </span>
+                          <span className="px-2.5 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full flex items-center gap-1">
+                            <Award size={12} /> Tips: Gunakan Canva/Figma atau foto HP untuk visual
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                          <BookOpen size={16} />
-                          Resources Resmi
+                      {/* === RESOURCES === */}
+                      <div className="border border-gray-200 rounded-xl p-4 bg-white">
+                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
+                          <BookOpen size={14} /> Resources
                         </h3>
-                        <ul className="text-sm text-[#5b5b5b] space-y-2">
+                        <ul className="text-sm text-[#5b5b5b] space-y-1.5">
                           <li>
                             <a
                               href="https://miro.com/templates/lean-canvas/"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Miro: Lean Canvas Template <ChevronRight size={12} />
+                              Miro: Lean Canvas Template
                             </a>
                           </li>
                           <li>
@@ -447,9 +479,9 @@ export default function Level5Page() {
                               href="https://www.canva.com/templates/EAFhWMaXv5c-pink-modern-fashion-business-plan-presentation/"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Template Canva UMKM <ChevronRight size={12} />
+                              Template Canva UMKM
                             </a>
                           </li>
                           <li>
@@ -457,9 +489,9 @@ export default function Level5Page() {
                               href="https://perempuaninovasi.id/workshop"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Workshop Prototype untuk Pemula <ChevronRight size={12} />
+                              Workshop Prototype untuk Pemula
                             </a>
                           </li>
                         </ul>
@@ -472,6 +504,15 @@ export default function Level5Page() {
           </div>
         </main>
       </div>
+
+      {/* Modal Notifikasi */}
+      <NotificationModalPlan
+        isOpen={showNotification}
+        type="success"
+        xpGained={notificationData.xpGained}
+        badgeName={notificationData.badgeName}
+        onClose={() => setShowNotification(false)}
+      />
     </div>
   );
 }
