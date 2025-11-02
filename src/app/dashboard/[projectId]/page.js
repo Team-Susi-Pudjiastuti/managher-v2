@@ -73,19 +73,19 @@ export default function DashboardPage() {
     let bgColor, textColor, borderColor, badgeBg;
 
     if (isLockedPhase) {
-      // 🔒 TERKUNCI
+      // TERKUNCI
       bgColor = 'bg-gray-200';
       textColor = 'text-gray-500';
       borderColor = 'border-gray-300';
       badgeBg = 'bg-gray-300 text-gray-700';
     } else if (isCompleted) {
-      // ✅ SUDAH SELESAI → PINK SOLID (sesuai permintaan)
+      // SUDAH SELESAI → PINK SOLID
       bgColor = 'bg-[#f02d9c]';
       textColor = 'text-white';
       borderColor = 'border-[#f02d9c]';
       badgeBg = 'bg-[#8acfd1] text-white';
     } else if (isActive) {
-      // 🟡 AKTIF → PINK PUCAT (sesuai permintaan)
+      // AKTIF → PINK PUCAT
       bgColor = 'bg-[#fdf6f0]';
       textColor = 'text-slate-800';
       borderColor = 'border-[#f02d9c]/30';
@@ -206,7 +206,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* 🔥 FASE PLAN — SELURUH CARD BISA DIKLICK */}
+        {/* FASE PLAN — SELURUH CARD BISA DIKLICK */}
         <Link href={`/dashboard/${projectId}/plan`} className="block mb-6 sm:mb-8 group">
           <div className="relative">
             <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-xl sm:rounded-2xl"></div>

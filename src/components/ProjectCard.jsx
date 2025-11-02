@@ -5,7 +5,6 @@ import { useEffect } from 'react';
 import { CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Trash2, X } from 'lucide-react';
-import useProjectStore from '@/store/useProjectStore';
 
 export default function ProjectCard({ project, onClick }) {
   // const totalLevels = 12; 
@@ -31,7 +30,7 @@ export default function ProjectCard({ project, onClick }) {
   };
 
   const confirmDelete = () => {
-    deleteProject(project.id);
+    deleteProject(id);
     setIsDeleteModalOpen(false);
   };
 
