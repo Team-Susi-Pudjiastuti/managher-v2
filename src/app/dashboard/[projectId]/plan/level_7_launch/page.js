@@ -10,6 +10,7 @@ import {
   FileText,
   Award,
   Rocket,
+  Lightbulb,
   Users,
   ClipboardCheck,
   Goal,
@@ -33,13 +34,14 @@ import {
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
+import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 // Daftar item checklist
 const CHECKLIST_ITEMS = [
   { id: 'social', label: 'Buat akun Instagram & WhatsApp bisnis', icon: Instagram },
-  { id: 'photos', label: 'Siapkan 5+ foto produk yang menarik', icon: Smartphone },
+  { id: 'photos', label: 'Siapkan foto produk yang menarik', icon: Smartphone },
   { id: 'payment', label: 'Siapkan metode pembayaran (QRIS, transfer)', icon: CreditCard },
-  { id: 'offer', label: 'Tawarkan ke 5 orang pertama (teman/keluarga)', icon: MessageCircle },
+  { id: 'offer', label: 'Tawarkan ke orang terdekat (teman/keluarga)', icon: MessageCircle },
   { id: 'delivery', label: 'Uji coba proses pengiriman/pengambilan', icon: Truck },
   { id: 'price', label: 'Tentukan harga & paket (misal: bundle hemat)', icon: Store },
   { id: 'feedback', label: 'Kumpulkan 3 testimoni awal', icon: Users },
@@ -80,12 +82,18 @@ export default function Level7Page() {
     }
   }, [projectId, projects]);
 
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationData, setNotificationData] = useState({
+    message: '',
+    xpGained: 0,
+    badgeName: '',
+  });
+
   const toggleChecklistItem = (id) => {
     const newChecklist = { ...checklist, [id]: !checklist[id] };
     setChecklist(newChecklist);
 
     const updatedLevels = [...(project?.levels || [])];
-    // Pastikan level 7 (index 6) tersedia
     while (updatedLevels.length <= 6) {
       updatedLevels.push({ id: updatedLevels.length + 1, completed: false, data: {} });
     }
@@ -102,12 +110,12 @@ export default function Level7Page() {
     return project?.levels?.[levelIndex]?.data || null;
   };
 
-  const vpc = getLevelData(0); // Level 1
-  const rww = getLevelData(1); // Level 2
-  const brand = getLevelData(2); // Level 3
-  const lean = getLevelData(3); // Level 4
-  const mvp = getLevelData(4); // Level 5
-  const beta = getLevelData(5); // Level 6
+  const vpc = getLevelData(0);
+  const rww = getLevelData(1);
+  const brand = getLevelData(2);
+  const lean = getLevelData(3);
+  const mvp = getLevelData(4);
+  const beta = getLevelData(5);
 
   const getVPCProductTitle = (ps) => {
     if (!ps) return '-';
@@ -119,6 +127,15 @@ export default function Level7Page() {
     { href: `/dashboard/${projectId}/plan`, label: 'Fase Plan' },
     { label: 'Level 7: Aset & Checklist Launching' }
   ];
+
+  // Handle klik tombol "Selesai"
+  const handleSelesaiClick = () => {
+    setNotificationData({
+      xpGained: 10,
+      badgeName: 'Launch Star',
+    });
+    setShowNotification(true);
+  };
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -257,7 +274,7 @@ export default function Level7Page() {
                         Prev
                       </button>
                       <button
-                        onClick={() => router.push(`/dashboard/${projectId}`)}
+                        onClick={handleSelesaiClick}
                         className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
                       >
                         Selesai
@@ -266,49 +283,93 @@ export default function Level7Page() {
                     </div>
                   </div>
 
-                  {/* Kolom Kanan */}
+                  {/* === KOLOM KANAN — DISESUAIKAN DENGAN GAYA LEVEL 5 === */}
                   <div className="space-y-5">
-                    <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                      <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                        <Goal size={16} />
-                        Tujuan Level 7
+                    {/* === PENCAPAIAN === */}
+                    <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                      <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
+                        <Award size={16} className="text-[#f02d9c]" />
+                        Pencapaian
                       </h3>
-                      <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                        <li>Pastikan kesiapan operasional harian</li>
-                        <li>Kurangi risiko gagal dengan langkah kecil</li>
-                        <li>Siapkan fondasi untuk pelanggan pertama</li>
-                      </ul>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="px-3 py-1.5 bg-[#f02d9c] text-white text-xs font-bold rounded-full flex items-center gap-1">
+                          <Lightbulb size={12} /> +10 XP
+                        </span>
+                        <span className="px-3 py-1.5 bg-[#8acfd1] text-[#0a5f61] text-xs font-bold rounded-full flex items-center gap-1">
+                          <Award size={12} /> Launch Star
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs text-[#5b5b5b]">
+                        Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
+                      </p>
                     </div>
 
-                    <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                      <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                        <Award size={16} />
-                        Tips untuk Solopreneur
+                    {/* === PETUNJUK === */}
+                    <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                      <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
+                        <BookOpen size={16} className="text-[#f02d9c]" />
+                        Petunjuk
                       </h3>
-                      <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                        <li><strong>Jangan tunggu sempurna!</strong> Mulai dengan yang bisa kamu lakukan hari ini</li>
-                        <li>Gunakan <strong>HP + Canva</strong> untuk foto & konten</li>
-                        <li>Mulai dari <strong>5 orang terdekat</strong> untuk validasi</li>
-                      </ul>
+                      <div className="space-y-2">
+                        {[
+                          'Siapkan akun Instagram & WhatsApp bisnis',
+                          'Uji coba proses pengiriman/pengambilan',
+                          'Tentukan harga & paket (misal: bundle hemat)',
+                          'Kumpulkan 3 testimoni awal',
+                          'Tentukan jam operasional & respons',
+                        ].map((text, i) => (
+                          <div key={i} className="flex items-start gap-2 text-sm text-[#5b5b5b]">
+                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#f02d9c] text-white text-xs font-bold mt-0.5">
+                              {i + 1}
+                            </span>
+                            {text}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <span className="px-2.5 py-1.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full flex items-center gap-1">
+                          <Lightbulb size={12} /> Tujuan: Siapkan fondasi untuk pelanggan pertama
+                        </span>
+                        <span className="px-2.5 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full flex items-center gap-1">
+                          <Award size={12} /> Tips: Mulai dari 5 orang terdekat untuk validasi
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                      <h3 className="font-bold text-[#0a5f61] mb-3">
-                        <BookOpen size={16} /> Resources</h3>
-                      <ul className="text-sm text-[#5b5b5b] space-y-2">
+                    {/* === RESOURCES === */}
+                    <div className="border border-gray-200 rounded-xl p-4 bg-white">
+                      <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
+                        <BookOpen size={14} /> Resources
+                      </h3>
+                      <ul className="text-sm text-[#5b5b5b] space-y-1.5">
                         <li>
-                          <a href="https://miro.com/templates/value-proposition-canvas/" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline flex items-center gap-1">
-                            Miro VPC Template <ExternalLink size={12} />
+                          <a
+                            href="https://miro.com/templates/value-proposition-canvas/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                          >
+                            Miro VPC Template <ChevronRight size={12} />
                           </a>
                         </li>
                         <li>
-                          <a href="https://www.canva.com/templates/EAFhWMaXv5c-pink-modern-fashion-business-plan-presentation/" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline">
-                            Template Canva UMKM
+                          <a
+                            href="https://www.canva.com/templates/EAFhWMaXv5c-pink-modern-fashion-business-plan-presentation/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                          >
+                            Template Canva UMKM <ChevronRight size={12} />
                           </a>
                         </li>
                         <li>
-                          <a href="https://perempuaninovasi.id/workshop" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline">
-                            Workshop Perempuan Inovasi
+                          <a
+                            href="https://perempuaninovasi.id/workshop"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                          >
+                            Workshop Perempuan Inovasi <ChevronRight size={12} />
                           </a>
                         </li>
                       </ul>
@@ -320,6 +381,17 @@ export default function Level7Page() {
           </div>
         </main>
       </div>
+
+      <NotificationModalPlan
+        isOpen={showNotification}
+        type="success"
+        xpGained={notificationData.xpGained}
+        badgeName={notificationData.badgeName}
+        onClose={() => {
+          setShowNotification(false);
+          router.push(`/dashboard/${projectId}`);
+        }}
+      />
     </div>
   );
 }
