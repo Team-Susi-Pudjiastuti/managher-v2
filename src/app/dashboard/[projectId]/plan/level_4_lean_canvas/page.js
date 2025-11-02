@@ -21,10 +21,12 @@ import {
   Eye,
   Edit3,
   Menu,
+  Award,
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
+import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 export default function Level4Page() {
   const { projectId } = useParams();
@@ -42,12 +44,16 @@ export default function Level4Page() {
     RevenueStreams: '',
   });
 
-  // ✅ Fix error: selectedField is not defined
   const [selectedField, setSelectedField] = useState(null);
   const [isEditing, setIsEditing] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationData, setNotificationData] = useState({
+    xpGained: 0,
+    badgeName: '',
+  });
 
   useEffect(() => setIsMounted(true), []);
 
@@ -77,11 +83,16 @@ export default function Level4Page() {
 
   const handleSave = () => {
     localStorage.setItem(`lean-canvas-${projectId}`, JSON.stringify(canvas));
-    alert('Lean Canvas Level 4 berhasil disimpan! ✅');
+
+    setNotificationData({
+      xpGained: 10,
+      badgeName: 'Lean Strategist',
+    });
+    setShowNotification(true);
   };
 
   const handlePrint = () => {
-  window.print();
+    window.print();
   };
 
   const fieldBgColors = {
@@ -96,7 +107,6 @@ export default function Level4Page() {
     RevenueStreams: 'bg-emerald-50',
   };
 
-  
   const fieldIcons = {
     Problem: AlertTriangle,
     Solution: Wrench,
@@ -131,46 +141,107 @@ export default function Level4Page() {
     return <div className="min-h-screen bg-white p-6">Loading...</div>;
   }
 
- 
-  const InfoCard = ({ title, icon, items, links }) => (
-    <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-      <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-        {icon} {title}
-      </h3>
-      {items && (
-        <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-          {items.map((item, i) => (
-            <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
+  // === UPDATED: LEVEL 4 INFO CARDS (GAYA LEVEL 5/6) ===
+  const Level4InfoCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {/* Pencapaian */}
+      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+        <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
+          <Award size={16} className="text-[#f02d9c]" />
+          Pencapaian
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          <span className="px-3 py-1.5 bg-[#f02d9c] text-white text-xs font-bold rounded-full flex items-center gap-1">
+            <Lightbulb size={12} /> +10 XP
+          </span>
+          <span className="px-3 py-1.5 bg-[#8acfd1] text-[#0a5f61] text-xs font-bold rounded-full flex items-center gap-1">
+            <Award size={12} /> Lean Strategist
+          </span>
+        </div>
+        <p className="mt-2 text-xs text-[#5b5b5b]">
+          Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
+        </p>
+      </div>
+
+      {/* Petunjuk */}
+      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+        <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
+          <BookOpen size={16} className="text-[#f02d9c]" />
+          Petunjuk
+        </h3>
+        <div className="space-y-2">
+          {[
+            'Isi semua bagian Lean Canvas berdasarkan ide bisnismu',
+            'Fokus pada masalah nyata & solusi yang jelas',
+            'Tentukan metrik utama untuk mengukur keberhasilan',
+            'Identifikasi keunggulan yang sulit ditiru pesaing',
+            'Simpan canvas untuk lanjut ke Level 5',
+          ].map((text, i) => (
+            <div key={i} className="flex items-start gap-2 text-sm text-[#5b5b5b]">
+              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#f02d9c] text-white text-xs font-bold mt-0.5">
+                {i + 1}
+              </span>
+              {text}
+            </div>
           ))}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="px-2.5 py-1.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full flex items-center gap-1">
+            <Lightbulb size={12} /> Tujuan: Rangkum model bisnis dalam 1 halaman
+          </span>
+          <span className="px-2.5 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full flex items-center gap-1">
+            <Award size={12} /> Tips: Gunakan kalimat singkat & spesifik
+          </span>
+        </div>
+      </div>
+
+      {/* Resources */}
+      <div className="border border-gray-200 rounded-xl p-4 bg-white">
+        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
+          <BookOpen size={14} /> Resources
+        </h3>
+        <ul className="text-sm text-[#5b5b5b] space-y-1.5">
+          <li>
+            <a
+              href="https://miro.com/templates/lean-canvas/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+            >
+              Miro: Lean Canvas Template <ChevronRight size={12} />
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://www.strategyzer.com/canvas/lean-canvas"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+            >
+              Panduan Resmi Lean Canvas (Strategyzer) <ChevronRight size={12} />
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://perempuaninovasi.id/workshop"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+            >
+              Workshop Perempuan Inovasi <ChevronRight size={12} />
+            </a>
+          </li>
         </ul>
-      )}
-      {links && (
-        <ul className="text-sm text-[#5b5b5b] space-y-2">
-          {links.map((link, i) => (
-            <li key={i}>
-              <a
-                href={link.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#f02d9c] hover:underline flex items-center gap-1"
-              >
-                {link.label} <ChevronRight size={12} />
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+      </div>
     </div>
   );
 
   return (
     <div className="min-h-screen bg-white font-[Poppins] text-[#333]">
-      {/* Breadcrumb */}
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
         <Breadcrumb items={breadcrumbItems} />
       </div>
 
-      {/* Mobile Header */}
       {isMobile && !mobileSidebarOpen && (
         <header className="p-3 flex items-center border-b border-gray-200 bg-white sticky top-10 z-30">
           <button
@@ -202,45 +273,17 @@ export default function Level4Page() {
                   className="relative bg-white rounded-2xl border-t border-l border-black p-4 sm:p-5 md:p-6"
                   style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                 >
-                  <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-6">
-                    Level 4: Lean Canvas
-                  </h1>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c]">
+                      Level 4: Lean Canvas
+                    </h1>
+                  </div>
+
+                  {/* === INFO CARDS (HORIZONTAL) === */}
+                  <Level4InfoCards />
 
                   {isEditing ? (
                     <>
-                      {/* Info Cards */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6">
-                        <InfoCard
-                          title="Tujuan Level 4"
-                          icon={<Target size={16} />}
-                          items={[
-                            'Mengidentifikasi masalah inti pelanggan dan solusi yang relevan',
-                            'Merancang model bisnis awal dengan fokus pada nilai dan keberlanjutan',
-                            'Menyelaraskan proposisi nilai dengan segmen pelanggan dan saluran distribusi',
-                          ]}
-                        />
-                        <InfoCard
-                          title="Tips & Best Practice"
-                          icon={<Lightbulb size={16} />}
-                          items={[
-                            'Fokus pada <strong>1–3 masalah utama</strong> yang paling menyakitkan',
-                            'Unfair Advantage harus <strong>nyata dan sulit ditiru</strong>',
-                            'Revenue Streams sebaiknya <strong>beragam</strong> tapi realistis',
-                            'Gunakan data atau wawancara pelanggan untuk mengisi canvas ini',
-                          ]}
-                        />
-                        <InfoCard
-                          title="Resources Resmi"
-                          icon={<BookOpen size={16} />}
-                          links={[
-                            { label: 'Strategyzer: Lean Canvas', href: 'https://www.strategyzer.com/canvas/lean-canvas' },
-                            { label: 'Miro: Lean Canvas Template', href: 'https://miro.com/templates/lean-canvas/' },
-                            { label: 'Workshop Lean Startup untuk UMKM', href: 'https://perempuaninovasi.id/workshop' },
-                          ]}
-                        />
-                      </div>
-
-                      {/* === CANVAS EDITABLE (layout 5 kolom) === */}
                       <div className="mb-6">
                         <div className="hidden md:grid grid-cols-5 gap-4">
                           {/* Problem */}
@@ -407,7 +450,6 @@ export default function Level4Page() {
                           </div>
                         </div>
 
-                        {/* Mobile: tumpuk vertikal */}
                         <div className="md:hidden space-y-4">
                           {Object.entries(canvas).map(([field]) => {
                             const Icon = fieldIcons[field];
@@ -446,41 +488,7 @@ export default function Level4Page() {
                       </div>
                     </>
                   ) : (
-                    /* === MODE PREVIEW: layout 5 kolom, read-only, dengan warna & ikon === */
                     <>
-                      {/* Info Cards tetap muncul */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6">
-                        <InfoCard
-                          title="Tujuan Level 4"
-                          icon={<Target size={16} />}
-                          items={[
-                            'Mengidentifikasi masalah inti pelanggan dan solusi yang relevan',
-                            'Merancang model bisnis awal dengan fokus pada nilai dan keberlanjutan',
-                            'Menyelaraskan proposisi nilai dengan segmen pelanggan dan saluran distribusi',
-                          ]}
-                        />
-                        <InfoCard
-                          title="Tips & Best Practice"
-                          icon={<Lightbulb size={16} />}
-                          items={[
-                            'Fokus pada <strong>1–3 masalah utama</strong> yang paling menyakitkan',
-                            'Unfair Advantage harus <strong>nyata dan sulit ditiru</strong>',
-                            'Revenue Streams sebaiknya <strong>beragam</strong> tapi realistis',
-                            'Gunakan data atau wawancara pelanggan untuk mengisi canvas ini',
-                          ]}
-                        />
-                        <InfoCard
-                          title="Resources Resmi"
-                          icon={<BookOpen size={16} />}
-                          links={[
-                            { label: 'Strategyzer: Lean Canvas', href: 'https://www.strategyzer.com/canvas/lean-canvas' },
-                            { label: 'Miro: Lean Canvas Template', href: 'https://miro.com/templates/lean-canvas/' },
-                            { label: 'Workshop Lean Startup untuk UMKM', href: 'https://perempuaninovasi.id/workshop' },
-                          ]}
-                        />
-                      </div>
-
-                      {/* Preview Canvas (read-only, layout 5 kolom, dengan warna & ikon) */}
                       <div className="mb-8">
                         <div className="hidden md:grid grid-cols-5 gap-4">
                           <div className={`col-span-1 row-span-2 ${fieldBgColors.Problem} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
@@ -559,7 +567,6 @@ export default function Level4Page() {
                           </div>
                         </div>
 
-                        {/* Mobile preview */}
                         <div className="md:hidden space-y-4">
                           {Object.entries(canvas).map(([field, value]) => {
                             const Icon = fieldIcons[field];
@@ -593,20 +600,17 @@ export default function Level4Page() {
                         </div>
                       </div>
 
-                      {/* Tombol Edit di bawah preview */}
-                      <div className="mt-6 flex justify-center">
+                      {/* === TOMBOL EDIT & PRINT BERDAMPINGAN === */}
+                      <div className="mt-6 flex justify-center gap-3">
                         <button
                           onClick={() => setIsEditing(true)}
-                          className="px-5 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1"
+                          className="px-5 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
                         >
                           <Edit3 size={16} /> Edit Canvas
                         </button>
-                      </div>
-
-                      <div className="mt-6 flex justify-center">
                         <button
-                           onClick={handlePrint}
-                          className="px-5 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1"
+                          onClick={handlePrint}
+                          className="px-5 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
                         >
                           <Printer size={16} /> Print Canvas
                         </button>
@@ -614,7 +618,6 @@ export default function Level4Page() {
                     </>
                   )}
 
-                  {/* Tombol Aksi */}
                   <div className="mt-6 flex flex-wrap gap-2 justify-center">
                     <button
                       onClick={() => router.push(`/dashboard/${projectId}/plan/level_3_product_brand`)}
@@ -654,6 +657,15 @@ export default function Level4Page() {
           </div>
         </main>
       </div>
+
+      {/* Modal Notifikasi */}
+      <NotificationModalPlan
+        isOpen={showNotification}
+        type="success"
+        xpGained={notificationData.xpGained}
+        badgeName={notificationData.badgeName}
+        onClose={() => setShowNotification(false)}
+      />
     </div>
   );
 }

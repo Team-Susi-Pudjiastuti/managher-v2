@@ -10,23 +10,20 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
-  Plus,
   Trash2,
   BarChart3,
   CheckCircle,
-  Video,
   BookOpen,
-  FileText,
   Edit3,
   AlertTriangle,
   Award,
   Lightbulb,
-  User,
 } from 'lucide-react';
 
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
+import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 import { 
   BarChart, 
@@ -35,7 +32,6 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  Legend, 
   ResponsiveContainer, 
   PieChart, 
   Pie, 
@@ -55,6 +51,11 @@ export default function Level6Page() {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationData, setNotificationData] = useState({
+    xpGained: 0,
+    badgeName: '',
+  });
 
   const [currentResponse, setCurrentResponse] = useState({
     name: '',
@@ -63,7 +64,6 @@ export default function Level6Page() {
     activity: '',
     satisfaction_rate: null,
     satisfaction_reason: '',
-    features: [{ name: '', score: null }],
     suggestion: '',
     recommendation: '',
     comment: '',
@@ -86,11 +86,30 @@ export default function Level6Page() {
     const found = projects.find((p) => p.id === projectId);
     setProject(found);
 
+    // Ambil responden dari Level 2 dengan skor ≥ 3.5
+    const level2Data = found?.levels?.[1]?.data?.rww;
+    if (level2Data?.responses) {
+      const qualifiedRespondents = level2Data.responses
+        .filter(r => parseFloat(r.total) >= 3.5)
+        .map(r => ({
+          id: Date.now() + Math.random(),
+          name: r.name,
+          gender: r.gender,
+          age: r.age?.toString() || '',
+          activity: r.activity,
+          satisfaction_rate: null,
+          satisfaction_reason: '',
+          suggestion: '',
+          recommendation: '',
+          comment: '',
+        }));
+      setAllResponses(qualifiedRespondents);
+    }
+
     const saved = localStorage.getItem(`beta_data_${projectId}`);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Support older saved shape that had { responses }
         const responses = Array.isArray(parsed.responses) ? parsed.responses : parsed;
         setAllResponses(responses || []);
       } catch (e) {
@@ -105,49 +124,14 @@ export default function Level6Page() {
     setCurrentResponse((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFeatureNameChange = (index, value) => {
-    const newFeatures = [...currentResponse.features];
-    newFeatures[index].name = value;
-    setCurrentResponse((prev) => ({ ...prev, features: newFeatures }));
-  };
-
-  const handleFeatureScoreChange = (index, score) => {
-    const newFeatures = [...currentResponse.features];
-    newFeatures[index].score = score;
-    setCurrentResponse((prev) => ({ ...prev, features: newFeatures }));
-  };
-
-  const addFeature = () => {
-    setCurrentResponse((prev) => ({
-      ...prev,
-      features: [...prev.features, { name: '', score: null }],
-    }));
-  };
-
-  const removeFeature = (index) => {
-    if (currentResponse.features.length <= 1) return;
-    const newFeatures = currentResponse.features.filter((_, i) => i !== index);
-    setCurrentResponse((prev) => ({ ...prev, features: newFeatures }));
-  };
-
   const addNewResponse = () => {
-    const { name, age, features } = currentResponse;
+    const { name, age } = currentResponse;
     if (!name || !age) {
       alert('Nama dan usia harus diisi.');
       return;
     }
-    if (features.some((f) => !f.name.trim())) {
-      alert('Semua nama fitur harus diisi.');
-      return;
-    }
 
-    // Ensure numeric scores remain numbers or null
-    const normalizedFeatures = features.map((f) => ({
-      name: f.name.trim(),
-      score: typeof f.score === 'number' ? f.score : null,
-    }));
-
-    const newResp = { ...currentResponse, features: normalizedFeatures, id: Date.now() };
+    const newResp = { ...currentResponse, id: Date.now() };
     const updated = [...allResponses, newResp];
     setAllResponses(updated);
 
@@ -156,7 +140,6 @@ export default function Level6Page() {
       JSON.stringify({ responses: updated, updatedAt: new Date().toISOString() })
     );
 
-    // After adding, reset form and set satisfaction & feature scores to null (white)
     setCurrentResponse({
       name: '',
       gender: '',
@@ -164,7 +147,6 @@ export default function Level6Page() {
       activity: '',
       satisfaction_rate: null,
       satisfaction_reason: '',
-      features: [{ name: '', score: null }],
       suggestion: '',
       recommendation: '',
       comment: '',
@@ -182,7 +164,7 @@ export default function Level6Page() {
     );
   };
 
-  // Analisis (safe numeric handling)
+  // Analisis
   const satisfactionValues = allResponses
     .map((r) => (typeof r.satisfaction_rate === 'number' ? r.satisfaction_rate : null))
     .filter((v) => v !== null);
@@ -196,22 +178,6 @@ export default function Level6Page() {
     ? Math.round((recommendCount / allResponses.length) * 100)
     : 0;
 
-  const avgFeatureScores = {};
-  allResponses.forEach((res) => {
-    res.features?.forEach((f) => {
-      if (f.name && typeof f.score === 'number') {
-        const key = f.name.trim();
-        if (!avgFeatureScores[key]) avgFeatureScores[key] = { total: 0, count: 0 };
-        avgFeatureScores[key].total += f.score;
-        avgFeatureScores[key].count += 1;
-      }
-    });
-  });
-
-  const featureAverages = Object.entries(avgFeatureScores)
-    .map(([name, { total, count }]) => ({ name, avg: (total / count).toFixed(1) }))
-    .sort((a, b) => b.avg - a.avg);
-
   const canLaunch = allResponses.length >= 5 && parseFloat(avgSatisfaction) >= 4.0 && recommendRate >= 70;
 
   const handleSave = () => {
@@ -219,7 +185,6 @@ export default function Level6Page() {
       responses: allResponses,
       avgSatisfaction,
       recommendRate,
-      featureAverages,
       updatedAt: new Date().toISOString(),
     };
 
@@ -234,17 +199,28 @@ export default function Level6Page() {
     };
     updateProject(projectId, { levels: updatedLevels });
 
-    alert('Data Beta Testing berhasil disimpan!');
+    setNotificationData({
+      xpGained: 10,
+      badgeName: 'Beta Master',
+    });
+    setShowNotification(true);
   };
 
+  // Diagram: Distribusi Kepuasan (1–5)
+  const satisfactionDist = [0, 0, 0, 0, 0];
+  allResponses.forEach(r => {
+    if (typeof r.satisfaction_rate === 'number' && r.satisfaction_rate >= 1 && r.satisfaction_rate <= 5) {
+      satisfactionDist[Math.floor(r.satisfaction_rate) - 1]++;
+    }
+  });
+  const satisfactionChartData = satisfactionDist.map((count, i) => ({
+    score: i + 1,
+    label: satisfactionLabels[i],
+    count,
+  }));
+
   // Utility: age buckets
-  const ageBuckets = {
-    '<18': 0,
-    '18-24': 0,
-    '25-34': 0,
-    '35-44': 0,
-    '45+': 0,
-  };
+  const ageBuckets = { '<18': 0, '18-24': 0, '25-34': 0, '35-44': 0, '45+': 0 };
   allResponses.forEach((r) => {
     const a = Number(r.age);
     if (!a) return;
@@ -271,7 +247,7 @@ export default function Level6Page() {
     value: allResponses.filter((r) => r.recommendation === opt).length,
   }));
 
-  // gender chart data
+  // Gender chart data
   const genderChartData = [
     { name: 'Laki-laki', value: allResponses.filter((r) => r.gender === 'Laki-laki').length, fill: '#4A90E2' },
     { name: 'Perempuan', value: allResponses.filter((r) => r.gender === 'Perempuan').length, fill: '#f02d9c' },
@@ -439,52 +415,6 @@ export default function Level6Page() {
                           />
                         </div>
 
-                        {/* Fitur Dinamis */}
-                        <div className="mb-6 p-4 bg-[#f0f9f9] rounded-lg border border-[#c2e9e8]">
-                          <div className="flex justify-between items-center mb-2">
-                            <h3 className="font-bold text-[#0a5f61]">Fitur yang Dinilai</h3>
-                            <button
-                              type="button"
-                              onClick={addFeature}
-                              className="p-1.5 rounded-lg hover:bg-gray-100"
-                            >
-                              <Plus size={16} className="text-[#0a5f61]" />
-                            </button>
-                          </div>
-                          <p className="text-sm text-[#5b5b5b] italic mb-3">
-                            *Fitur yang dimaksud bisa berupa <strong>rasa</strong>, <strong>warna</strong>, <strong>tagline</strong>, <strong>halaman</strong> (UI), atau elemen lain pada produk yang ingin dinilai.
-                          </p>
-                          <div className="space-y-4">
-                            {currentResponse.features.map((f, i) => (
-                              <div key={i} className="space-y-2">
-                                <div className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    value={f.name}
-                                    onChange={(e) => handleFeatureNameChange(i, e.target.value)}
-                                    placeholder={`Fitur ${i + 1}`}
-                                    className="flex-1 px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
-                                    style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                                  />
-                                  {currentResponse.features.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => removeFeature(i)}
-                                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  )}
-                                </div>
-                                <RatingBox
-                                  value={f.score}
-                                  onChange={(val) => handleFeatureScoreChange(i, val)}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
                         {/* Saran & Rekomendasi */}
                         <div className="mb-6 p-4 bg-[#f8fbff] rounded-lg border border-[#d0e7f9]">
                           <h3 className="font-bold text-[#0a5f61] mb-4">Saran & Rekomendasi</h3>
@@ -548,7 +478,6 @@ export default function Level6Page() {
                                 { label: 'Kepuasan', value: avgSatisfaction, color: '#f02d9c' },
                                 { label: 'Rekomendasi', value: `${recommendRate}%`, color: '#8acfd1' },
                                 { label: 'Responden', value: allResponses.length, color: '#f02d9c' },
-                                { label: 'Fitur', value: featureAverages.length, color: '#8acfd1' },
                               ].map((item, i) => (
                                 <div
                                   key={i}
@@ -577,14 +506,13 @@ export default function Level6Page() {
                               )}
                             </div>
 
-                            {/* Tombol Navigasi */}
                             <div className="flex flex-wrap gap-2 justify-center">
                               <Link
-                                href={`/dashboard/${projectId}/plan/level_5_validation`}
+                                href={`/dashboard/${projectId}/plan/level_5_MVP`}
                                 className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
                               >
                                 <ChevronLeft size={16} />
-                                Preview
+                                Prev
                               </Link>
 
                               <button
@@ -616,96 +544,101 @@ export default function Level6Page() {
                       )}
                     </div>
 
-                    {/* Kolom Kanan: Ringkasan visual dan daftar responden */}
+                    {/* === KOLOM KANAN — GAYA LEVEL 5, ISI SESUAI LEVEL 6 === */}
                     <div className="space-y-5">
-                      {/* Tujuan Level */}
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                          <Lightbulb size={16} /> Tujuan Level 6 (Beta Testing)
+                      {/* === PENCAPAIAN === */}
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                        <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
+                          <Award size={16} className="text-[#f02d9c]" />
+                          Pencapaian
                         </h3>
-                        <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                          <li>Validasi MVP dengan pengguna nyata dari target pasar</li>
-                          <li>Kumpulkan feedback spesifik tentang fitur dan pengalaman pengguna</li>
-                          <li>Ukur tingkat kepuasan dan niat rekomendasi</li>
-                          <li>Identifikasi perbaikan kritis sebelum launching resmi</li>
-                          <li>Capai <strong>product-market fit</strong> berdasarkan bukti nyata</li>
-                        </ul>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-3 py-1.5 bg-[#f02d9c] text-white text-xs font-bold rounded-full flex items-center gap-1">
+                            <Lightbulb size={12} /> +10 XP
+                          </span>
+                          <span className="px-3 py-1.5 bg-[#8acfd1] text-[#0a5f61] text-xs font-bold rounded-full flex items-center gap-1">
+                            <Award size={12} /> Beta Master
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs text-[#5b5b5b]">
+                          Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
+                        </p>
                       </div>
 
-                      {/* Tips */}
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                          <Award size={16} /> Tips Beta Testing
+                      {/* === PETUNJUK === */}
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                        <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
+                          <BookOpen size={16} className="text-[#f02d9c]" />
+                          Petunjuk
                         </h3>
-                        <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                          <li>Uji dengan <strong>5–15 pengguna</strong> dari segmen target</li>
-                          <li>Beri tugas spesifik, bukan instruksi umum</li>
-                          <li>Amati <strong>titik frustasi</strong> tanpa membantu</li>
-                          <li>Gunakan hasil untuk perbarui <strong>Value Proposition Canvas</strong></li>
-                          <li>Simpan semua feedback dalam satu tempat terpusat</li>
-                        </ul>
-                      </div>
-
-                      {/* Resources */}
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                          <BookOpen size={16} /> Resources Resmi
-                        </h3>
-                        <div className="space-y-3">
-                          <div>
-                            <ul className="text-sm space-y-1">
-                              <li>
-                                <a
-                                  href="https://www.youtube.com/watch?v=VlX9Kq2e5qU"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[#f02d9c] hover:underline"
-                                >
-                                  Cara Validasi Ide dalam 15 Menit
-                                </a>
-                              </li>
-                            </ul>
-                          </div>
-                          <div>
-                            <ul className="text-sm space-y-1">
-                              <li>
-                                <a
-                                  href="https://www.strategyzer.com/blog/validate-your-ideas-before-you-build"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[#f02d9c] hover:underline"
-                                >
-                                  Validate Before You Build (Strategyzer)
-                                </a>
-                              </li>
-                              <li>
-                                <a
-                                  href="https://perempuaninovasi.id/workshop"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[#f02d9c] hover:underline"
-                                >
-                                  Panduan Validasi Ide (Perempuan Inovasi)
-                                </a>
-                              </li>
-                            </ul>
-                          </div>
+                        <div className="space-y-2">
+                          {[
+                            'Undang 5–15 orang dari target pasar untuk uji MVP',
+                            'Catat tingkat kepuasan (skala 1–5) dan alasan mereka',
+                            'Tanyakan apakah mereka merekomendasikan produkmu',
+                            'Kumpulkan saran perbaikan spesifik',
+                            'Simpan data untuk evaluasi sebelum launching',
+                          ].map((text, i) => (
+                            <div key={i} className="flex items-start gap-2 text-sm text-[#5b5b5b]">
+                              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#f02d9c] text-white text-xs font-bold mt-0.5">
+                                {i + 1}
+                              </span>
+                              {text}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <span className="px-2.5 py-1.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full flex items-center gap-1">
+                            <Lightbulb size={12} /> Tujuan: Validasi MVP dengan pengguna nyata
+                          </span>
+                          <span className="px-2.5 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full flex items-center gap-1">
+                            <Award size={12} /> Tips: Fokus pada feedback jujur, bukan pujian
+                          </span>
                         </div>
                       </div>
 
-                      {/* Daftar Responden & Diagram */}
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd] mt-5">
-                        <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                          <Users size={16} /> Data Responden
+                      {/* === RESOURCES === */}
+                      <div className="border border-gray-200 rounded-xl p-4 bg-white">
+                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
+                          <BookOpen size={14} /> Resources
                         </h3>
-
-                        {allResponses.length === 0 ? (
-                          <p className="text-sm text-[#7a7a7a] italic">
-                            Belum ada data responden yang ditambahkan.
-                          </p>
-                        ) : (
-                          <>
-                            {/* Tabel Responden */}
+                        <ul className="text-sm text-[#5b5b5b] space-y-1.5">
+                          <li>
+                            <a
+                              href="https://www.youtube.com/watch?v=VlX9Kq2e5qU"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                            >
+                              Cara Validasi Ide dalam 15 Menit <ChevronRight size={12} />
+                            </a>
+                          </li>
+                          <li>
+                            <a
+                              href="https://www.strategyzer.com/blog/validate-your-ideas-before-you-build"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                            >
+                              Validate Before You Build (Strategyzer) <ChevronRight size={12} />
+                            </a>
+                          </li>
+                          <li>
+                            <a
+                              href="https://perempuaninovasi.id/workshop"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                            >
+                              Panduan Validasi Ide (Perempuan Inovasi) <ChevronRight size={12} />
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
+                       <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd] mt-5">
+                            <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
+                              <Users size={16} /> Visualisasi Data Responden
+                            </h3>
                             <div className="overflow-x-auto mb-4">
                               <table className="min-w-full border border-gray-300 text-sm">
                                 <thead className="bg-[#f02d9c] text-white">
@@ -714,8 +647,8 @@ export default function Level6Page() {
                                     <th className="py-2 px-3 border border-gray-300 text-left">Jenis Kelamin</th>
                                     <th className="py-2 px-3 border border-gray-300 text-left">Usia</th>
                                     <th className="py-2 px-3 border border-gray-300 text-left">Aktivitas</th>
-                                    <th className="py-2 px-3 border border-gray-300 text-left">Fitur</th>
                                     <th className="py-2 px-3 border border-gray-300 text-left">Kepuasan</th>
+                                    <th className="py-2 px-3 border border-gray-300 text-left">Saran</th>
                                     <th className="py-2 px-3 border border-gray-300 text-left">Rekomendasi</th>
                                     <th className="py-2 px-3 border border-gray-300 text-left">Aksi</th>
                                   </tr>
@@ -727,12 +660,8 @@ export default function Level6Page() {
                                       <td className="py-2 px-3 border border-gray-300">{r.gender}</td>
                                       <td className="py-2 px-3 border border-gray-300">{r.age}</td>
                                       <td className="py-2 px-3 border border-gray-300">{r.activity}</td>
-                                      <td className="py-2 px-3 border border-gray-300">
-                                        {Array.isArray(r.features) && r.features.length > 0
-                                          ? r.features.map((f) => f.name).filter(Boolean).join(', ')
-                                          : '-'}
-                                      </td>
                                       <td className="py-2 px-3 border border-gray-300">{r.satisfaction_rate ?? '-'}</td>
+                                      <td className="py-2 px-3 border border-gray-300 max-w-[120px] truncate">{r.suggestion || '-'}</td>
                                       <td className="py-2 px-3 border border-gray-300">{r.recommendation ?? '-'}</td>
                                       <td className="py-2 px-3 border border-gray-300">
                                         <button
@@ -747,8 +676,21 @@ export default function Level6Page() {
                                 </tbody>
                               </table>
                             </div>
-
                             <div className="grid grid-cols-1 gap-4">
+                              {/* Diagram Kepuasan */}
+                              <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
+                                <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Kepuasan</h4>
+                                <ResponsiveContainer width="100%" height={200}>
+                                  <BarChart data={satisfactionChartData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="score" />
+                                    <YAxis allowDecimals={false} />
+                                    <Tooltip formatter={(value) => [value, 'Jumlah Responden']} />
+                                    <Bar dataKey="count" fill="#f02d9c" />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+
                               {/* Diagram Jenis Kelamin */}
                               <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
                                 <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Jenis Kelamin</h4>
@@ -770,33 +712,15 @@ export default function Level6Page() {
                               {/* Diagram Usia */}
                               <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
                                 <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Usia</h4>
-                                <div style={{ width: '100%', height: 200 }}>
-                                  <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={ageChartData}>
-                                      <CartesianGrid strokeDasharray="3 3" />
-                                      <XAxis dataKey="name" />
-                                      <YAxis allowDecimals={false} />
-                                      <Tooltip />
-                                      <Bar dataKey="value" fill="#f02d9c" />
-                                    </BarChart>
-                                  </ResponsiveContainer>
-                                </div>
-                              </div>
-
-                              {/* Diagram Aktivitas */}
-                              <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
-                                <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Aktivitas</h4>
-                                <div style={{ width: '100%', height: 200 }}>
-                                  <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={activityChartData}>
-                                      <CartesianGrid strokeDasharray="3 3" />
-                                      <XAxis dataKey="name" />
-                                      <YAxis allowDecimals={false} />
-                                      <Tooltip />
-                                      <Bar dataKey="value" fill="#8acfd1" />
-                                    </BarChart>
-                                  </ResponsiveContainer>
-                                </div>
+                                <ResponsiveContainer width="100%" height={200}>
+                                  <BarChart data={ageChartData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" />
+                                    <YAxis allowDecimals={false} />
+                                    <Tooltip />
+                                    <Bar dataKey="value" fill="#f02d9c" />
+                                  </BarChart>
+                                </ResponsiveContainer>
                               </div>
 
                               {/* Diagram Rekomendasi */}
@@ -821,9 +745,7 @@ export default function Level6Page() {
                                 </ResponsiveContainer>
                               </div>
                             </div>
-                          </>
-                        )}
-                      </div>
+                          </div>
                     </div>
                   </div>
                 </div>
@@ -832,6 +754,14 @@ export default function Level6Page() {
           </div>
         </main>
       </div>
+
+      <NotificationModalPlan
+        isOpen={showNotification}
+        type="success"
+        xpGained={notificationData.xpGained}
+        badgeName={notificationData.badgeName}
+        onClose={() => setShowNotification(false)}
+      />
     </div>
   );
 }
