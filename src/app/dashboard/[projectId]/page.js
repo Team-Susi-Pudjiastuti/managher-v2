@@ -54,16 +54,14 @@ export default function DashboardPage() {
   const completedLevels = enrichedLevels.filter(l => l.completed);
   const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
   const globalProgress = Math.min(100, Math.floor((currentXp / TOTAL_XP) * 100));
-  const currentLevel = enrichedLevels.find(l => l.phase === 'plan' && !l.completed) || planLevels[planLevels.length - 1];
-
+  const currentLevel = enrichedLevels.find(l => l.phase.name === 'plan' && !l.completed);
   // const planLevels = enrichedLevels.filter(l => l.phase === 'plan');
   // const sellLevels = enrichedLevels.filter(l => l.phase === 'sell');
   // const scaleUpLevels = enrichedLevels.filter(l => l.phase === 'scaleUp');
 
-  // 🔒 Fase Sell & Scale Up selalu dikunci
-  const isPlanCompleted = false; 
-  const isSellCompleted = false;
-
+  // // 🔒 Fase Sell & Scale Up selalu dikunci
+  // const isPlanCompleted = false; 
+  // const isSellCompleted = false;
   const renderLevelBadge = (level) => {
     // Fase Sell & Scale Up selalu dianggap "belum selesai"
     const isLockedPhase = level.phase.name !== 'plan';
@@ -136,8 +134,6 @@ export default function DashboardPage() {
       </div>
     );
   };
-
-  console.log(levels)
 
   const renderSmallPhaseButton = ({ href, isLocked, phaseColor }) => {
     if (isLocked) {
