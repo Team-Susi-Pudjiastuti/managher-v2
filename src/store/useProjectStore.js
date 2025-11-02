@@ -78,10 +78,17 @@ const useProjectStore = create(
       set({ sellLevels: levels.filter(l => l.phase.name === 'sell') });
       set({ scaleUpLevels: levels.filter(l => l.phase.name === 'scale_up') });  
       return levels;
-    }
+    },
+    deleteProject: async (projectId) => {
+      await apiRequest(`project/${projectId}`, 'DELETE');
+      set((state) => ({
+        projects: state.projects.filter((p) => p.id !== projectId),
+      }));
+    },
   })
   )
 );
+
 
 
 export default useProjectStore;

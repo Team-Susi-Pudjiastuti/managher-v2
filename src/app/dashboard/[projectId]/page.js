@@ -1,3 +1,4 @@
+// app/dashboard/[projectId]/page.jsx
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -53,9 +54,13 @@ export default function DashboardPage() {
   const completedLevels = enrichedLevels.filter(l => l.completed);
   const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
   const globalProgress = Math.min(100, Math.floor((currentXp / TOTAL_XP) * 100));
-  const currentLevel = enrichedLevels.find(l => !l.completed) || enrichedLevels[enrichedLevels.length - 1];
+  const currentLevel = enrichedLevels.find(l => l.phase === 'plan' && !l.completed) || planLevels[planLevels.length - 1];
 
-  // Fase Sell & Scale Up selalu dikunci
+  // const planLevels = enrichedLevels.filter(l => l.phase === 'plan');
+  // const sellLevels = enrichedLevels.filter(l => l.phase === 'sell');
+  // const scaleUpLevels = enrichedLevels.filter(l => l.phase === 'scaleUp');
+
+  // 🔒 Fase Sell & Scale Up selalu dikunci
   const isPlanCompleted = false; 
   const isSellCompleted = false;
 
@@ -66,24 +71,31 @@ export default function DashboardPage() {
     const isActive = !isLockedPhase && level._id === currentLevel._id && !isCompleted;
 
     let bgColor, textColor, borderColor, badgeBg;
-    if (isLockedPhase || (!isCompleted && !isActive)) {
-      // Abu-abu untuk: locked phase, atau plan belum selesai
+
+    if (isLockedPhase) {
+      // 🔒 TERKUNCI
       bgColor = 'bg-gray-200';
       textColor = 'text-gray-500';
       borderColor = 'border-gray-300';
       badgeBg = 'bg-gray-300 text-gray-700';
     } else if (isCompleted) {
-      // Pink pucat + badge biru untuk level Plan yang selesai
+      // ✅ SUDAH SELESAI → PINK SOLID (sesuai permintaan)
+      bgColor = 'bg-[#f02d9c]';
+      textColor = 'text-white';
+      borderColor = 'border-[#f02d9c]';
+      badgeBg = 'bg-[#8acfd1] text-white';
+    } else if (isActive) {
+      // 🟡 AKTIF → PINK PUCAT (sesuai permintaan)
       bgColor = 'bg-[#fdf6f0]';
       textColor = 'text-slate-800';
       borderColor = 'border-[#f02d9c]/30';
       badgeBg = 'bg-[#8acfd1] text-white';
     } else {
-      // Active (sedang dikerjakan)
-      bgColor = 'bg-[#f02d9c]';
-      textColor = 'text-white';
-      borderColor = 'border-[#f02d9c]';
-      badgeBg = 'bg-[#8acfd1] text-white';
+      // ⏳ PLAN TAPI BELUM SAMPAI
+      bgColor = 'bg-gray-200';
+      textColor = 'text-gray-500';
+      borderColor = 'border-gray-300';
+      badgeBg = 'bg-gray-300 text-gray-700';
     }
 
     const iconMap = {
@@ -194,29 +206,31 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Fase Plan */}
-        <div className="relative mb-6 sm:mb-8">
-          <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-xl sm:rounded-2xl"></div>
-          <div
-            className="relative bg-white rounded-xl sm:rounded-2xl border-t border-l border-black p-4 sm:p-5"
-            style={{ boxShadow: '1px 1px 0 0 #f02d9c' }}
-          >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="font-bold text-[#f02d9c] text-lg">Fase: Plan</h3>
-              {renderSmallPhaseButton({
-                href: `/dashboard/${projectId}/plan`,
-                isLocked: false,
-                phaseColor: '#f02d9c'
-              })}
-            </div>
-            <div className="flex flex-wrap gap-4 justify-start">
-              {planLevels.map(renderLevelBadge)}
+        {/* 🔥 FASE PLAN — SELURUH CARD BISA DIKLICK */}
+        <Link href={`/dashboard/${projectId}/plan`} className="block mb-6 sm:mb-8 group">
+          <div className="relative">
+            <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-xl sm:rounded-2xl"></div>
+            <div
+              className="relative bg-white rounded-xl sm:rounded-2xl border-t border-l border-black p-4 sm:p-5
+                group-hover:translate-x-1 group-hover:translate-y-1 transition-transform duration-200
+                cursor-pointer"
+              style={{ boxShadow: '1px 1px 0 0 #f02d9c' }}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="font-bold text-[#f02d9c] text-lg">Fase: Plan</h3>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-black text-xs rounded-full border border-black font-medium">
+                  Buka
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2 justify-start">
+                {planLevels.map(renderLevelBadge)}
+              </div>
             </div>
           </div>
-        </div>
+        </Link>
 
-        {/* Fase Sell */}
-        <div className="relative mb-6 sm:mb-8">
+        {/* Fase Sell — TIDAK BISA DIKLICK (terkunci) */}
+        <div className="relative mb-6 sm:mb-8 opacity-80">
           <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#8acfd1] rounded-xl sm:rounded-2xl"></div>
           <div
             className="relative bg-white rounded-xl sm:rounded-2xl border-t border-l border-black p-4 sm:p-5"
@@ -224,11 +238,10 @@ export default function DashboardPage() {
           >
             <div className="flex justify-between items-start mb-4">
               <h3 className="font-bold text-[#0a5f61] text-lg">Fase: Sell</h3>
-              {renderSmallPhaseButton({
-                href: `/dashboard/${projectId}/sell`,
-                isLocked: true, 
-                phaseColor: '#8acfd1'
-              })}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 text-gray-600 text-xs rounded-full border border-gray-300 font-medium">
+                <Lock size={12} />
+                Belum Tersedia
+              </span>
             </div>
             <div className="flex flex-wrap gap-2 justify-start">
               {sellLevels.map(renderLevelBadge)}
@@ -236,8 +249,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Fase Scale Up */}
-        <div className="relative mb-6 sm:mb-8">
+        {/* Fase Scale Up — TIDAK BISA DIKLICK (terkunci) */}
+        <div className="relative mb-6 sm:mb-8 opacity-80">
           <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#c5a8e0] rounded-xl sm:rounded-2xl"></div>
           <div
             className="relative bg-white rounded-xl sm:rounded-2xl border-t border-l border-black p-4 sm:p-5"
@@ -245,11 +258,10 @@ export default function DashboardPage() {
           >
             <div className="flex justify-between items-start mb-4">
               <h3 className="font-bold text-[#5a3a8c] text-lg">Fase: Scale Up</h3>
-              {renderSmallPhaseButton({
-                href: `/dashboard/${projectId}/scale-up`,
-                isLocked: true, 
-                phaseColor: '#c5a8e0'
-              })}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 text-gray-600 text-xs rounded-full border border-gray-300 font-medium">
+                <Lock size={12} />
+                Belum Tersedia
+              </span>
             </div>
             <div className="flex flex-wrap gap-2 justify-start">
               {scaleUpLevels.map(renderLevelBadge)}
