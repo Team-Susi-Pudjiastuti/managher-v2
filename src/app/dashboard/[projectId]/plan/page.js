@@ -66,20 +66,18 @@ export default function PlanLevelsPage() {
     const isActive = level.id === firstIncompleteLevel?.id;
 
     let bgColor, textColor, borderColor, badgeBg;
+
     if (isCompleted) {
-      // Sudah selesai: pink pucat + badge biru
-      bgColor = 'bg-[#fdf6f0]';
-      textColor = 'text-slate-800';
-      borderColor = 'border-[#f02d9c]/30';
-      badgeBg = 'bg-[#8acfd1] text-white';
-    } else if (isActive) {
-      // Sedang dikerjakan: pink solid + badge biru
       bgColor = 'bg-[#f02d9c]';
       textColor = 'text-white';
       borderColor = 'border-[#f02d9c]';
       badgeBg = 'bg-[#8acfd1] text-white';
+    } else if (isActive) {
+      bgColor = 'bg-[#fdf6f0]';
+      textColor = 'text-slate-800';
+      borderColor = 'border-[#f02d9c]/30';
+      badgeBg = 'bg-[#8acfd1] text-white';
     } else {
-      // Belum selesai: abu-abu + badge abu-abu
       bgColor = 'bg-gray-200';
       textColor = 'text-gray-500';
       borderColor = 'border-gray-300';
@@ -100,7 +98,6 @@ export default function PlanLevelsPage() {
           <p className="text-[10px] mt-0.5">{level.title}</p>
           <span className="block text-[8px] font-semibold mt-1">+{level.xp} XP</span>
         </div>
-        {/* Badge ditambahkan di sini */}
         {level.badge && (
           <span className={`mt-1 px-1.5 py-0.5 rounded text-[7px] font-bold whitespace-nowrap ${badgeBg}`}>
             {level.badge}
@@ -143,80 +140,91 @@ export default function PlanLevelsPage() {
           {enrichedLevels.map((level) => {
             const isCompleted = level.completed;
             const isUnlocked = level.id <= (firstIncompleteLevel?.id || Infinity);
-            const isActive = level.id === firstIncompleteLevel?.id;
 
+            if (!isUnlocked) {
+              // TERKUNCI
+              return (
+                <div key={level.id} className="relative opacity-70 cursor-not-allowed">
+                  <div className="absolute inset-0 translate-x-1 translate-y-1 bg-gray-300 rounded-xl sm:rounded-2xl"></div>
+                  <div
+                    className="relative bg-white rounded-xl sm:rounded-2xl border-t border-l border-gray-400 p-3 sm:p-5"
+                    style={{ boxShadow: '1px 1px 0 0 #d1d5db' }}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                      <div className="shrink-0 hidden sm:block">
+                        {renderLevelBadge(level)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-500 text-base sm:text-lg">{level.title}</h3>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1 flex items-start gap-1">
+                          <Lock size={14} className="mt-0.5 shrink-0" />
+                          Belum bisa diakses — selesaikan level sebelumnya
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // SELURUH CARD
             return (
-              <div key={level.id} className="relative">
-                <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-xl sm:rounded-2xl"></div>
-                <div
-                  className="relative bg-white rounded-xl sm:rounded-2xl border-t border-l border-black p-3 sm:p-5"
-                  style={{ boxShadow: '1px 1px 0 0 #f02d9c' }}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
-                    <div className="shrink-0 hidden sm:block">
-                      {renderLevelBadge(level)}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-[#5b5b5b] text-base sm:text-lg">{level.title}</h3>
-                      <p className="text-xs sm:text-sm text-[#7a7a7a] mt-1 flex items-start gap-1">
-                        {isCompleted ? (
-                          <>
-                            <Check size={14} className="text-green-600 mt-0.5 shrink-0" />
-                            <span>Sudah selesai</span>
-                          </>
-                        ) : isActive ? (
-                          <>
-                            <Sparkle size={14} className="text-[#f02d9c] mt-0.5 shrink-0" />
-                            <span>Siap dikerjakan — klik "Buka" untuk mulai</span>
-                          </>
-                        ) : !isUnlocked ? (
-                          <>
-                            <Lock size={14} className="text-gray-500 mt-0.5 shrink-0" />
-                            <span>Belum bisa diakses — selesaikan level sebelumnya</span>
-                          </>
-                        ) : (
-                          <>
-                            <Sparkle size={14} className="text-[#f02d9c] mt-0.5 shrink-0" />
-                            <span>Buka untuk lanjutkan</span>
-                          </>
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="shrink-0 mt-2 sm:mt-0">
-                      {isCompleted || isUnlocked ? (
-                        <Link 
-                          href={`/dashboard/${projectId}/plan/${level.path}`} 
-                          className="group relative inline-block"
-                        >
+              <Link
+                key={level.id}
+                href={`/dashboard/${projectId}/plan/${level.path}`}
+                className="block"
+              >
+                <div className="relative group">
+                  <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-xl sm:rounded-2xl"></div>
+                  <div
+                    className="relative bg-white rounded-xl sm:rounded-2xl border-t border-l border-black p-3 sm:p-5
+                      group-hover:translate-x-1 group-hover:translate-y-1 transition-transform duration-200
+                      cursor-pointer"
+                    style={{ boxShadow: '1px 1px 0 0 #f02d9c' }}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                      <div className="shrink-0 hidden sm:block">
+                        {renderLevelBadge(level)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-[#5b5b5b] text-base sm:text-lg">{level.title}</h3>
+                        <p className="text-xs sm:text-sm text-[#7a7a7a] mt-1 flex items-start gap-1">
+                          {isCompleted ? (
+                            <>
+                              <Check size={14} className="text-green-600 mt-0.5 shrink-0" />
+                              <span>Sudah selesai</span>
+                            </>
+                          ) : level.id === firstIncompleteLevel?.id ? (
+                            <>
+                              <Sparkle size={14} className="text-[#f02d9c] mt-0.5 shrink-0" />
+                              <span>Klik card ini untuk mulai mengerjakan</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkle size={14} className="text-[#f02d9c] mt-0.5 shrink-0" />
+                              <span>Klik untuk lanjutkan</span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                      {/* tombol "Buka" sebagai CTA */}
+                      <div className="shrink-0 mt-2 sm:mt-0">
+                        <div className="group relative inline-block">
                           <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-full"></div>
                           <div
                             className="relative px-3 py-1 sm:px-4 sm:py-1.5 bg-white rounded-full border-t border-l border-black font-medium text-black text-xs sm:text-sm
                               group-hover:bg-[#f02d9c] group-hover:text-white
-                              group-hover:translate-x-1 group-hover:translate-y-1
                               transition-all duration-200 whitespace-nowrap"
                             style={{ boxShadow: '1px 1px 0 0 #f02d9c' }}
                           >
                             Buka
                           </div>
-                        </Link>
-                      ) : (
-                        <div className="group relative inline-block opacity-70 cursor-not-allowed">
-                          <div className="absolute inset-0 translate-x-1 translate-y-1 bg-gray-300 rounded-full"></div>
-                          <div
-                            className="relative px-3 py-1 sm:px-4 sm:py-1.5 bg-white rounded-full border-t border-l border-gray-400 font-medium text-gray-500 text-xs sm:text-sm flex items-center gap-1"
-                            style={{ boxShadow: '1px 1px 0 0 #d1d5db' }}
-                          >
-                            <Lock size={10} />
-                            <span className="hidden sm:inline">Terkunci</span>
-                          </div>
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

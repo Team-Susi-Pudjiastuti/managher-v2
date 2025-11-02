@@ -35,7 +35,6 @@ export default function PlanSidebar({
     return false;
   });
 
-  // halaman level path
   useEffect(() => {
     const isInLevelPage = /\/plan\/level_[1-7]_[a-z]/.test(pathname);
     if (isInLevelPage) {
@@ -57,7 +56,7 @@ export default function PlanSidebar({
   const sidebarItems = [
     { id: 'overview', title: 'Overview', icon: LayoutDashboard, href: `/dashboard/${projectId}` },
     { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level_1_idea` },
-    { id: 2, title: 'RWW Analysist', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww` },
+    { id: 2, title: 'RWW Analysis', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww` },
     { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level_3_product_brand` },
     { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas` },
     { id: 5, title: 'MVP', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP` },
@@ -72,7 +71,6 @@ export default function PlanSidebar({
 
   const isActive = (id) => {
     if (id === 'overview') return pathname === `/dashboard/${projectId}`;
-    // Cocokkan berdasarkan path level
     const levelPath = sidebarItems.find(item => item.id === id)?.href;
     return levelPath && pathname.startsWith(levelPath);
   };
@@ -156,14 +154,15 @@ export default function PlanSidebar({
             const active = isActive(item.id);
 
             let bgColor, textColor, borderColor;
-            if (active) {
+
+            if (completed) {
               bgColor = 'bg-[#f02d9c]';
               textColor = 'text-white';
-              borderColor = 'border-black';
-            } else if (completed) {
-              bgColor = 'bg-[#8acfd1]';
-              textColor = 'text-[#0a5f61]';
-              borderColor = 'border-black';
+              borderColor = 'border-[#f02d9c]';
+            } else if (active) {
+              bgColor = 'bg-[#fdf6f0]';
+              textColor = 'text-slate-800';
+              borderColor = 'border-[#f02d9c]/30';
             } else {
               bgColor = 'bg-gray-100';
               textColor = 'text-gray-500';
