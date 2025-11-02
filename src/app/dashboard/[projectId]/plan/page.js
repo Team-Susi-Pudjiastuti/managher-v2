@@ -117,20 +117,7 @@ export default function PlanLevelsPage() {
       </div>
     );
   };
-  
-  const pathMap = {
-    level_1_idea: "level_1_idea",
-    level_2_rww: "level_2_rww",
-    level_3_product_brand: "level_3_product_brand",
-    level_4_lean_canvas: "level_4_lean_canvas",
-    level_5_MVP: "level_5_MVP",
-    level_6_beta_testing: "level_6_beta_testing",
-    level_7_launch: "level_7_launch",
-  }
 
-const getLevelPath = (level) => {
-  return pathMap[level._id] || "level_1_idea";
-};
   return (
     <div className="min-h-screen bg-white">
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
@@ -191,12 +178,12 @@ const getLevelPath = (level) => {
                 </div>
               );
             }
-
+            console.log(level)
             // SELURUH CARD
             return (
               <Link
                 key={level._id}
-                href={`/dashboard/${projectId}/plan/${getLevelPath(level)}`}
+                href={`/dashboard/${projectId}/plan/${level.path}/${level.entities[0].entity_ref}`}
                 className="block"
               >
                 <div className="relative group">

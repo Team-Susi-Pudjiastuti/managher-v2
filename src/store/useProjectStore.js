@@ -79,6 +79,16 @@ const useProjectStore = create(
       set({ scaleUpLevels: levels.filter(l => l.phase.name === 'scale_up') });  
       return levels;
     },
+    updateLevelStatus: async (id, updates) => {
+      const res = await apiRequest(`level/${id}`, 'PUT', updates);
+      const updatedLevel = res.data || {};
+      set((state) => ({
+        levels: state.levels.map((l) =>
+          l._id === id ? { ...l, ...updatedLevel } : l
+        ),
+      }));
+      return updatedLevel;
+    },
     deleteProject: async (projectId) => {
       await apiRequest(`project/${projectId}`, 'DELETE');
       set((state) => ({

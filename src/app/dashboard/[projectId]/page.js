@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import useProjectStore from '@/store/useProjectStore';
-import { Lock, HelpCircle } from "lucide-react"
+import { Lock, HelpCircle, Sparkles } from "lucide-react"
 import * as Icons from 'lucide-react';
 
 // const LEVELS = [
@@ -25,8 +25,8 @@ import * as Icons from 'lucide-react';
 
 
 export default function DashboardPage() {
-  const { projectId } = useParams();
   const { getLevels, levels, projects, planLevels, sellLevels, scaleUpLevels } = useProjectStore((state) => state);
+  const { projectId } = useParams();
 
   useEffect(() => {
     if (projectId) {
@@ -55,13 +55,8 @@ export default function DashboardPage() {
   const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
   const globalProgress = Math.min(100, Math.floor((currentXp / TOTAL_XP) * 100));
   const currentLevel = enrichedLevels.find(l => l.phase.name === 'plan' && !l.completed);
-  // const planLevels = enrichedLevels.filter(l => l.phase === 'plan');
-  // const sellLevels = enrichedLevels.filter(l => l.phase === 'sell');
-  // const scaleUpLevels = enrichedLevels.filter(l => l.phase === 'scaleUp');
 
-  // // 🔒 Fase Sell & Scale Up selalu dikunci
-  // const isPlanCompleted = false; 
-  // const isSellCompleted = false;
+
   const renderLevelBadge = (level) => {
     // Fase Sell & Scale Up selalu dianggap "belum selesai"
     const isLockedPhase = level.phase.name !== 'plan';
@@ -161,7 +156,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-white p-3 sm:p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#5b5b5b] mb-4 sm:mb-6">Dashboard: {levels[0].project?.title}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#5b5b5b] mb-4 sm:mb-6">Dashboard: {levels.project?.title}</h1>
 
         {/* Global XP & Progress */}
         <div className="mb-6 sm:mb-8 p-4 sm:p-5 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-200">
@@ -169,7 +164,7 @@ export default function DashboardPage() {
             <div>
               <span className="font-bold text-[#5b5b5b] text-sm sm:text-base">Total XP: {currentXp} / {TOTAL_XP}</span>
               <div className="text-xs sm:text-sm text-[#7a7a7a] mt-1">
-                Level: {currentLevel.order} • {currentLevel.title}
+                Level: {currentLevel?.order} • {currentLevel?.title}
               </div>
             </div>
             <span className="font-bold text-[#f02d9c] text-sm sm:text-base">{globalProgress}%</span>

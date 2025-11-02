@@ -22,6 +22,7 @@ import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
+import useBusinessIdeaStore from '@/store/useBusinessIdea';
 
 // === HELPER: Parse & Format Products & Services ===
 const parseProductsServices = (text) => {
@@ -93,9 +94,9 @@ const generateThreeIdeasFromInterest = (interest) => {
     // ... (data ide tetap sama seperti file Anda)
     {
       interest: 'kuliner',
-      customerJobs: 'Ibu bekerja usia 28–45 tahun ingin menyediakan makanan sehat untuk keluarga setiap hari',
-      pains: 'Waktu terbatas, tidak sempat belanja & masak, takut anak kurang gizi, stres mengatur menu',
-      gains: 'Anak sehat dan tumbuh optimal, hemat waktu, tidak perlu mikir masak, tenang secara mental',
+      marketPotential: 'Ibu bekerja usia 28–45 tahun ingin menyediakan makanan sehat untuk keluarga setiap hari',
+      problemSolved: 'Waktu terbatas, tidak sempat belanja & masak, takut anak kurang gizi, stres mengatur menu',
+      solutionOffered: 'Anak sehat dan tumbuh optimal, hemat waktu, tidak perlu mikir masak, tenang secara mental',
       productsServices:
         'Meal Prep Box untuk Ibu Bekerja\n' +
         'Jenis: Layanan Langganan Makanan Sehat\n' +
@@ -107,15 +108,15 @@ const generateThreeIdeasFromInterest = (interest) => {
         'Biaya Bahan Baku: Beras organik (Rp50.000), Ayam kampung (Rp80.000), Sayur lokal (Rp30.000), Bumbu & minyak (Rp20.000) → Total: Rp180.000/minggu\n' +
         'Harga Jual: Rp299.000/minggu\n' +
         'Margin: ±40%',
-      painRelievers:
+      unfairAdvantage:
         'Dikirim setiap Senin pagi → tidak perlu belanja\nSiap saji dalam 5 menit → tidak perlu masak\nBisa atur alergi/makanan pantangan → aman untuk anak',
-      gainCreators: 'Hemat 10 jam/minggu\nAnak-anak lebih sehat\nTidak perlu mikir menu\nHarga: Rp299.000/minggu (5 menu)',
+      uniqueValueProposition: 'Hemat 10 jam/minggu\nAnak-anak lebih sehat\nTidak perlu mikir menu\nHarga: Rp299.000/minggu (5 menu)',
     },
     {
       interest: 'fashion',
-      customerJobs: 'Wanita muslim usia 20–35 tahun butuh outfit formal untuk acara spesial (nikahan, wisuda, dll)',
-      pains: 'Beli outfit mahal tapi jarang dipakai, takut tidak sesuai ekspektasi, repot laundry & simpan',
-      gains: 'Tampil percaya diri, hemat uang, tidak perlu khawatir soal penyimpanan, ramah lingkungan',
+      marketPotential: 'Wanita muslim usia 20–35 tahun butuh outfit formal untuk acara spesial (nikahan, wisuda, dll)',
+      problemSolved: 'Beli outfit mahal tapi jarang dipakai, takut tidak sesuai ekspektasi, repot laundry & simpan',
+      solutionOffered: 'Tampil percaya diri, hemat uang, tidak perlu khawatir soal penyimpanan, ramah lingkungan',
       productsServices:
         'Modest Wear Rental untuk Acara Formal\n' +
         'Jenis: Platform Sewa Pakaian\n' +
@@ -127,15 +128,15 @@ const generateThreeIdeasFromInterest = (interest) => {
         'Biaya Bahan Baku: Rp0 (tidak ada produksi, hanya perawatan: laundry & steaming @Rp15.000/outfit)\n' +
         'Harga Jual: Rp149.000/3 hari\n' +
         'Margin: ±60% setelah skala',
-      painRelievers:
+      unfairAdvantage:
         'Sewa mulai Rp149rb → jauh lebih murah daripada beli\nGratis pengiriman & pengembalian\nBisa coba virtual via AR → minim risiko salah pilih',
-      gainCreators: 'Tampil fresh di setiap acara tanpa beli baru\nHemat hingga 70% dibanding beli\nRamah lingkungan\nHarga: Rp149.000/3 hari',
+      uniqueValueProposition: 'Tampil fresh di setiap acara tanpa beli baru\nHemat hingga 70% dibanding beli\nRamah lingkungan\nHarga: Rp149.000/3 hari',
     },
     {
       interest: 'edukasi anak',
-      customerJobs: 'Orang tua ingin anak usia 7–12 tahun belajar coding secara menyenangkan dan mandiri',
-      pains: 'Tidak punya waktu dampingi, kursus offline mahal, anak cepat bosan dengan metode kaku',
-      gains: 'Anak paham logika pemrograman, bisa bikin game sederhana, lebih percaya diri di sekolah',
+      marketPotential: 'Orang tua ingin anak usia 7–12 tahun belajar coding secara menyenangkan dan mandiri',
+      problemSolved: 'Tidak punya waktu dampingi, kursus offline mahal, anak cepat bosan dengan metode kaku',
+      solutionOffered: 'Anak paham logika pemrograman, bisa bikin game sederhana, lebih percaya diri di sekolah',
       productsServices:
         'Kelas Coding untuk Anak SD via WhatsApp\n' +
         'Jenis: Layanan Edukasi Digital\n' +
@@ -147,15 +148,15 @@ const generateThreeIdeasFromInterest = (interest) => {
         'Biaya Bahan Baku: Rp0 (digital, tidak ada bahan fisik)\n' +
         'Harga Jual: Rp99.000/program\n' +
         'Margin: ±95%',
-      painRelievers:
+      unfairAdvantage:
         'Cukup 10 menit/hari → tidak mengganggu jadwal\nGrup WhatsApp eksklusif dengan mentor → responsif\nTidak perlu laptop → bisa pakai HP orang tua',
-      gainCreators: 'Anak belajar mandiri tanpa perlu dampingan\nBiaya terjangkau\nDapat sertifikat digital\nHarga: Rp99.000/program',
+      uniqueValueProposition: 'Anak belajar mandiri tanpa perlu dampingan\nBiaya terjangkau\nDapat sertifikat digital\nHarga: Rp99.000/program',
     },
     {
       interest: 'jasa keuangan',
-      customerJobs: 'Pemilik warung kopi/makanan usia 30–50 tahun ingin catat keuangan harian dengan mudah',
-      pains: 'Tidak paham Excel, takut ribet, sering lupa catat, stok sering kehabisan tanpa sadar',
-      gains: 'Tahu untung/rugi harian, siap laporan pajak, stok terpantau, tidur lebih tenang',
+      marketPotential: 'Pemilik warung kopi/makanan usia 30–50 tahun ingin catat keuangan harian dengan mudah',
+      problemSolved: 'Tidak paham Excel, takut ribet, sering lupa catat, stok sering kehabisan tanpa sadar',
+      solutionOffered: 'Tahu untung/rugi harian, siap laporan pajak, stok terpantau, tidur lebih tenang',
       productsServices:
         'Aplikasi Catatan Keuangan UMKM Warung\n' +
         'Jenis: Aplikasi Mobile\n' +
@@ -167,9 +168,9 @@ const generateThreeIdeasFromInterest = (interest) => {
         'Biaya Bahan Baku: Rp50.000/bulan (server cloud, biaya API suara, maintenance)\n' +
         'Harga Jual: Rp49.000/bulan\n' +
         'Margin: ±80% setelah 500 pengguna aktif',
-      painRelievers:
+      unfairAdvantage:
         'Cukup ucapkan: “Hari ini jual 50 kopi, modal 200rb” → otomatis jadi laporan\nBackup otomatis ke cloud\nNotifikasi saat stok hampir habis',
-      gainCreators: 'Tidak perlu bisa baca/tulis lancar\nLaporan harian & mingguan otomatis\nSiap untuk laporan pajak\nHarga: Rp49.000/bulan',
+      uniqueValueProposition: 'Tidak perlu bisa baca/tulis lancar\nLaporan harian & mingguan otomatis\nSiap untuk laporan pajak\nHarga: Rp49.000/bulan',
     },
   ];
 
@@ -184,31 +185,38 @@ const generateThreeIdeasFromInterest = (interest) => {
   return result;
 };
 
+
 // === KOMPONEN UTAMA ===
 export default function Level1Page() {
-  const { projectId } = useParams();
-  const router = useRouter();
-  const projects = useProjectStore((state) => state.projects);
-  const updateProject = useProjectStore((state) => state.updateProject);
+  const { businessIdeas, getBusinessIdeas, updateBusinessIdeas } = useBusinessIdeaStore();
+  const { planLevels, updateLevelStatus, projects } = useProjectStore();
+  const { id } = useParams();
+  const businessIdeaId = id; // Menggunakan id dari parameter URL
+  const projectId = businessIdeas.project || '';
+  const levelId = planLevels[0]._id
+  console.log(levelId)
+  
+  useEffect(() => {
+    getBusinessIdeas(businessIdeaId);
+  }, []);
 
+  const router = useRouter();
   const [interest, setInterest] = useState('');
-  const [vpcData, setVpcData] = useState({
-    customerJobs: '',
-    pains: '',
-    gains: '',
-    productsServices: '',
-    painRelievers: '',
-    gainCreators: '',
-  });
   const [isEditing, setIsEditing] = useState(false);
   const [generatedIdeas, setGeneratedIdeas] = useState([]);
   const [selectedIdea, setSelectedIdea] = useState(null);
-  const [project, setProject] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  // State untuk menyimpan data VPC (Value Proposition Canvas)
+  const [vpcData, setVpcData] = useState({
+    marketPotential: '',
+    problemSolved: '',
+    solutionOffered: '',
+    productsServices: '',
+    unfairAdvantage: '',
+    uniqueValueProposition: '',
+  });
   const [isFinanceOpen, setIsFinanceOpen] = useState(false);
-
-  // ✅ State untuk notifikasi (ini yang sebelumnya hilang!)
   const [showNotification, setShowNotification] = useState(false);
   const [notificationData, setNotificationData] = useState({
     message: '',
@@ -223,26 +231,24 @@ export default function Level1Page() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
-    if (projectId) {
-      const found = projects.find((p) => p.id === projectId);
-      setProject(found);
-      if (found?.levels?.[0]?.data) {
-        const data = found.levels[0].data;
-        setInterest(data.interest || '');
-        setVpcData({
-          customerJobs: data.customerJobs || '',
-          pains: data.pains || '',
-          gains: data.gains || '',
-          productsServices: data.productsServices || '',
-          painRelievers: data.painRelievers || '',
-          gainCreators: data.gainCreators || '',
-        });
-        setSelectedIdea(data.interest || 'saved');
-        setIsEditing(false);
-      }
-    }
-  }, [projectId, projects]);
+  // useEffect(() => {
+  //   if (businessIdeaId) {
+  //     const data = businessIdeas.find((p) => p.id === businessIdeaId);
+  //     if (data) {
+  //       setInterest(data.interest || '');
+  //       setVpcData({
+  //         marketPotential: data.marketPotential || '',
+  //         problemSolved: data.problemSolved || '',
+  //         solutionOffered: data.solutionOffered || '',
+  //         productsServices: data.productsServices || '',
+  //         unfairAdvantage: data.unfairAdvantage || '',
+  //         uniqueValueProposition: data.uniqueValueProposition || '',
+  //       });
+  //       setSelectedIdea(data.interest || 'saved');
+  //       setIsEditing(false);
+  //     }
+  //   }
+  // }, [businessIdeaId, businessIdeas]);
 
   const handleGenerate = () => {
     if (!interest.trim()) {
@@ -253,12 +259,12 @@ export default function Level1Page() {
     setGeneratedIdeas(ideas);
     setSelectedIdea(null);
     setVpcData({
-      customerJobs: '',
-      pains: '',
-      gains: '',
+      marketPotential: '',
+      problemSolved: '',
+      solutionOffered: '',
       productsServices: '',
-      painRelievers: '',
-      gainCreators: '',
+      unfairAdvantage: '',
+      uniqueValueProposition: '',
     });
     setIsEditing(false);
   };
@@ -266,12 +272,12 @@ export default function Level1Page() {
   const handleSelectIdea = (idea) => {
     setSelectedIdea(idea.interest);
     setVpcData({
-      customerJobs: idea.customerJobs,
-      pains: idea.pains,
-      gains: idea.gains,
+      marketPotential: idea.marketPotential,
+      problemSolved: idea.problemSolved,
+      solutionOffered: idea.solutionOffered,
       productsServices: idea.productsServices,
-      painRelievers: idea.painRelievers,
-      gainCreators: idea.gainCreators,
+      unfairAdvantage: idea.unfairAdvantage,
+      uniqueValueProposition: idea.uniqueValueProposition,
     });
     setIsFinanceOpen(false);
     setIsEditing(false);
@@ -287,29 +293,41 @@ export default function Level1Page() {
       return;
     }
 
-    const updatedLevels = [...(project?.levels || [])];
-    updatedLevels[0] = {
-      id: 1,
-      completed: true,
-        interest: selectedIdea,
-        ...vpcData,
+    // Pastikan businessIdeaId tidak undefined
+    if (!businessIdeaId) {
+      alert('ID ide bisnis tidak ditemukan.');
+      return;
+    }
+
+    // Persiapkan data yang akan diupdate
+    const updateData = {
+      interest: selectedIdea,
+      ...vpcData,
     };
 
-    updateProject(projectId, { levels: updatedLevels });
-
-    //  Set notifikasi dengan XP & badge Level 1
-    setNotificationData({
-      message: 'Ide berhasil disimpan!',
-      xpGained: 10,
-      badgeName: 'AI Innovator',
+    // Update data ide bisnis menggunakan updateBusinessIdeas
+    updateBusinessIdeas(businessIdeaId, updateData)
+      .then(() => {
+        updateLevelStatus(levelId, { completed: true });
+        // Set notifikasi dengan XP & badge Level 1
+        setNotificationData({
+          message: 'Ide berhasil disimpan!',
+          xpGained: planLevels.find((p) => p._id === levelId)?.xp || 0,
+          badgeName: planLevels.find((p) => p._id === levelId)?.badge || '',
+        });
+      
+      // Tampilkan notifikasi
+      setShowNotification(true);
+    })
+    .catch(error => {
+      console.error("Error saving business idea:", error);
+      alert("Gagal menyimpan ide bisnis. Silakan coba lagi.");
     });
-    setShowNotification(true);
   };
 
   const breadcrumbItems = [
-    { href: `/dashboard/${projectId}`, label: 'Dashboard' },
     { href: `/dashboard/${projectId}/plan`, label: 'Fase Plan' },
-    { label: 'Level 1: Ide Generator' },
+    { href: `/dashboard/${projectId}/plan/${businessIdeaId}`, label: 'Level 1: Ide Generator' },
   ];
 
   const ps = parseProductsServices(vpcData.productsServices);
@@ -352,7 +370,7 @@ export default function Level1Page() {
       <div className="flex mt-6">
         {/* Sidebar */}
         <PlanSidebar
-          projectId={projectId}
+          businessIdeaId={businessIdeaId}
           currentLevelId={1}
           isMobile={isMobile}
           mobileSidebarOpen={mobileSidebarOpen}
@@ -402,6 +420,7 @@ export default function Level1Page() {
 
                     {/* 3 Pilihan Ide */}
                     {generatedIdeas.length > 0 && !selectedIdea && (
+                      
                       <div className="mb-5">
                         <h3 className="font-bold text-[#5b5b5b] mb-3">Pilih Salah Satu Ide:</h3>
                         <div className="grid grid-cols-1 gap-3">
@@ -422,6 +441,50 @@ export default function Level1Page() {
                         </div>
                       </div>
                     )}
+                    {!selectedIdea && generatedIdeas.length === 0 && vpcData && Object.keys(vpcData).length > 0 && (
+                      <div className="mb-5 p-4 border border-gray-300 rounded-xl bg-white shadow-sm">
+                        <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
+                          <Eye size={16} /> Pratinjau Produk & Brand (Tersimpan)
+                        </h3>
+
+                        {/* Profil Pelanggan */}
+                        <div className="p-3 mb-3 bg-[#fdf6f0] rounded border border-[#f0d5c2]">
+                          <h4 className="font-bold text-[#0a5f61] text-sm mb-2 flex items-center gap-1">
+                            <Target size={14} /> Profil Pelanggan
+                          </h4>
+                          <ul className="text-xs text-[#5b5b5b] space-y-1">
+                            <li><span className="font-medium">Tugas Pelanggan:</span> {businessIdeas.marketPotential || '-'}</li>
+                            <li><span className="font-medium">Masalah:</span> {businessIdeas.problemSolved || '-'}</li>
+                            <li><span className="font-medium">Keuntungan yang Diinginkan:</span> {businessIdeas.solutionOffered || '-'}</li>
+                          </ul>
+                        </div>
+
+                        {/* Produk & Layanan */}
+                        <div className="p-3 mb-3 bg-[#f0f9f9] rounded border border-[#c2e9e8]">
+                          <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
+                            <Package size={14} /> Produk & Layanan
+                          </h4>
+                          <ul className="text-xs text-[#5b5b5b] space-y-1">
+                            <li><span className="font-medium">Ide Produk:</span> {ps.ide || '-'}</li>
+                            {ps.jenis && <li><span className="font-medium">Jenis:</span> {ps.jenis}</li>}
+                            {ps.deskripsi && <li><span className="font-medium">Deskripsi:</span> {ps.deskripsi}</li>}
+                            {ps.harga && <li><span className="font-medium">Harga:</span> {ps.harga}</li>}
+                          </ul>
+                        </div>
+
+                        {/* Nilai Produk */}
+                        <div className="p-3 bg-[#f0f9f9] rounded border border-[#c2e9e8]">
+                          <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
+                            <Zap size={14} /> Nilai Produk
+                          </h4>
+                          <ul className="text-xs text-[#5b5b5b] space-y-1">
+                            <li><span className="font-medium">Solusi Masalah:</span> {businessIdeas.unfairAdvantage || '-'}</li>
+                            <li><span className="font-medium">Pencipta Keuntungan:</span> {businessIdeas.uniqueValueProposition || '-'}</li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
 
                     {/* Brand & Product Preview */}
                     {selectedIdea && !isEditing && (
@@ -430,6 +493,18 @@ export default function Level1Page() {
                           <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
                             <Eye size={16} /> Pratinjau Produk & Brand
                           </h3>
+
+                          {/* Profil Pelanggan */}
+                          <div className="p-3 mb-3 bg-[#fdf6f0] rounded border border-[#f0d5c2]">
+                            <h4 className="font-bold text-[#0a5f61] text-sm mb-2 flex items-center gap-1">
+                              <Target size={14} /> Profil Pelanggan
+                            </h4>
+                            <ul className="text-xs text-[#5b5b5b] space-y-1">
+                              <li><span className="font-medium">Tugas Pelanggan:</span> {businessIdeas.marketPotential || '-'}</li>
+                              <li><span className="font-medium">Masalah/Masalah:</span> {businessIdeas.problemSolved || '-'}</li>
+                              <li><span className="font-medium">Keuntungan yang Diinginkan:</span> {businessIdeas.solutionOffered || '-'}</li>
+                            </ul>
+                          </div>
 
                           {/* Produk & Layanan */}
                           <div className="p-3 mb-3 bg-[#f0f9f9] rounded border border-[#c2e9e8]">
@@ -489,26 +564,14 @@ export default function Level1Page() {
                             </div>
                           </div>
 
-                          {/* Profil Pelanggan */}
-                          <div className="p-3 mb-3 bg-[#fdf6f0] rounded border border-[#f0d5c2]">
-                            <h4 className="font-bold text-[#0a5f61] text-sm mb-2 flex items-center gap-1">
-                              <Target size={14} /> Profil Pelanggan
-                            </h4>
-                            <ul className="text-xs text-[#5b5b5b] space-y-1">
-                              <li><span className="font-medium">Tugas Pelanggan:</span> {vpcData.customerJobs || '-'}</li>
-                              <li><span className="font-medium">Masalah/Masalah:</span> {vpcData.pains || '-'}</li>
-                              <li><span className="font-medium">Keuntungan yang Diinginkan:</span> {vpcData.gains || '-'}</li>
-                            </ul>
-                          </div>
-
                           {/* Nilai Produk */}
                           <div className="p-3 bg-[#f0f9f9] rounded border border-[#c2e9e8]">
                             <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
                               <Zap size={14} /> Nilai Produk
                             </h4>
                             <ul className="text-xs text-[#5b5b5b] space-y-1">
-                              <li><span className="font-medium">Solusi Masalah:</span> {vpcData.painRelievers || '-'}</li>
-                              <li><span className="font-medium">Pencipta Keuntungan:</span> {vpcData.gainCreators || '-'}</li>
+                              <li><span className="font-medium">Solusi Masalah:</span> {businessIdeas.unfairAdvantage || '-'}</li>
+                              <li><span className="font-medium">Pencipta Keuntungan:</span> {businessIdeas.uniqueValueProposition || '-'}</li>
                             </ul>
                           </div>
                         </div>
@@ -526,8 +589,8 @@ export default function Level1Page() {
                             <div>
                               <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Tugas Pelanggan</label>
                               <textarea
-                                value={vpcData.customerJobs}
-                                onChange={(e) => handleVpcChange('customerJobs', e.target.value)}
+                                value={businessIdeas.marketPotential}
+                                onChange={(e) => handleVpcChange('idea', e.target.value)}
                                 className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
                                 rows="2"
                               />
@@ -535,8 +598,8 @@ export default function Level1Page() {
                             <div>
                               <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Masalah/Masalah</label>
                               <textarea
-                                value={vpcData.pains}
-                                onChange={(e) => handleVpcChange('pains', e.target.value)}
+                                value={businessIdeas.problemSolved}
+                                onChange={(e) => handleVpcChange('problemSolved', e.target.value)}
                                 className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
                                 rows="2"
                               />
@@ -544,8 +607,8 @@ export default function Level1Page() {
                             <div>
                               <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Keuntungan yang Diinginkan</label>
                               <textarea
-                                value={vpcData.gains}
-                                onChange={(e) => handleVpcChange('gains', e.target.value)}
+                                value={businessIdeas.solutionOffered}
+                                onChange={(e) => handleVpcChange('solutionOffered', e.target.value)}
                                 className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
                                 rows="2"
                               />
@@ -666,8 +729,8 @@ export default function Level1Page() {
                             <div>
                               <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Solusi Masalah</label>
                               <textarea
-                                value={vpcData.painRelievers}
-                                onChange={(e) => handleVpcChange('painRelievers', e.target.value)}
+                                value={businessIdeas.unfairAdvantage}
+                                onChange={(e) => handleVpcChange('unfairAdvantage', e.target.value)}
                                 className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
                                 rows="3"
                               />
@@ -675,8 +738,8 @@ export default function Level1Page() {
                             <div>
                               <label className="block text-xs font-medium text-[#5b5b5b] mb-1">Pencipta Keuntungan</label>
                               <textarea
-                                value={vpcData.gainCreators}
-                                onChange={(e) => handleVpcChange('gainCreators', e.target.value)}
+                                value={businessIdeas.uniqueValueProposition}
+                                onChange={(e) => handleVpcChange('uniqueValueProposition', e.target.value)}
                                 className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
                                 rows="3"
                               />
@@ -702,13 +765,13 @@ export default function Level1Page() {
                           <Edit3 size={16} /> {isEditing ? 'Simpan Edit' : 'Edit'}
                         </button>
                         <button
-                          onClick={() => router.push(`/dashboard/${projectId}`)}
+                          onClick={() => router.push(`/dashboard/${businessIdeaId}`)}
                           className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
                         >
                           <ChevronLeft size={16} /> Prev
                         </button>
                         <Link
-                          href={`/dashboard/${projectId}/plan/level_2_rww`}
+                          href={`/dashboard/${businessIdeaId}/plan/level_2_rww`}
                           className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
                         >
                           Next <ChevronRight size={16} />
@@ -725,7 +788,7 @@ export default function Level1Page() {
                       <div className="bg-[#f02d9c]/10 border border-[#f02d9c]/30 rounded-xl p-3 text-center hover:scale-[1.02] transition-transform">
                         <div className="flex items-center gap-1 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
                           <Lightbulb size={14} />
-                          <span>+10 XP</span>
+                          <span>+{planLevels.find((p) => p._id === levelId)?.xp || 0} XP</span>
                         </div>
                       </div>
 
@@ -733,7 +796,7 @@ export default function Level1Page() {
                       <div className="bg-[#f02d9c]/10 border border-[#f02d9c]/30 rounded-xl p-3 text-center hover:scale-[1.02] transition-transform">
                         <div className="flex items-center gap-1 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
                           <Award size={14} />
-                          <span>AI Innovator</span>
+                          <span>{planLevels.find((p) => p._id === levelId)?.badge || ''}</span>
                         </div>
                       </div>
                     </div>

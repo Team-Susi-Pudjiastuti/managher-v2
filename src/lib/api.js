@@ -1,4 +1,4 @@
-const API_URL = "https://managher-api.vercel.app/api"
+const API_URL = "http://localhost:3000/api"
 
 export async function apiRequest (endpoint, method = 'GET', body) {
     const options = {
