@@ -24,56 +24,11 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
+import useRWWTestingStore from '@/store/useRWWTesting';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
-
-// === CONFETTI ANIMATION (SAMA DENGAN LEVEL 1) ===
-const Confetti = () => {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const confettiCount = 120;
-    const gravity = 0.4;
-    const colors = ['#f02d9c', '#8acfd1', '#fbe2a7', '#ff6b9d', '#4ecdc4'];
-    const confettiPieces = Array.from({ length: confettiCount }, () => ({
-      x: Math.random() * canvas.width,
-      y: -10,
-      size: Math.random() * 8 + 4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      speedX: (Math.random() - 0.5) * 6,
-      speedY: Math.random() * 8 + 4,
-      rotation: Math.random() * 360,
-      rotationSpeed: (Math.random() - 0.5) * 8,
-    }));
-    let animationId;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      let stillFalling = false;
-      confettiPieces.forEach((piece) => {
-        piece.y += piece.speedY;
-        piece.x += piece.speedX;
-        piece.speedY += gravity;
-        piece.rotation += piece.rotationSpeed;
-        if (piece.y < canvas.height) stillFalling = true;
-        ctx.save();
-        ctx.translate(piece.x, piece.y);
-        ctx.rotate((piece.rotation * Math.PI) / 180);
-        ctx.fillStyle = piece.color;
-        ctx.fillRect(-piece.size / 2, -piece.size / 2, piece.size, piece.size);
-        ctx.restore();
-      });
-      if (stillFalling) animationId = requestAnimationFrame(animate);
-    };
-    animate();
-    return () => cancelAnimationFrame(animationId);
-  }, []);
-  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-[9999]" />;
-};
+import Confetti from '@/components/Confetti';
 
 
 // === PROGRESS BAR  ===
@@ -173,24 +128,21 @@ const scaleLabels = ['Tidak Pernah', 'Pernah', 'Kadang', 'Sering', 'Sangat Serin
 const range5 = [1, 2, 3, 4, 5];
 
 export default function RWW() {
-  const { projectId } = useParams();
+  const { id, projectId } = useParams();
   const router = useRouter();
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
-
+  const { rwwTesting, getRWWTesting, updateRWWTesting, addRWWTesting } = useRWWTestingStore();
+  
   // --- Tambahkan state untuk confetti ---
   const [showConfetti, setShowConfetti] = useState(false);
-
+  
   // Top-level states
   const [showNotification, setShowNotification] = useState(false);
   const [notificationData, setNotificationData] = useState({
     xpGained: 0,
     badgeName: '',
   });
-  const [respondenName, setRespondenName] = useState('');
-  const [jenisKelamin, setJenisKelamin] = useState('');
-  const [usia, setUsia] = useState('');
-  const [aktivitas, setAktivitas] = useState('');
   const [q1, setQ1] = useState(null);
   const [q2, setQ2] = useState(null);
   const [q3, setQ3] = useState(null);
@@ -207,7 +159,9 @@ export default function RWW() {
   const [responses, setResponses] = useState([]);
   const [vpcDataFromLevel1, setVpcDataFromLevel1] = useState(null);
   const [isFinanceOpen, setIsFinanceOpen] = useState(false);
+  const { planLevels } = useProjectStore();
 
+  
   useEffect(() => {
     const checkMobile = () => setIsMobile(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
     checkMobile();
@@ -220,42 +174,37 @@ export default function RWW() {
       }
     };
   }, []);
-
+  
+  // Load RWW Testing data from database
   useEffect(() => {
-    if (!projectId) return;
-    const found = (projects || []).find((p) => p.id === projectId);
-    setProject(found);
-    const level1Data = found?.levels?.[0]?.data;
-    if (level1Data) {
-      setVpcDataFromLevel1({
-        customerJobs: level1Data.customerJobs || '',
-        pains: level1Data.pains || '',
-        gains: level1Data.gains || '',
-        productsServices: level1Data.productsServices || '',
-        painRelievers: level1Data.painRelievers || '',
-        gainCreators: level1Data.gainCreators || '',
+    if (projectId) {
+      getRWWTesting(projectId).then(data => {
+        if (data && data.length > 0 && data[0].responses) {
+          setResponses(data[0].responses || []);
+        } else {
+          // Try to load from localStorage as fallback
+          const savedData = typeof window !== 'undefined' ? localStorage.getItem(`rww_data_${projectId}`) : null;
+          if (savedData) {
+            try {
+              const parsed = JSON.parse(savedData);
+              setResponses(parsed.responses || []);
+            } catch (e) {
+              console.error('Failed to parse saved RWW data', e);
+            }
+          }
+        }
       });
     }
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`rww_data_${projectId}`);
-      if (saved) {
-        try {
-          const { responses: savedResponses } = JSON.parse(saved);
-          setResponses(Array.isArray(savedResponses) ? savedResponses : []);
-        } catch (e) {
-          console.error('Gagal memuat data RWW dari localStorage:', e);
-          setResponses([]);
-        }
-      }
-    }
-  }, [projectId, projects]);
+  }, [projectId, getRWWTesting]);
 
   // --- PROGRESS BAR LOGIC ---
-  const totalLevels = 7;
-  const completedLevels = project?.levels?.filter((l) => l.completed).length || 0;
+  const totalLevels = planLevels.length;
+  const completedLevels = planLevels?.filter((l) => l.completed).length || 0;
   const currentXp = completedLevels * 10;
   const totalXp = totalLevels * 10;
-  const firstIncompleteLevel = project?.levels?.find(l => !l.completed) || { id: 3 };
+  const firstIncompleteLevel = planLevels?.find(l => !l.completed) || { id: 3 };
+  
+  <Confetti />
 
   const handleAddResponden = () => {
     const allAnswered = [q1, q2, q3, q4, q5, q6, q7, q8, q9].every((val) => val !== null);
@@ -279,15 +228,6 @@ export default function RWW() {
     setJenisKelamin('');
     setUsia('');
     setAktivitas('');
-    setQ1(null);
-    setQ2(null);
-    setQ3(null);
-    setQ4(null);
-    setQ5(null);
-    setQ6(null);
-    setQ7(null);
-    setQ8(null);
-    setQ9(null);
   };
 
   const calculateAverages = () => {
@@ -371,10 +311,29 @@ export default function RWW() {
       averages,
       updatedAt: new Date().toISOString(),
     };
+    
+    // Save to database using RWW Testing store
+    if (rwwTesting && rwwTesting.length > 0) {
+      updateRWWTesting(rwwTesting[0]._id, {
+        responses,
+        averages,
+        isValid: parseFloat(averages.total) >= 3.5
+      });
+    } else {
+      addRWWTesting({
+        projectId,
+        responses,
+        averages,
+        isValid: parseFloat(averages.total) >= 3.5
+      });
+    }
+    
+    // Also save to localStorage as backup
     if (typeof window !== 'undefined') {
       localStorage.setItem(`rww_data_${projectId}`, JSON.stringify(dataToSave));
     }
-    const updatedLevels = Array.isArray(project?.levels) ? [...project.levels] : [];
+    
+    const updatedLevels = Array.isArray(planLevels) ? [...planLevels] : [];
     if (!updatedLevels[1]) updatedLevels[1] = { id: 2, completed: false, data: {} };
     const isValid = parseFloat(averages.total) >= 3.5;
     updatedLevels[1] = {
@@ -410,6 +369,7 @@ export default function RWW() {
 
   const genderSummary = getGenderSummary();
   const ageGroupSummary = getAgeGroupSummary();
+console.log(rwwTesting)
 
   return (
     <div className="min-h-screen bg-white font-[Poppins]">
@@ -465,7 +425,7 @@ export default function RWW() {
                         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
                           <p className="text-sm text-yellow-800">
                             ❗ Belum ada data dari Level 1. Silakan lengkapi{' '}
-                            <Link href={`/dashboard/${projectId}/plan/level_1_idea`} className="text-[#f02d9c] underline">
+                            <Link href={`/dashboard/${projectId}/plan/level_1_idea/${planLevels[0]?.project._id}`} className="text-[#f02d9c] underline">
                               Level 1
                             </Link>{' '}
                             terlebih dahulu.
@@ -593,7 +553,7 @@ export default function RWW() {
                             <label className="block text-sm font-medium mb-2">Nama Lengkap</label>
                             <input
                               type="text"
-                              value={respondenName}
+                              value={rwwTesting[0]?.name}
                               onChange={(e) => setRespondenName(e.target.value)}
                               placeholder="Contoh: Ahmad"
                               className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
@@ -603,11 +563,11 @@ export default function RWW() {
                           <div>
                             <label className="block text-sm font-medium mb-2">Jenis Kelamin</label>
                             <select
-                              value={jenisKelamin}
+                              value={rwwTesting[0]?.gender}
                               onChange={(e) => setJenisKelamin(e.target.value)}
                               className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            >
+                            > enum
                               <option value="">Pilih Jenis Kelamin</option>
                               <option value="Laki-laki">Laki-laki</option>
                               <option value="Perempuan">Perempuan</option>
@@ -618,7 +578,7 @@ export default function RWW() {
                             <label className="block text-sm font-medium mb-2">Usia</label>
                             <input
                               type="number"
-                              value={usia}
+                              value={rwwTesting[0]?.age}
                               onChange={(e) => setUsia(e.target.value)}
                               placeholder="Contoh: 25"
                               className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
@@ -629,7 +589,7 @@ export default function RWW() {
                             <label className="block text-sm font-medium mb-2">Aktivitas</label>
                             <input
                               type="text"
-                              value={aktivitas}
+                              value={rwwTesting[0]?.activity}
                               onChange={(e) => setAktivitas(e.target.value)}
                               placeholder="Contoh: Mahasiswa"
                               className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
@@ -790,7 +750,7 @@ export default function RWW() {
                             </div>
                             <div className="flex flex-wrap gap-2 justify-center">
                               <Link
-                                href={`/dashboard/${projectId}/plan/level_1_idea`}
+                                href={`/dashboard/${projectId}/plan/level_1_idea/${planLevels[0]._id}`}
                                 className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
                               >
                                 <ChevronLeft size={16} />
@@ -846,10 +806,10 @@ export default function RWW() {
                         </div>
                         <div className="flex flex-wrap gap-3">
                           <div className="flex items-center gap-1.5 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Lightbulb size={12} /> +10 XP
+                            <Lightbulb size={12} /> {planLevels[1].xp} XP
                           </div>
                           <div className="flex items-center gap-1.5 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Award size={12} /> Validator Pro
+                            <Award size={12} /> {planLevels[1].badge}
                           </div>
                         </div>
                         <p className="mt-3 text-xs text-[#5b5b5b]">

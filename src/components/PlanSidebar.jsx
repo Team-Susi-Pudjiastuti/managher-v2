@@ -24,9 +24,8 @@ export default function PlanSidebar({
   mobileSidebarOpen = false,
   setMobileSidebarOpen = () => {}
 }) {
+  const { planLevels } = useProjectStore();
   const pathname = usePathname();
-  const projects = useProjectStore((state) => state.projects);
-  const project = projects.find(p => p.id === projectId);
 
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -55,18 +54,18 @@ export default function PlanSidebar({
 
   const sidebarItems = [
     { id: 'overview', title: 'Overview', icon: LayoutDashboard, href: `/dashboard/${projectId}` },
-    { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level_1_idea` },
-    { id: 2, title: 'RWW Analysis', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww` },
-    { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level_3_product_brand` },
-    { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas` },
-    { id: 5, title: 'MVP', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP` },
-    { id: 6, title: 'Beta Testing', icon: Users, href: `/dashboard/${projectId}/plan/level_6_beta_testing` },
-    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch` }
+    { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level_1_idea/${planLevels?.[0]?._id}` },
+    { id: 2, title: 'RWW Analysis', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww/${planLevels?.[1]?._id}` },
+    { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level_3_product_brand/${planLevels?.[2]?._id}` },
+    { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas/${planLevels?.[3]?._id}` },
+    { id: 5, title: 'MVP', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP/${planLevels?.[4]?._id}` },
+    { id: 6, title: 'Beta Testing', icon: Users, href: `/dashboard/${projectId}/plan/level_6_beta_testing/${planLevels?.[5]?._id}` },
+    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch/${planLevels?.[6]?._id}` }
   ];
 
   const isLevelCompleted = (id) => {
     if (id === 'overview') return true;
-    return project?.levels?.[id - 1]?.completed || false;
+    return planLevels?.[id - 1]?.completed || false;
   };
 
   const isActive = (id) => {
