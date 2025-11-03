@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react'; // Tambahkan useRef
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -18,8 +18,6 @@ import {
   AlertTriangle,
   Award,
   Lightbulb,
-  ChevronUp,
-  ChevronDown,
   Zap,
 } from 'lucide-react';
 
@@ -41,7 +39,7 @@ import {
   Cell 
 } from 'recharts';
 
-// === CONFETTI ANIMATION (DIIMPOR DARI LEVEL 2) ===
+// === CONFETTI ANIMATION ===
 const Confetti = () => {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -88,7 +86,7 @@ const Confetti = () => {
   return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-[9999]" />;
 };
 
-// === PROGRESS BAR (DISAMAKAN DENGAN LEVEL 2, TANPA TULISAN "LANJUT KE LEVEL") ===
+// === PROGRESS BAR (SAMA DENGAN LEVEL 5) ===
 const PhaseProgressBar = ({ currentXp, totalXp }) => {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
@@ -114,7 +112,9 @@ const PhaseProgressBar = ({ currentXp, totalXp }) => {
           style={{ width: `${progress}%` }}
         />
       </div>
-      {/* ❌ DIHAPUS: Tidak ada teks "Lanjut ke Level..." */}
+      {progress >= 100 && (
+        <p className="text-[10px] text-[#7a7a7a] mt-1 text-right">Selesai!</p>
+      )}
     </div>
   );
 };
@@ -264,14 +264,13 @@ export default function Level6Page() {
     setNotificationData({ xpGained: 10, badgeName: 'Beta Master' });
     setShowNotification(true);
 
-    // ✨ Tampilkan confetti jika MVP siap launch
     if (canLaunch) {
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
+      setTimeout(() => setShowConfetti(false), 3000); 
     }
   };
 
-  // Chart data utilities (sama seperti asli — dipertahankan)
+  // Chart data utilities
   const satisfactionDist = [0, 0, 0, 0, 0];
   allResponses.forEach(r => {
     if (typeof r.satisfaction_rate === 'number' && r.satisfaction_rate >= 1 && r.satisfaction_rate <= 5) {
@@ -335,7 +334,6 @@ export default function Level6Page() {
 
   return (
     <div className="min-h-screen bg-white font-[Poppins]">
-      {/* ✨ Tampilkan Confetti jika MVP siap launch */}
       {showConfetti && <Confetti />}
 
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
@@ -383,7 +381,6 @@ export default function Level6Page() {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Kolom Kiri: Form & Ringkasan */}
                     <div>
-                      {/* ... (form dan ringkasan tetap sama, tidak diubah) */}
                       <div
                         className="mb-6 p-5 bg-white rounded-xl border-t border-l border-black"
                         style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
@@ -391,7 +388,6 @@ export default function Level6Page() {
                         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
                           <Users size={16} /> Tambah Data Responden
                         </h2>
-                        {/* ... (form input tetap seperti asli) */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                           <div>
                             <label className="block text-sm font-medium mb-2">Nama Lengkap</label>
@@ -518,98 +514,96 @@ export default function Level6Page() {
                       </div>
 
                       {allResponses.length > 0 && (
-                        <div className="mt-6">
-                          <div
-                            className="bg-white p-5 rounded-xl border-t border-l border-black"
-                            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                          >
-                            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                              <BarChart3 size={16} /> Ringkasan Beta Testing
-                            </h2>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-                              {[
-                                { label: 'Kepuasan', value: avgSatisfaction, color: '#f02d9c' },
-                                { label: 'Rekomendasi', value: `${recommendRate}%`, color: '#8acfd1' },
-                                { label: 'Responden', value: allResponses.length, color: '#f02d9c' },
-                              ].map((item, i) => (
-                                <div
-                                  key={i}
-                                  className="text-center p-3 bg-white rounded-lg border-t border-l border-black"
-                                  style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                                >
-                                  <div className="text-xl font-bold" style={{ color: item.color }}>
-                                    {item.value}
-                                  </div>
-                                  <div className="text-xs mt-1">{item.label}</div>
+                    <div className="mt-6">
+                      <div
+                        className="bg-white p-5 rounded-xl border-t border-l border-black"
+                        style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+                      >
+                        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                          <BarChart3 size={16} /> Ringkasan Beta Testing
+                        </h2>
+                        <div className="flex justify-center">
+                          <div className="grid grid-cols-3 gap-3 mb-5 max-w-md w-full">
+                            {[
+                              { label: 'Kepuasan', value: avgSatisfaction, color: '#f02d9c' },
+                              { label: 'Rekomendasi', value: `${recommendRate}%`, color: '#8acfd1' },
+                              { label: 'Responden', value: allResponses.length, color: '#f02d9c' },
+                            ].map((item, i) => (
+                              <div
+                                key={i}
+                                className="text-center p-3 bg-white rounded-lg border-t border-l border-black"
+                                style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+                              >
+                                <div className="text-xl font-bold" style={{ color: item.color }}>
+                                  {item.value}
                                 </div>
-                              ))}
-                            </div>
-
-                            <div className="text-center mb-5">
-                              {canLaunch ? (
-                                <span className="inline-flex items-center gap-1.5 bg-[#e8f5f4] text-[#0d8a85] px-4 py-2 rounded-full font-bold text-sm border border-[#8acfd1]">
-                                  <CheckCircle size={16} />
-                                  MVP SIAP DILUNCURKAN!
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1.5 bg-[#fff8e1] text-[#c98a00] px-4 py-2 rounded-full font-bold text-sm border border-[#fbe2a7]">
-                                  <AlertTriangle size={16} />
-                                  BUTUH PENYEMPURNAAN
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 justify-center">
-                              <Link
-                                href={`/dashboard/${projectId}/plan/level_5_MVP`}
-                                className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
-                              >
-                                <ChevronLeft size={16} />
-                                Prev
-                              </Link>
-                              <button
-                                onClick={() => setIsEditing(!isEditing)}
-                                className="px-4 py-2 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] flex items-center gap-1"
-                              >
-                                <Edit3 size={16} />
-                                {isEditing ? 'Batal Edit' : 'Edit'}
-                              </button>
-                              <button
-                                onClick={handleSave}
-                                className="px-4 py-2 bg-[#f02d9c] text-white font-medium rounded-lg border border-black flex items-center gap-1"
-                              >
-                                <CheckCircle size={16} />
-                                Simpan
-                              </button>
-                              <Link
-                                href={`/dashboard/${projectId}/plan/level_7_launch`}
-                                className="px-4 py-2 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black flex items-center gap-1"
-                              >
-                                Next
-                                <ChevronRight size={16} />
-                              </Link>
-                            </div>
+                                <div className="text-xs mt-1">{item.label}</div>
+                              </div>
+                            ))}
                           </div>
                         </div>
+
+                        <div className="text-center mb-5">
+                          {canLaunch ? (
+                            <span className="inline-flex items-center gap-1.5 bg-[#e8f5f4] text-[#0d8a85] px-4 py-2 rounded-full font-bold text-sm border border-[#8acfd1]">
+                              <CheckCircle size={16} />
+                              MVP SIAP DILUNCURKAN!
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 bg-[#fff8e1] text-[#c98a00] px-4 py-2 rounded-full font-bold text-sm border border-[#fbe2a7]">
+                              <AlertTriangle size={16} />
+                              BUTUH PENYEMPURNAAN
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          <Link
+                            href={`/dashboard/${projectId}/plan/level_5_MVP`}
+                            className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
+                          >
+                            <ChevronLeft size={16} />
+                            Prev
+                          </Link>
+                          <button
+                            onClick={() => setIsEditing(!isEditing)}
+                            className="px-4 py-2 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] flex items-center gap-1"
+                          >
+                            <Edit3 size={16} />
+                            {isEditing ? 'Batal Edit' : 'Edit'}
+                          </button>
+                          <button
+                            onClick={handleSave}
+                            className="px-4 py-2 bg-[#f02d9c] text-white font-medium rounded-lg border border-black flex items-center gap-1"
+                          >
+                            <CheckCircle size={16} />
+                            Simpan
+                          </button>
+                          <Link
+                            href={`/dashboard/${projectId}/plan/level_7_launch`}
+                            className="px-4 py-2 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black flex items-center gap-1"
+                          >
+                            Next
+                            <ChevronRight size={16} />
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
                       )}
                     </div>
 
                     {/* Kolom Kanan */}
                     <div className="space-y-5">
-                      {/* === PROGRESS BAR BARU === */}
+                      {/* PROGRESS BAR */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-3">
                           <Zap size={16} className="text-[#f02d9c]" />
                           <span className="font-bold text-[#5b5b5b]">Progress Fase Plan</span>
                         </div>
-                        <PhaseProgressBar
-                          currentXp={currentXp}
-                          totalXp={totalXp}
-                          // firstIncompleteLevel dihapus → TIDAK ADA TEXT "LANJUT KE LEVEL"
-                        />
+                        <PhaseProgressBar currentXp={currentXp} totalXp={totalXp} />
                       </div>
 
-                      {/* Pencapaian, Petunjuk, Resources → tetap seperti asli */}
+                      {/* Pencapaian */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
                           <Award size={16} className="text-[#f02d9c]" />
@@ -628,6 +622,7 @@ export default function Level6Page() {
                         </p>
                       </div>
 
+                      {/* Petunjuk */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
                           <BookOpen size={16} className="text-[#f02d9c]" />
@@ -659,6 +654,7 @@ export default function Level6Page() {
                         </div>
                       </div>
 
+                      {/* Resources */}
                       <div className="border border-gray-200 rounded-xl p-4 bg-white">
                         <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
                           <BookOpen size={14} /> Resources
@@ -682,7 +678,7 @@ export default function Level6Page() {
                         </ul>
                       </div>
 
-                      {/* Tabel + Visualisasi Data Responden → tetap seperti asli */}
+                      {/* Visualisasi Data */}
                       <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd] mt-5">
                         <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
                           <Users size={16} /> Visualisasi Data Responden

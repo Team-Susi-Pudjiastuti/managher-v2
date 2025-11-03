@@ -224,47 +224,44 @@ export default function Level5Page() {
     setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
+  const handleSave = () => {
+    const dataToSave = products.map((p) => ({
+      name: p.name,
+      concept: p.concept,
+      price: p.price,
+      previewUrl: p.previewUrl,
+    }));
+    localStorage.setItem(`mvp-${projectId}`, JSON.stringify(dataToSave));
 
- const handleSave = () => {
-  const dataToSave = products.map((p) => ({
-    name: p.name,
-    concept: p.concept,
-    price: p.price,
-    previewUrl: p.previewUrl,
-  }));
+    const isValid = products.some((p) => p.concept || p.previewUrl);
 
-  localStorage.setItem(`mvp-${projectId}`, JSON.stringify(dataToSave));
-
-  const isValid = products.some((p) => p.concept || p.previewUrl);
-
-  // Reset dulu agar perubahan state terdeteksi
-  setShowConfetti(false);
-  if (isValid) {
-    setTimeout(() => {
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 4000);
-    }, 50);
-  }
-
-  setNotificationData({
-    xpGained: 10,
-    badgeName: 'Product Maker',
-  });
-  setShowNotification(true);
-
-  if (project) {
-    const updatedLevels = [...(project.levels || [])];
-    while (updatedLevels.length <= 4) {
-      updatedLevels.push({ id: updatedLevels.length + 1, completed: false });
+    // Simpan ke Zustand
+    if (project) {
+      const updatedLevels = [...(project.levels || [])];
+      while (updatedLevels.length <= 4) {
+        updatedLevels.push({ id: updatedLevels.length + 1, completed: false });
+      }
+      updatedLevels[4] = {
+        id: 5,
+        completed: isValid,
+        mvp: dataToSave,
+      };
+      updateProject(projectId, { levels: updatedLevels });
     }
-    updatedLevels[4] = {
-      id: 5,
-      completed: isValid,
-      mvp: dataToSave,
-    };
-    updateProject(projectId, { levels: updatedLevels });
-  }
-};
+
+    // Tampilkan konfeti & notifikasi HANYA saat valid
+    if (isValid) {
+      setShowConfetti(true);
+      setNotificationData({
+        xpGained: 10,
+        badgeName: 'Product Maker',
+      });
+      setShowNotification(true);
+      setTimeout(() => setShowConfetti(false), 5000);
+    } else {
+      alert('Minimal isi deskripsi atau unggah gambar prototype.');
+    }
+  };
 
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },
@@ -278,7 +275,7 @@ export default function Level5Page() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      {/* ✅ CONFETTI DI RENDER DI ROOT */}
+      {/* ✅ CONFETTI HANYA MUNCUL SAAT TOMBOL SIMPAN DITEKAN & DATA VALID */}
       {showConfetti && <Confetti />}
 
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
@@ -306,7 +303,6 @@ export default function Level5Page() {
           mobileSidebarOpen={mobileSidebarOpen}
           setMobileSidebarOpen={setMobileSidebarOpen}
         />
-
         <main className="flex-1">
           <div className="py-6 px-3 sm:px-4 md:px-6">
             <div className="max-w-6xl mx-auto">
@@ -319,7 +315,6 @@ export default function Level5Page() {
                   <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-4 sm:mb-6">
                     Level 5: Prototype
                   </h1>
-
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
                       {isEditing ? (
@@ -338,13 +333,11 @@ export default function Level5Page() {
                                   <Trash2 size={14} />
                                 </button>
                               )}
-
                               <h3 className="font-bold text-[#f02d9c] mb-3 flex items-center gap-2">
                                 <FileText size={16} />
                                 Product Concept{' '}
                                 {products.length > 1 ? `#${products.indexOf(product) + 1}` : ''}
                               </h3>
-
                               <label className="block text-xs font-medium text-[#5b5b5b] mb-1">
                                 Nama Produk
                               </label>
@@ -355,7 +348,6 @@ export default function Level5Page() {
                                 placeholder="Masukkan nama produk"
                                 className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c] mb-3"
                               />
-
                               <label className="block text-xs font-medium text-[#5b5b5b] mb-1">
                                 Deskripsi Produk
                               </label>
@@ -366,7 +358,6 @@ export default function Level5Page() {
                                 className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
                                 rows={3}
                               />
-
                               <label className="block text-xs font-medium text-[#5b5b5b] mt-3 mb-1 flex items-center gap-1">
                                 <DollarSign size={14} />
                                 Harga (Rp)
@@ -378,7 +369,6 @@ export default function Level5Page() {
                                 placeholder="Contoh: 25000"
                                 className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c] mb-3"
                               />
-
                               <div className="mt-3">
                                 <label className="block text-xs font-medium text-[#5b5b5b] mb-1 flex items-center gap-1">
                                   <Camera size={14} />
@@ -421,7 +411,6 @@ export default function Level5Page() {
                               </div>
                             </div>
                           ))}
-
                           {products.length < 5 && (
                             <button
                               onClick={addProduct}
@@ -475,7 +464,6 @@ export default function Level5Page() {
                           ))}
                         </div>
                       )}
-
                       <div className="flex flex-wrap gap-2 mt-4">
                         <button
                           onClick={handleSave}
@@ -577,7 +565,7 @@ export default function Level5Page() {
                         <ul className="text-sm text-[#5b5b5b] space-y-1.5">
                           <li>
                             <a
-                              href="https://miro.com/templates/lean-canvas/"
+                              href="https://miro.com/templates/lean-canvas/ "
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
@@ -587,7 +575,7 @@ export default function Level5Page() {
                           </li>
                           <li>
                             <a
-                              href="https://www.canva.com/templates/EAFhWMaXv5c-pink-modern-fashion-business-plan-presentation/"
+                              href="https://www.canva.com/templates/EAFhWMaXv5c-pink-modern-fashion-business-plan-presentation/ "
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
@@ -597,7 +585,7 @@ export default function Level5Page() {
                           </li>
                           <li>
                             <a
-                              href="https://perempuaninovasi.id/workshop"
+                              href="https://perempuaninovasi.id/workshop "
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
