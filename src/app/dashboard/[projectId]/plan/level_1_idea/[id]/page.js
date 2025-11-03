@@ -23,191 +23,51 @@ import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 import useBusinessIdeaStore from '@/store/useBusinessIdea';
+import { generateBusinessIdea } from '@/ai/flows/analysisBusinessIdea';
 
-// === HELPER: Parse & Format Products & Services ===
+// === HELPER: Parse & Format ===
 const parseProductsServices = (text) => {
-  const lines = text.split('\n').map((l) => l.trim()).filter((l) => l);
-  let ide = '',
-    jenis = '',
-    deskripsi = '',
-    fitur = '',
-    manfaat = '',
-    harga = '',
-    biayaModal = '',
-    biayaBahanBaku = '',
-    hargaJual = '',
-    margin = '';
-  for (const line of lines) {
-    if (line.startsWith('Jenis:')) jenis = line.replace('Jenis:', '').trim();
-    else if (line.startsWith('Deskripsi:')) deskripsi = line.replace('Deskripsi:', '').trim();
-    else if (line.startsWith('Fitur')) fitur = line;
-    else if (line.startsWith('Manfaat')) manfaat = line;
-    else if (line.startsWith('Harga:')) harga = line;
-    else if (line.startsWith('Biaya Modal:')) biayaModal = line;
-    else if (line.startsWith('Biaya Bahan Baku:')) biayaBahanBaku = line;
-    else if (line.startsWith('Harga Jual:')) hargaJual = line;
-    else if (line.startsWith('Margin:')) margin = line;
-    else if (!ide) ide = line;
-  }
-  return {
-    ide,
-    jenis,
-    deskripsi,
-    fitur,
-    manfaat,
-    harga,
-    biayaModal,
-    biayaBahanBaku,
-    hargaJual,
-    margin,
+  if (!text) return {};
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  const data = {
+    ide: '',
+    jenis: '',
+    deskripsi: '',
+    fitur: '',
+    manfaat: '',
+    harga: '',
+    biayaModal: '',
+    biayaBahanBaku: '',
+    hargaJual: '',
+    margin: '',
   };
+  for (const line of lines) {
+    if (line.startsWith('Jenis:')) data.jenis = line.replace('Jenis:', '').trim();
+    else if (line.startsWith('Deskripsi:')) data.deskripsi = line.replace('Deskripsi:', '').trim();
+    else if (line.startsWith('Fitur')) data.fitur = line;
+    else if (line.startsWith('Manfaat')) data.manfaat = line;
+    else if (line.startsWith('Harga:')) data.harga = line;
+    else if (line.startsWith('Biaya Modal:')) data.biayaModal = line;
+    else if (line.startsWith('Biaya Bahan Baku:')) data.biayaBahanBaku = line;
+    else if (line.startsWith('Harga Jual:')) data.hargaJual = line;
+    else if (line.startsWith('Margin:')) data.margin = line;
+    else if (!data.ide) data.ide = line;
+  }
+  return data;
 };
-
-const formatProductsServices = ({
-  ide,
-  jenis,
-  deskripsi,
-  fitur,
-  manfaat,
-  harga,
-  biayaModal,
-  biayaBahanBaku,
-  hargaJual,
-  margin,
-}) => {
-  const parts = [ide];
-  if (jenis) parts.push(`Jenis: ${jenis}`);
-  if (deskripsi) parts.push(`Deskripsi: ${deskripsi}`);
-  if (fitur) parts.push(fitur);
-  if (manfaat) parts.push(manfaat);
-  if (harga) parts.push(harga);
-  if (biayaModal) parts.push(biayaModal);
-  if (biayaBahanBaku) parts.push(biayaBahanBaku);
-  if (hargaJual) parts.push(hargaJual);
-  if (margin) parts.push(margin);
-  return parts.join('\n');
-};
-
-// === GENERATOR IDE DENGAN RINCIAN BIAYA ===
-const generateThreeIdeasFromInterest = (interest) => {
-  const baseIdeas = [
-    // ... (data ide tetap sama seperti file Anda)
-    {
-      interest: 'kuliner',
-      marketPotential: 'Ibu bekerja usia 28–45 tahun ingin menyediakan makanan sehat untuk keluarga setiap hari',
-      problemSolved: 'Waktu terbatas, tidak sempat belanja & masak, takut anak kurang gizi, stres mengatur menu',
-      solutionOffered: 'Anak sehat dan tumbuh optimal, hemat waktu, tidak perlu mikir masak, tenang secara mental',
-      productsServices:
-        'Meal Prep Box untuk Ibu Bekerja\n' +
-        'Jenis: Layanan Langganan Makanan Sehat\n' +
-        'Deskripsi: Kotak makanan siap saji mingguan dengan resep bergizi dari ahli nutrisi, bahan organik lokal\n' +
-        'Fitur utama: Dikirim setiap Senin, siap saji dalam 5 menit, bisa atur alergi\n' +
-        'Manfaat: Hemat 10 jam/minggu, anak lebih sehat, tidak perlu mikir menu\n' +
-        'Harga: Rp299.000/minggu (5 menu)\n' +
-        'Biaya Modal: Rp5.000.000 (kompor portable, wadah food-grade 100 pcs, branding awal)\n' +
-        'Biaya Bahan Baku: Beras organik (Rp50.000), Ayam kampung (Rp80.000), Sayur lokal (Rp30.000), Bumbu & minyak (Rp20.000) → Total: Rp180.000/minggu\n' +
-        'Harga Jual: Rp299.000/minggu\n' +
-        'Margin: ±40%',
-      unfairAdvantage:
-        'Dikirim setiap Senin pagi → tidak perlu belanja\nSiap saji dalam 5 menit → tidak perlu masak\nBisa atur alergi/makanan pantangan → aman untuk anak',
-      uniqueValueProposition: 'Hemat 10 jam/minggu\nAnak-anak lebih sehat\nTidak perlu mikir menu\nHarga: Rp299.000/minggu (5 menu)',
-    },
-    {
-      interest: 'fashion',
-      marketPotential: 'Wanita muslim usia 20–35 tahun butuh outfit formal untuk acara spesial (nikahan, wisuda, dll)',
-      problemSolved: 'Beli outfit mahal tapi jarang dipakai, takut tidak sesuai ekspektasi, repot laundry & simpan',
-      solutionOffered: 'Tampil percaya diri, hemat uang, tidak perlu khawatir soal penyimpanan, ramah lingkungan',
-      productsServices:
-        'Modest Wear Rental untuk Acara Formal\n' +
-        'Jenis: Platform Sewa Pakaian\n' +
-        'Deskripsi: Sewa hijab & dress formal berkualitas tinggi dengan opsi pengiriman & laundry gratis\n' +
-        'Fitur utama: Sewa mulai Rp149rb, gratis pengiriman & pengembalian, coba virtual via AR\n' +
-        'Manfaat: Tampil fresh tanpa beli baru, hemat 70%, ramah lingkungan\n' +
-        'Harga: Rp149.000/3 hari\n' +
-        'Biaya Modal: Rp10.000.000 (stok awal 50 outfit, gantungan, kemasan, sistem booking sederhana)\n' +
-        'Biaya Bahan Baku: Rp0 (tidak ada produksi, hanya perawatan: laundry & steaming @Rp15.000/outfit)\n' +
-        'Harga Jual: Rp149.000/3 hari\n' +
-        'Margin: ±60% setelah skala',
-      unfairAdvantage:
-        'Sewa mulai Rp149rb → jauh lebih murah daripada beli\nGratis pengiriman & pengembalian\nBisa coba virtual via AR → minim risiko salah pilih',
-      uniqueValueProposition: 'Tampil fresh di setiap acara tanpa beli baru\nHemat hingga 70% dibanding beli\nRamah lingkungan\nHarga: Rp149.000/3 hari',
-    },
-    {
-      interest: 'edukasi anak',
-      marketPotential: 'Orang tua ingin anak usia 7–12 tahun belajar coding secara menyenangkan dan mandiri',
-      problemSolved: 'Tidak punya waktu dampingi, kursus offline mahal, anak cepat bosan dengan metode kaku',
-      solutionOffered: 'Anak paham logika pemrograman, bisa bikin game sederhana, lebih percaya diri di sekolah',
-      productsServices:
-        'Kelas Coding untuk Anak SD via WhatsApp\n' +
-        'Jenis: Layanan Edukasi Digital\n' +
-        'Deskripsi: Program belajar coding 12 minggu dengan video pendek, tantangan seru, dan hadiah digital\n' +
-        'Fitur utama: Cukup 10 menit/hari, grup WhatsApp eksklusif, bisa pakai HP\n' +
-        'Manfaat: Anak belajar mandiri, biaya terjangkau, dapat sertifikat digital\n' +
-        'Harga: Rp99.000/program\n' +
-        'Biaya Modal: Rp500.000 (pembuatan konten video, desain worksheet, sistem otomatisasi WhatsApp)\n' +
-        'Biaya Bahan Baku: Rp0 (digital, tidak ada bahan fisik)\n' +
-        'Harga Jual: Rp99.000/program\n' +
-        'Margin: ±95%',
-      unfairAdvantage:
-        'Cukup 10 menit/hari → tidak mengganggu jadwal\nGrup WhatsApp eksklusif dengan mentor → responsif\nTidak perlu laptop → bisa pakai HP orang tua',
-      uniqueValueProposition: 'Anak belajar mandiri tanpa perlu dampingan\nBiaya terjangkau\nDapat sertifikat digital\nHarga: Rp99.000/program',
-    },
-    {
-      interest: 'jasa keuangan',
-      marketPotential: 'Pemilik warung kopi/makanan usia 30–50 tahun ingin catat keuangan harian dengan mudah',
-      problemSolved: 'Tidak paham Excel, takut ribet, sering lupa catat, stok sering kehabisan tanpa sadar',
-      solutionOffered: 'Tahu untung/rugi harian, siap laporan pajak, stok terpantau, tidur lebih tenang',
-      productsServices:
-        'Aplikasi Catatan Keuangan UMKM Warung\n' +
-        'Jenis: Aplikasi Mobile\n' +
-        'Deskripsi: Aplikasi pencatatan keuangan berbasis suara dengan antarmuka super sederhana, hanya butuh HP Android\n' +
-        'Fitur utama: Cukup ucapkan transaksi, backup otomatis, notifikasi stok habis\n' +
-        'Manfaat: Tidak perlu bisa baca/tulis lancar, laporan otomatis, siap laporan pajak\n' +
-        'Harga: Rp49.000/bulan\n' +
-        'Biaya Modal: Rp15.000.000 (pengembangan MVP, hosting awal, uji coba lapangan)\n' +
-        'Biaya Bahan Baku: Rp50.000/bulan (server cloud, biaya API suara, maintenance)\n' +
-        'Harga Jual: Rp49.000/bulan\n' +
-        'Margin: ±80% setelah 500 pengguna aktif',
-      unfairAdvantage:
-        'Cukup ucapkan: “Hari ini jual 50 kopi, modal 200rb” → otomatis jadi laporan\nBackup otomatis ke cloud\nNotifikasi saat stok hampir habis',
-      uniqueValueProposition: 'Tidak perlu bisa baca/tulis lancar\nLaporan harian & mingguan otomatis\nSiap untuk laporan pajak\nHarga: Rp49.000/bulan',
-    },
-  ];
-
-  const normalized = interest.toLowerCase().trim();
-  const matched = baseIdeas.find(
-    (idea) =>
-      idea.interest.toLowerCase().includes(normalized) || normalized.includes(idea.interest.toLowerCase())
-  );
-  const others = baseIdeas.filter((i) => i !== matched);
-  const randomOthers = others.sort(() => 0.5 - Math.random()).slice(0, 2);
-  const result = matched ? [matched, ...randomOthers] : baseIdeas.sort(() => 0.5 - Math.random()).slice(0, 3);
-  return result;
-};
-
 
 // === KOMPONEN UTAMA ===
 export default function Level1Page() {
+  const { id } = useParams();
+  const router = useRouter();
   const { businessIdeas, getBusinessIdeas, updateBusinessIdeas } = useBusinessIdeaStore();
   const { planLevels, updateLevelStatus, projects } = useProjectStore();
-  const { id } = useParams();
-  const businessIdeaId = id; // Menggunakan id dari parameter URL
-  const projectId = businessIdeas.project || '';
-  const levelId = planLevels[0]._id
-  console.log(levelId)
-  
-  useEffect(() => {
-    getBusinessIdeas(businessIdeaId);
-  }, []);
 
-  const router = useRouter();
   const [interest, setInterest] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
   const [generatedIdeas, setGeneratedIdeas] = useState([]);
   const [selectedIdea, setSelectedIdea] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  // State untuk menyimpan data VPC (Value Proposition Canvas)
   const [vpcData, setVpcData] = useState({
     marketPotential: '',
     problemSolved: '',
@@ -216,6 +76,8 @@ export default function Level1Page() {
     unfairAdvantage: '',
     uniqueValueProposition: '',
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isFinanceOpen, setIsFinanceOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationData, setNotificationData] = useState({
@@ -224,111 +86,14 @@ export default function Level1Page() {
     badgeName: '',
   });
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // useEffect(() => {
-  //   if (businessIdeaId) {
-  //     const data = businessIdeas.find((p) => p.id === businessIdeaId);
-  //     if (data) {
-  //       setInterest(data.interest || '');
-  //       setVpcData({
-  //         marketPotential: data.marketPotential || '',
-  //         problemSolved: data.problemSolved || '',
-  //         solutionOffered: data.solutionOffered || '',
-  //         productsServices: data.productsServices || '',
-  //         unfairAdvantage: data.unfairAdvantage || '',
-  //         uniqueValueProposition: data.uniqueValueProposition || '',
-  //       });
-  //       setSelectedIdea(data.interest || 'saved');
-  //       setIsEditing(false);
-  //     }
-  //   }
-  // }, [businessIdeaId, businessIdeas]);
-
-  const handleGenerate = () => {
-    if (!interest.trim()) {
-      alert('Silakan isi minat/bidang Anda terlebih dahulu.');
-      return;
-    }
-    const ideas = generateThreeIdeasFromInterest(interest);
-    setGeneratedIdeas(ideas);
-    setSelectedIdea(null);
-    setVpcData({
-      marketPotential: '',
-      problemSolved: '',
-      solutionOffered: '',
-      productsServices: '',
-      unfairAdvantage: '',
-      uniqueValueProposition: '',
-    });
-    setIsEditing(false);
-  };
-
-  const handleSelectIdea = (idea) => {
-    setSelectedIdea(idea.interest);
-    setVpcData({
-      marketPotential: idea.marketPotential,
-      problemSolved: idea.problemSolved,
-      solutionOffered: idea.solutionOffered,
-      productsServices: idea.productsServices,
-      unfairAdvantage: idea.unfairAdvantage,
-      uniqueValueProposition: idea.uniqueValueProposition,
-    });
-    setIsFinanceOpen(false);
-    setIsEditing(false);
-  };
-
-  const handleVpcChange = (field, value) => {
-    setVpcData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSave = () => {
-    if (!selectedIdea) {
-      alert('Pilih salah satu ide produk terlebih dahulu.');
-      return;
-    }
-
-    // Pastikan businessIdeaId tidak undefined
-    if (!businessIdeaId) {
-      alert('ID ide bisnis tidak ditemukan.');
-      return;
-    }
-
-    // Persiapkan data yang akan diupdate
-    const updateData = {
-      interest: selectedIdea,
-      ...vpcData,
-    };
-
-    // Update data ide bisnis menggunakan updateBusinessIdeas
-    updateBusinessIdeas(businessIdeaId, updateData)
-      .then(() => {
-        updateLevelStatus(levelId, { completed: true });
-        // Set notifikasi dengan XP & badge Level 1
-        setNotificationData({
-          message: 'Ide berhasil disimpan!',
-          xpGained: planLevels.find((p) => p._id === levelId)?.xp || 0,
-          badgeName: planLevels.find((p) => p._id === levelId)?.badge || '',
-        });
-      
-      // Tampilkan notifikasi
-      setShowNotification(true);
-    })
-    .catch(error => {
-      console.error("Error saving business idea:", error);
-      alert("Gagal menyimpan ide bisnis. Silakan coba lagi.");
-    });
-  };
+  const businessIdeaId = id;
+  const projectId = businessIdeas.project || '';
+  const levelId = planLevels[0]?._id || '';
 
   const breadcrumbItems = [
-    { href: `/dashboard/${projectId}/plan`, label: 'Fase Plan' },
-    { href: `/dashboard/${projectId}/plan/${businessIdeaId}`, label: 'Level 1: Ide Generator' },
-  ];
+  { href: `/dashboard/${projectId}/plan`, label: 'Fase Plan' },
+  { href: `/dashboard/${projectId}/plan/${businessIdeaId}`, label: 'Level 1: Ide Generator' },
+];
 
   const ps = parseProductsServices(vpcData.productsServices);
 
@@ -345,6 +110,109 @@ export default function Level1Page() {
     const parts = clean.split('→')[0].split(',');
     return parts.map((part) => part.trim());
   };
+
+
+useEffect(() => {
+  const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+  return () => window.removeEventListener('resize', checkMobile);
+}, []);
+
+
+  // Ambil data ide bisnis awal
+  useEffect(() => {
+    if (businessIdeaId) getBusinessIdeas(businessIdeaId);
+  }, [businessIdeaId]);
+
+  // === GENERATE DARI AI ===
+  const handleGenerate = async () => {
+    if (!interest.trim()) {
+      alert('Silakan isi minat atau bidang terlebih dahulu.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // 🔥 Panggil AI Flow
+      const result = await generateBusinessIdea({ interest });
+      const ideas = Array.isArray(result) ? result : [result];
+      setGeneratedIdeas(ideas);
+
+      // Simpan ke store juga
+      if (businessIdeaId) {
+        await updateBusinessIdeas(businessIdeaId, { generatedIdeas: ideas });
+      }
+
+      setSelectedIdea(null);
+      setVpcData({
+        marketPotential: '',
+        problemSolved: '',
+        solutionOffered: '',
+        productsServices: '',
+        unfairAdvantage: '',
+        uniqueValueProposition: '',
+      });
+    } catch (error) {
+      console.error('Error generating idea:', error);
+      alert('Gagal menghasilkan ide bisnis.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // === PILIH IDE ===
+  const handleSelectIdea = async (idea) => {
+    setSelectedIdea(idea.interest);
+    setVpcData({
+      marketPotential: idea.marketPotential,
+      problemSolved: idea.problemSolved,
+      solutionOffered: idea.solutionOffered,
+      productsServices: idea.productsServices,
+      unfairAdvantage: idea.unfairAdvantage,
+      uniqueValueProposition: idea.uniqueValueProposition,
+    });
+
+    // Simpan pilihan ke store
+    if (businessIdeaId) {
+      await updateBusinessIdeas(businessIdeaId, {
+        interest: idea.interest,
+        ...idea,
+      });
+    }
+  };
+
+  // === EDIT DATA ===
+  const handleVpcChange = (field, value) => {
+    setVpcData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // === SIMPAN AKHIR ===
+  const handleSave = async () => {
+    if (!selectedIdea) {
+      alert('Pilih salah satu ide terlebih dahulu.');
+      return;
+    }
+
+    try {
+      await updateBusinessIdeas(businessIdeaId, {
+        interest: selectedIdea,
+        ...vpcData,
+      });
+      await updateLevelStatus(levelId, { completed: true });
+
+      setNotificationData({
+        message: 'Ide berhasil disimpan!',
+        xpGained: planLevels.find((p) => p._id === levelId)?.xp || 0,
+        badgeName: planLevels.find((p) => p._id === levelId)?.badge || '',
+      });
+      setShowNotification(true);
+    } catch (err) {
+      console.error('Error saving business idea:', err);
+      alert('Gagal menyimpan ide bisnis.');
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-white font-sans">
