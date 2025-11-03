@@ -18,11 +18,14 @@ import {
   Camera,
   FileText,
   Trash2,
+  DollarSign,
+  Award,
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import useProjectStore from '@/store/useProjectStore';
+import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 export default function Level5Page() {
   const { projectId } = useParams();
@@ -30,14 +33,20 @@ export default function Level5Page() {
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
 
-  const [products, setProducts] = useState([{ id: Date.now(), name: '', concept: '', previewUrl: '' }]);
+  const [products, setProducts] = useState([
+    { id: Date.now(), name: '', concept: '', price: '', previewUrl: '' }
+  ]);
   const [isEditing, setIsEditing] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const [project, setProject] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationData, setNotificationData] = useState({
+    xpGained: 0,
+    badgeName: '',
+  });
 
-  // Ref untuk input file tiap produk
   const fileInputRefs = useRef({});
 
   useEffect(() => {
@@ -64,11 +73,12 @@ export default function Level5Page() {
               id: Date.now() + i,
               name: item.name || '',
               concept: item.concept || '',
+              price: item.price || '',
               previewUrl: item.previewUrl || '',
             }))
           );
         } catch (e) {
-          console.warn('Failed to parse saved MVP data', e);
+          console.warn('Failed to parse saved Prototype data', e);
         }
       }
     }
@@ -76,19 +86,24 @@ export default function Level5Page() {
 
   const addProduct = () => {
     if (products.length >= 5) return;
-    setProducts((prev) => [...prev, { id: Date.now(), name: '', concept: '', previewUrl: '' }]);
+    setProducts((prev) => [
+      ...prev,
+      { id: Date.now(), name: '', concept: '', price: '', previewUrl: '' }
+    ]);
   };
 
   const updateProductName = (id, value) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, name: value } : p))
-    );
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, name: value } : p)));
   };
 
   const updateConcept = (id, value) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, concept: value } : p))
-    );
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, concept: value } : p)));
+  };
+
+  const updatePrice = (id, value) => {
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, price: value } : p)));
+    }
   };
 
   const handleImageUpload = (id, e) => {
@@ -126,6 +141,7 @@ export default function Level5Page() {
     const dataToSave = products.map((p) => ({
       name: p.name,
       concept: p.concept,
+      price: p.price,
       previewUrl: p.previewUrl,
     }));
 
@@ -144,14 +160,17 @@ export default function Level5Page() {
       updateProject(projectId, { levels: updatedLevels });
     }
 
-    alert('MVP berhasil disimpan! ✅');
-    setIsEditing(false); // ✅ Otomatis ke mode preview setelah simpan
+    setNotificationData({
+      xpGained: 10,
+      badgeName: 'Product Maker',
+    });
+    setShowNotification(true);
   };
 
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },
     { href: `/dashboard/${projectId}/plan`, label: 'Fase Plan' },
-    { label: 'Level 5: MVP' },
+    { label: 'Level 5: Prototype' },
   ];
 
   if (!isMounted) {
@@ -173,7 +192,7 @@ export default function Level5Page() {
           >
             <Menu size={20} className="text-[#5b5b5b]" />
           </button>
-          <h1 className="ml-2 font-bold text-[#5b5b5b] text-base">Level 5: MVP</h1>
+          <h1 className="ml-2 font-bold text-[#5b5b5b] text-base">Level 5: Prototype</h1>
         </header>
       )}
 
@@ -196,7 +215,7 @@ export default function Level5Page() {
                   style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                 >
                   <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-4 sm:mb-6">
-                    Level 5: MVP
+                    Level 5: Prototype
                   </h1>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -246,10 +265,22 @@ export default function Level5Page() {
                                 rows={3}
                               />
 
+                              <label className="block text-xs font-medium text-[#5b5b5b] mt-3 mb-1 flex items-center gap-1">
+                                <DollarSign size={14} />
+                                Harga (Rp)
+                              </label>
+                              <input
+                                type="text"
+                                value={product.price}
+                                onChange={(e) => updatePrice(product.id, e.target.value)}
+                                placeholder="Contoh: 25000"
+                                className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c] mb-3"
+                              />
+
                               <div className="mt-3">
                                 <label className="block text-xs font-medium text-[#5b5b5b] mb-1 flex items-center gap-1">
                                   <Camera size={14} />
-                                  Upload Gambar MVP
+                                  Upload Gambar Prototype
                                 </label>
                                 <div
                                   className="mt-1 border-2 border-dashed border-[#7a7a7a] rounded-lg p-3 text-center cursor-pointer hover:border-[#f02d9c]"
@@ -309,14 +340,14 @@ export default function Level5Page() {
                             >
                               <div className="p-4" style={{ backgroundColor: '#fdf6f0' }}>
                                 <h4 className="text-xs font-semibold text-[#5b5b5b] mb-2">
-                                  Product Preview {products.length > 1 ? `#${idx + 1}` : ''}
+                                  Prototype Preview {products.length > 1 ? `#${idx + 1}` : ''}
                                 </h4>
                                 <div className="flex items-start gap-3">
                                   <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
                                     {product.previewUrl ? (
                                       <img
                                         src={product.previewUrl}
-                                        alt="MVP"
+                                        alt="Prototype"
                                         className="w-full h-full object-contain"
                                       />
                                     ) : (
@@ -330,6 +361,11 @@ export default function Level5Page() {
                                     <p className="text-xs text-[#5b5b5b] mt-1 whitespace-pre-line line-clamp-2">
                                       {product.concept || 'Belum ada deskripsi'}
                                     </p>
+                                    {product.price && (
+                                      <p className="text-xs font-medium text-green-600 mt-1">
+                                        Harga: Rp{Number(product.price).toLocaleString('id-ID')}
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -369,51 +405,73 @@ export default function Level5Page() {
                       </div>
                     </div>
 
+                    {/* === KOLOM KANAN — DISESUAIKAN DENGAN GAYA LEVEL 1 === */}
                     <div className="space-y-5">
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                          <Target size={16} />
-                          Tujuan Level 5
+                      {/* === PENCAPAIAN === */}
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                        <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
+                          <Award size={16} className="text-[#f02d9c]" />
+                          Pencapaian
                         </h3>
-                        <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                          <li>Membangun versi paling sederhana dari produkmu (MVP)</li>
-                          <li>Memvisualisasikan bentuk fisik/digital MVP</li>
-                          <li>Menyiapkan aset untuk uji coba ke pelanggan awal</li>
-                        </ul>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-3 py-1.5 bg-[#f02d9c] text-white text-xs font-bold rounded-full flex items-center gap-1">
+                            <Lightbulb size={12} /> +10 XP
+                          </span>
+                          <span className="px-3 py-1.5 bg-[#8acfd1] text-[#0a5f61] text-xs font-bold rounded-full flex items-center gap-1">
+                            <Award size={12} /> Product Maker
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs text-[#5b5b5b]">
+                          Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
+                        </p>
                       </div>
 
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                          <Lightbulb size={16} />
-                          Tips & Best Practice
+                      {/* === PETUNJUK === */}
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                        <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
+                          <BookOpen size={16} className="text-[#f02d9c]" />
+                          Petunjuk
                         </h3>
-                        <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                          <li>
-                            <strong>MVP tidak harus sempurna</strong> — cukup untuk menguji ide utama
-                          </li>
-                          <li>
-                            Gunakan <strong>Canva, Figma, atau foto HP</strong> untuk visual MVP
-                          </li>
-                          <li>
-                            Fokus pada <strong>1–2 fitur inti</strong> yang menyelesaikan masalah utama
-                          </li>
-                        </ul>
+                        <div className="space-y-2">
+                          {[
+                            'Isi nama produk dan deskripsi singkat',
+                            'Tentukan harga jual (opsional)',
+                            'Upload gambar prototype (JPG/PNG/GIF, max 5MB)',
+                            'Klik “Simpan” untuk menyimpan konsep produk',
+                            'Klik “Lihat Preview” untuk melihat hasil sebelum lanjut ke Level 6',
+                          ].map((text, i) => (
+                            <div key={i} className="flex items-start gap-2 text-sm text-[#5b5b5b]">
+                              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#f02d9c] text-white text-xs font-bold mt-0.5">
+                                {i + 1}
+                              </span>
+                              {text}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <span className="px-2.5 py-1.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full flex items-center gap-1">
+                            <Lightbulb size={12} /> Tujuan: Buat versi sederhana produkmu untuk uji coba
+                          </span>
+                          <span className="px-2.5 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full flex items-center gap-1">
+                            <Award size={12} /> Tips: Gunakan Canva/Figma atau foto HP untuk visual
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                          <BookOpen size={16} />
-                          Resources Resmi
+                      {/* === RESOURCES === */}
+                      <div className="border border-gray-200 rounded-xl p-4 bg-white">
+                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
+                          <BookOpen size={14} /> Resources
                         </h3>
-                        <ul className="text-sm text-[#5b5b5b] space-y-2">
+                        <ul className="text-sm text-[#5b5b5b] space-y-1.5">
                           <li>
                             <a
                               href="https://miro.com/templates/lean-canvas/"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Miro: Lean Canvas Template <ChevronRight size={12} />
+                              Miro: Lean Canvas Template
                             </a>
                           </li>
                           <li>
@@ -421,9 +479,9 @@ export default function Level5Page() {
                               href="https://www.canva.com/templates/EAFhWMaXv5c-pink-modern-fashion-business-plan-presentation/"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Template Canva UMKM <ChevronRight size={12} />
+                              Template Canva UMKM
                             </a>
                           </li>
                           <li>
@@ -431,9 +489,9 @@ export default function Level5Page() {
                               href="https://perempuaninovasi.id/workshop"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Workshop MVP untuk Pemula <ChevronRight size={12} />
+                              Workshop Prototype untuk Pemula
                             </a>
                           </li>
                         </ul>
@@ -446,6 +504,15 @@ export default function Level5Page() {
           </div>
         </main>
       </div>
+
+      {/* Modal Notifikasi */}
+      <NotificationModalPlan
+        isOpen={showNotification}
+        type="success"
+        xpGained={notificationData.xpGained}
+        badgeName={notificationData.badgeName}
+        onClose={() => setShowNotification(false)}
+      />
     </div>
   );
 }
