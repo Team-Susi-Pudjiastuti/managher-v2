@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 import useRWWTestingStore from '@/store/useRWWTesting';
+import useBusinessIdeaStore from '@/store/useBusinessIdea';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
@@ -133,6 +134,7 @@ export default function RWW() {
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
   const { rwwTesting, getRWWTesting, updateRWWTesting, addRWWTesting } = useRWWTestingStore();
+  const { getBusinessIdeas, businessIdeas} = useBusinessIdeaStore();
   
   // --- Tambahkan state untuk confetti ---
   const [showConfetti, setShowConfetti] = useState(false);
@@ -157,11 +159,14 @@ export default function RWW() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [project, setProject] = useState(null);
   const [responses, setResponses] = useState([]);
-  const [vpcDataFromLevel1, setVpcDataFromLevel1] = useState(null);
   const [isFinanceOpen, setIsFinanceOpen] = useState(false);
-  const { planLevels } = useProjectStore();
+  const [respondenName, setRespondenName] = useState('');
+  const [jenisKelamin, setJenisKelamin] = useState('');
+  const [usia, setUsia] = useState('');
+  const [aktivitas, setAktivitas] = useState('');
+  const { planLevels } = useProjectStore();;
+  // const businessIdeaId = planLevels?.[0].entities[0].entity_ref || null;
 
-  
   useEffect(() => {
     const checkMobile = () => setIsMobile(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
     checkMobile();
@@ -174,24 +179,40 @@ export default function RWW() {
       }
     };
   }, []);
+
+useEffect(() => {
+  const businessIdeaId = planLevels?.[0]?.entities?.[0]?.entity_ref;
+
+  if (businessIdeaId) {
+    getBusinessIdeas(businessIdeaId);
+  }
+}, [planLevels]);
+
+
   
   // Load RWW Testing data from database
   useEffect(() => {
     if (projectId) {
       getRWWTesting(projectId).then(data => {
-        if (data && data.length > 0 && data[0].responses) {
-          setResponses(data[0].responses || []);
-        } else {
-          // Try to load from localStorage as fallback
-          const savedData = typeof window !== 'undefined' ? localStorage.getItem(`rww_data_${projectId}`) : null;
-          if (savedData) {
-            try {
-              const parsed = JSON.parse(savedData);
-              setResponses(parsed.responses || []);
-            } catch (e) {
-              console.error('Failed to parse saved RWW data', e);
-            }
-          }
+        if (data && data.length > 0) {
+          const parsed = data.map(r => {
+            const realAvg = r.real.reduce((a, b) => a + b, 0) / 3;
+            const winAvg = r.win.reduce((a, b) => a + b, 0) / 3;
+            const worthAvg = r.worth.reduce((a, b) => a + b, 0) / 3;
+            const total = ((realAvg + winAvg + worthAvg) / 3).toFixed(1);
+            return {
+              id: r._id,
+              name: r.name,
+              gender: r.gender,
+              age: r.age,
+              activity: r.activity,
+              real: parseFloat(realAvg.toFixed(1)),
+              win: parseFloat(winAvg.toFixed(1)),
+              worth: parseFloat(worthAvg.toFixed(1)),
+              total,
+            };
+          });
+          setResponses(parsed);
         }
       });
     }
@@ -206,28 +227,66 @@ export default function RWW() {
   
   <Confetti />
 
-  const handleAddResponden = () => {
+  const handleAddResponden = async () => {
     const allAnswered = [q1, q2, q3, q4, q5, q6, q7, q8, q9].every((val) => val !== null);
     if (!allAnswered) {
       alert('Mohon lengkapi semua penilaian (1–5) terlebih dahulu.');
       return;
     }
-    const newResponse = {
-      id: Date.now(),
+
+    const real = [q1, q2, q3];
+    const win = [q4, q5, q6];
+    const worth = [q7, q8, q9];
+
+    const newRespondenData = {
+      project: projectId,
       name: respondenName || '—',
       gender: jenisKelamin || '—',
       age: usia ? parseInt(usia, 10) : null,
       activity: aktivitas || '—',
-      real: (q1 + q2 + q3) / 3,
-      win: (q4 + q5 + q6) / 3,
-      worth: (q7 + q8 + q9) / 3,
-      total: ((q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8 + q9) / 9).toFixed(1),
+      real,
+      win,
+      worth,
     };
-    setResponses((prev) => [...prev, newResponse]);
+
+
+    // Kirim ke backend
+    await addRWWTesting(newRespondenData);
+
+    // Reset form
     setRespondenName('');
     setJenisKelamin('');
     setUsia('');
     setAktivitas('');
+    setQ1(null);
+    setQ2(null);
+    setQ3(null);
+    setQ4(null);
+    setQ5(null);
+    setQ6(null);
+    setQ7(null);
+    setQ8(null);
+    setQ9(null);
+
+    // Refresh data dari backend
+    const freshData = await getRWWTesting(projectId);
+    setResponses(freshData.map(r => {
+      const realAvg = r.real.reduce((a, b) => a + b, 0) / 3;
+      const winAvg = r.win.reduce((a, b) => a + b, 0) / 3;
+      const worthAvg = r.worth.reduce((a, b) => a + b, 0) / 3;
+      const total = ((realAvg + winAvg + worthAvg) / 3).toFixed(1);
+      return {
+        id: r._id,
+        name: r.name,
+        gender: r.gender,
+        age: r.age,
+        activity: r.activity,
+        real: parseFloat(realAvg.toFixed(1)),
+        win: parseFloat(winAvg.toFixed(1)),
+        worth: parseFloat(worthAvg.toFixed(1)),
+        total,
+      };
+    }));
   };
 
   const calculateAverages = () => {
@@ -355,8 +414,8 @@ export default function RWW() {
     }
 
     setNotificationData({
-      xpGained: 10,
-      badgeName: 'Validator Pro',
+      xpGained: planLevels[1].xp,
+      badgeName: planLevels[1].badge || 'Validator Pro',
     });
     setShowNotification(true);
   };
@@ -369,7 +428,6 @@ export default function RWW() {
 
   const genderSummary = getGenderSummary();
   const ageGroupSummary = getAgeGroupSummary();
-console.log(rwwTesting)
 
   return (
     <div className="min-h-screen bg-white font-[Poppins]">
@@ -421,7 +479,7 @@ console.log(rwwTesting)
                     {/* Kolom Kiri: Preview Ide + Form */}
                     <div>
                       {/* ... (sama seperti file asli) */}
-                      {!vpcDataFromLevel1 ? (
+                      {!planLevels?.[0]?.completed ? (
                         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
                           <p className="text-sm text-yellow-800">
                             ❗ Belum ada data dari Level 1. Silakan lengkapi{' '}
@@ -437,11 +495,10 @@ console.log(rwwTesting)
                             <Eye size={16} /> 💡 Ide yang Akan Divalidasi
                           </h3>
                           {(() => {
-                            const ps = parseProductsServices(vpcDataFromLevel1.productsServices);
                             return (
                               <>
-                                <ul className="text-[15px] text-[#5b5b5b] space-y-1.5">
-                                  <li><span className="font-medium">Apa yang kamu jual?</span> {ps.ide || '-'}</li>
+                                {/* <ul className="text-[15px] text-[#5b5b5b] space-y-1.5">
+                                  <li><span className="font-medium">Apa yang kamu jual?</span> {level1 || '-'}</li>
                                   {ps.jenis && <li><span className="font-medium">Jenis:</span> {ps.jenis}</li>}
                                   {ps.deskripsi && <li><span className="font-medium">Deskripsi:</span> {ps.deskripsi}</li>}
                                   {ps.fitur && <li><span className="font-medium">Fitur utama:</span> {ps.fitur}</li>}
@@ -491,16 +548,16 @@ console.log(rwwTesting)
                                       </div>
                                     )}
                                   </div>
-                                )}
-                                {ps.uniqueAdvantage && (
+                                )} */}
+                                {businessIdeas?.uniqueValueProposition && (
                                   <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
                                     <p className="font-medium text-[#0a5f61] text-sm">Apa yang bikin kamu beda?</p>
                                     <p className="text-[15px] text-[#5b5b5b] mt-1">
-                                      {ps.uniqueAdvantage.replace('Keunggulan Unik: ', '')}
+                                      {businessIdeas?.uniqueValueProposition.replace('Keunggulan Unik: ', '')}
                                     </p>
                                   </div>
                                 )}
-                                {ps.keyMetrics && (
+                                {businessIdeas?.keyMetrics && (
                                   <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
                                     <p className="font-medium text-[#0a5f61] text-sm">Apa yang mau kamu ukur?</p>
                                     <div className="mt-1 flex flex-wrap gap-1.5">
@@ -518,7 +575,7 @@ console.log(rwwTesting)
                                     </div>
                                   </div>
                                 )}
-                                {ps.channel && (
+                                {businessIdeas?.channel && (
                                   <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
                                     <p className="font-medium text-[#0a5f61] text-sm">Di mana kamu jualan?</p>
                                     <div className="mt-1 flex flex-wrap gap-1.5">
@@ -553,7 +610,7 @@ console.log(rwwTesting)
                             <label className="block text-sm font-medium mb-2">Nama Lengkap</label>
                             <input
                               type="text"
-                              value={rwwTesting[0]?.name}
+                              value={respondenName}
                               onChange={(e) => setRespondenName(e.target.value)}
                               placeholder="Contoh: Ahmad"
                               className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
@@ -563,11 +620,11 @@ console.log(rwwTesting)
                           <div>
                             <label className="block text-sm font-medium mb-2">Jenis Kelamin</label>
                             <select
-                              value={rwwTesting[0]?.gender}
+                              value={jenisKelamin}
                               onChange={(e) => setJenisKelamin(e.target.value)}
                               className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            > enum
+                            > 
                               <option value="">Pilih Jenis Kelamin</option>
                               <option value="Laki-laki">Laki-laki</option>
                               <option value="Perempuan">Perempuan</option>
@@ -578,7 +635,7 @@ console.log(rwwTesting)
                             <label className="block text-sm font-medium mb-2">Usia</label>
                             <input
                               type="number"
-                              value={rwwTesting[0]?.age}
+                              value={usia}
                               onChange={(e) => setUsia(e.target.value)}
                               placeholder="Contoh: 25"
                               className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
@@ -587,14 +644,20 @@ console.log(rwwTesting)
                           </div>
                           <div>
                             <label className="block text-sm font-medium mb-2">Aktivitas</label>
-                            <input
-                              type="text"
-                              value={rwwTesting[0]?.activity}
+                            <select
+                              value={aktivitas}
                               onChange={(e) => setAktivitas(e.target.value)}
                               placeholder="Contoh: Mahasiswa"
                               className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            />
+                            >
+                            <option value="">Pilih Aktivitas</option>
+                            <option value="Mahasiswa">Mahasiswa</option>
+                            <option value="Ibu rumah tangga">IRT</option>
+                            <option value="Pekerja">Pekerja</option>
+                            <option value="Lainnya">Lainnya</option>
+                            <option value="Tidak mau memberi tau">Tidak mau memberi tau</option>
+                            </select>
                           </div>
                         </div>
 

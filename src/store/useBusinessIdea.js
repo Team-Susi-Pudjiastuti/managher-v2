@@ -5,16 +5,22 @@ import { apiRequest } from '../lib/api';
 const useBusinessIdeaStore = create(
   persist(
     (set, get) => ({
-      businessIdeas: [],
+      businessIdeas: null,
       loading: false,
       error: null,
-
       getBusinessIdeas: async (id) => {
-        const res = await apiRequest(`business-idea/${id}`, 'GET');
-        const ideas = res.data || [];
-        set({ businessIdeas: ideas });
-        return ideas;
+        try {
+          console.log("📡 Fetching business idea by ID:", id);
+          const res = await apiRequest(`business-idea/${id}`, 'GET');
+          const data = res?.data || {}; //
+
+          set({ businessIdea: data }); //
+          return data;
+        } catch (err) {
+          console.error("Error fetching business idea:", err);
+        }
       },
+
 
       updateBusinessIdeas: async (id, updateData) => {
         const res = await apiRequest(`business-idea/${id}`, 'PUT', updateData);

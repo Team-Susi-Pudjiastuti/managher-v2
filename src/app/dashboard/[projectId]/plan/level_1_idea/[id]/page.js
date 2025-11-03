@@ -373,7 +373,7 @@ useEffect(() => {
 
     setIsLoading(true);
     try {
-      // 🔥 Panggil AI Flow
+
       const result = await generateBusinessIdea({ interest });
       const ideas = Array.isArray(result) ? result : [result];
       setGeneratedIdeas(ideas);
