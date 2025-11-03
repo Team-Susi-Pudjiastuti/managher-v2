@@ -15,12 +15,89 @@ import {
   ChevronRight,
   CheckCircle,
   Menu,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import useProjectStore from '@/store/useProjectStore';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
+
+// === CONFETTI ANIMATION (SAMA DENGAN LEVEL 1) ===
+const Confetti = () => {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const confettiCount = 120;
+    const gravity = 0.4;
+    const colors = ['#f02d9c', '#8acfd1', '#fbe2a7', '#ff6b9d', '#4ecdc4'];
+    const confettiPieces = Array.from({ length: confettiCount }, () => ({
+      x: Math.random() * canvas.width,
+      y: -10,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      speedX: (Math.random() - 0.5) * 6,
+      speedY: Math.random() * 8 + 4,
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 8,
+    }));
+    let animationId;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let stillFalling = false;
+      confettiPieces.forEach((piece) => {
+        piece.y += piece.speedY;
+        piece.x += piece.speedX;
+        piece.speedY += gravity;
+        piece.rotation += piece.rotationSpeed;
+        if (piece.y < canvas.height) stillFalling = true;
+        ctx.save();
+        ctx.translate(piece.x, piece.y);
+        ctx.rotate((piece.rotation * Math.PI) / 180);
+        ctx.fillStyle = piece.color;
+        ctx.fillRect(-piece.size / 2, -piece.size / 2, piece.size, piece.size);
+        ctx.restore();
+      });
+      if (stillFalling) animationId = requestAnimationFrame(animate);
+    };
+    animate();
+    return () => cancelAnimationFrame(animationId);
+  }, []);
+  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-[9999]" />;
+};
+
+const PhaseProgressBar = ({ currentXp, totalXp }) => {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const calculatedProgress = totalXp > 0 ? Math.min(100, Math.floor((currentXp / totalXp) * 100)) : 0;
+    setProgress(calculatedProgress);
+  }, [currentXp, totalXp]);
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-3 w-full">
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <span className="text-xs font-bold text-[#5b5b5b]">
+          XP Fase Plan: {currentXp} / {totalXp}
+        </span>
+        <span className="text-xs font-bold text-[#f02d9c]">{progress}%</span>
+      </div>
+      <div className="w-full bg-[#f0f0f0] rounded-full h-1.5">
+        <div
+          className="h-1.5 rounded-full bg-[#f02d9c] transition-all duration-500"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      {progress >= 100 && (
+        <p className="text-[10px] text-[#7a7a7a] mt-1 text-right">Selesai!</p>
+      )}
+    </div>
+  );
+};
 
 // Helper: get initials
 const getInitials = (name) => {
@@ -51,22 +128,18 @@ export default function Level3Page() {
   const updateProject = useProjectStore((state) => state.updateProject);
 
   const [showNotification, setShowNotification] = useState(false);
-    const [notificationData, setNotificationData] = useState({
-      xpGained: 0,
-      badgeName: '',
-    });
+  const [showConfetti, setShowConfetti] = useState(false); // <-- Tambahkan state ini
+  const [notificationData, setNotificationData] = useState({
+    message: '',
+    xpGained: 0,
+    badgeName: '',
+  });
 
   const [brandName, setBrandName] = useState('');
   const [tagline, setTagline] = useState('');
-
-  const [productName, setProductName] = useState('');
-  const [productDesc, setProductDesc] = useState('');
-  const [price, setPrice] = useState('');
-
   const [palette, setPalette] = useState(['#F6E8D6']);
   const [activePickerIndex, setActivePickerIndex] = useState(0);
   const MAX_COLORS = 6;
-
   const [logoPreview, setLogoPreview] = useState('');
   const logoUploadRef = useRef(null);
 
@@ -101,7 +174,6 @@ export default function Level3Page() {
           const data = JSON.parse(saved);
           setBrandName(data.brandName || '');
           setTagline(data.tagline || '');
-          // Do NOT restore product fields — they are removed from UI
           setPalette(data.palette || ['#F6E8D6']);
           setLogoPreview(data.logoPreview || '');
         } catch (e) {
@@ -110,6 +182,13 @@ export default function Level3Page() {
       }
     }
   }, [projectId, projects]);
+
+  // Progress data
+  const totalLevels = 7;
+  const completedLevels = project?.levels?.filter((l) => l.completed).length || 0;
+  const currentXp = completedLevels * 10;
+  const totalXp = totalLevels * 10;
+  const firstIncompleteLevel = project?.levels?.find((l) => !l.completed) || { id: 3 };
 
   // Palette
   const updateColor = (idx, hex) => {
@@ -153,7 +232,6 @@ export default function Level3Page() {
     const data = {
       brandName,
       tagline,
-      // productName, productDesc, price are omitted from save
       palette,
       logoPreview,
       updatedAt: new Date().toISOString(),
@@ -167,14 +245,18 @@ export default function Level3Page() {
       }
       updatedLevels[2] = {
         id: 3,
-        completed: !!brandName, // Only require brand name now
+        completed: !!brandName,
         data: { concept: data },
       };
       updateProject(projectId, { levels: updatedLevels });
     }
 
+    // Tampilkan confetti saat berhasil menyimpan
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 3000);
+
     setNotificationData({
-      message: 'Ide berhasil disimpan!',
+      message: 'Konsep brand berhasil disimpan!',
       xpGained: 10,
       badgeName: 'Brand Builder',
     });
@@ -195,6 +277,8 @@ export default function Level3Page() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
+      {showConfetti && <Confetti />} {/* Render confetti jika true */}
+
       {/* Breadcrumb */}
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
         <Breadcrumb items={breadcrumbItems} />
@@ -232,11 +316,14 @@ export default function Level3Page() {
                   className="relative bg-white rounded-2xl border-t border-l border-black p-4 sm:p-5 md:p-6"
                   style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                 >
-                  <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-4 sm:mb-6">
-                    Level 3: Concept Development
-                  </h1>
+                  {!isMobile && (
+                    <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-4 sm:mb-6">
+                      Level 3: Concept Development
+                    </h1>
+                  )}
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column: Form / Preview */}
                     <div>
                       {isEditing ? (
                         <div className="space-y-4">
@@ -339,11 +426,19 @@ export default function Level3Page() {
                                   disableAlpha
                                 />
                               </div>
+                              {palette.length < MAX_COLORS && (
+                                <button
+                                  onClick={addColor}
+                                  className="mt-2 text-xs text-[#f02d9c] font-medium hover:underline"
+                                >
+                                  + Tambah Warna
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
                       ) : (
-                        /* ✅ PREVIEW MODE — hanya menampilkan brand + logo */
+                        /* PREVIEW MODE */
                         <div className="p-4 border border-gray-300 rounded-xl bg-white shadow-sm">
                           <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
                             <Eye size={16} /> Brand Preview
@@ -357,7 +452,6 @@ export default function Level3Page() {
                             }}
                           >
                             <div className="flex flex-col items-center text-center">
-                              {/* Logo */}
                               <div
                                 className="flex items-center justify-center rounded-lg mb-3"
                                 style={{
@@ -377,11 +471,7 @@ export default function Level3Page() {
                                   <span className="text-lg font-bold">{brandInitials}</span>
                                 )}
                               </div>
-
-                              {/* Brand Name */}
                               <p className="font-bold text-lg">{brandName || 'Nama Brand'}</p>
-
-                              {/* Tagline */}
                               <p className="text-sm opacity-90 mt-1">{tagline || 'Tagline Anda'}</p>
                             </div>
                           </div>
@@ -420,70 +510,86 @@ export default function Level3Page() {
                       </div>
                     </div>
 
-                    {/* Edukasi */}
+                    {/* Right Column: Edukasi — Progress Bar + Pencapaian + Petunjuk + Resources */}
                     <div className="space-y-5">
-                      <div className="flex items-center gap-3 mb-3">
-                    {/* XP */}
-                      <div className="bg-[#f02d9c]/10 border border-[#f02d9c]/30 rounded-xl p-3 text-center hover:scale-[1.02] transition-transform">
-                        <div className="flex items-center gap-1 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
-                          <Lightbulb size={14} />
-                          <span>+10 XP</span>
+                      {/* Progress Bar sebagai Card */}
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap size={16} className="text-[#f02d9c]" />
+                          <span className="font-bold text-[#5b5b5b]">Progress Fase Plan</span>
+                        </div>
+                        <PhaseProgressBar
+                          currentXp={currentXp}
+                          totalXp={totalXp}
+                          firstIncompleteLevel={firstIncompleteLevel}
+                        />
+                      </div>
+
+                      {/* Achievements */}
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Award size={16} className="text-[#f02d9c]" />
+                          <span className="font-bold text-[#5b5b5b]">Pencapaian</span>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                          <div className="flex items-center gap-1.5 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold">
+                            <Lightbulb size={12} /> +10 XP
+                          </div>
+                          <div className="flex items-center gap-1.5 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold">
+                            <Award size={12} /> Brand Builder
+                          </div>
+                        </div>
+                        <p className="mt-3 text-xs text-[#5b5b5b]">
+                          Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
+                        </p>
+                      </div>
+
+                      {/* Instructions */}
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <BookOpen size={16} className="text-[#f02d9c]" />
+                          <span className="font-bold text-[#5b5b5b]">Petunjuk</span>
+                        </div>
+                        <div className="space-y-2">
+                          {[
+                            'Isi nama brand dan tagline',
+                            'Upload logo (opsional)',
+                            'Pilih atau sesuaikan palet warna',
+                            'Gunakan tombol “Lihat Preview” untuk melihat hasil',
+                            'Klik “Simpan” untuk lanjut ke Level 4',
+                          ].map((text, i) => (
+                            <div key={i} className="flex items-start gap-2 text-sm text-[#5b5b5b]">
+                              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#f02d9c] text-white text-xs font-bold mt-0.5">
+                                {i + 1}
+                              </span>
+                              {text}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <div className="px-2.5 py-1.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full flex items-center gap-1">
+                            <Lightbulb size={12} /> Tujuan: Bangun identitas visual yang konsisten
+                          </div>
+                          <div className="px-2.5 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full flex items-center gap-1">
+                            <Award size={12} /> Tips: Gunakan maksimal 3–6 warna
+                          </div>
                         </div>
                       </div>
 
-                      {/* Badge */}
-                      <div className="bg-[#f02d9c]/10 border border-[#f02d9c]/30 rounded-xl p-3 text-center hover:scale-[1.02] transition-transform">
-                        <div className="flex items-center gap-1 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
-                          <Award size={14} />
-                          <span>Brand Builder</span>
-                        </div>
-                      </div>
-                    </div>
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                          <Lightbulb size={16} />
-                          Tujuan Level 3
+                      {/* Resources */}
+                      <div className="border border-gray-200 rounded-xl p-4 bg-white">
+                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
+                          <BookOpen size={14} /> Resources
                         </h3>
-                        <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                          <li>Mengembangkan identitas visual brand yang konsisten</li>
-                          <li>Mendefinisikan nama, tagline, dan positioning brand</li>
-                          <li>Menyusun elemen dasar brand untuk digunakan di tahap selanjutnya</li>
-                        </ul>
-                      </div>
-
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                          <Award size={16} />
-                          Tips & Best Practice
-                        </h3>
-                        <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
-                          <li>Warna logo harus kontras dengan latar belakang</li>
-                          <li>
-                            Tagline harus <strong>pendek, jelas, dan emosional</strong>
-                          </li>
-                          <li>
-                            Logo sebaiknya sederhana, mudah dikenali, dan mencerminkan nilai brand
-                          </li>
-                          <li>
-                            Gunakan logo yang konsisten di semua platform — pastikan tetap terbaca bahkan dalam ukuran kecil
-                          </li>
-                        </ul>
-                      </div>
-
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                        <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                          <BookOpen size={16} />
-                          Resources Resmi
-                        </h3>
-                        <ul className="text-sm text-[#5b5b5b] space-y-2">
+                        <ul className="text-sm text-[#5b5b5b] space-y-1.5">
                           <li>
                             <a
                               href="https://www.strategyzer.com/canvas/value-proposition-canvas"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Strategyzer: Value Proposition Design <ChevronRight size={12} />
+                              Strategyzer: Value Proposition Design
                             </a>
                           </li>
                           <li>
@@ -491,9 +597,9 @@ export default function Level3Page() {
                               href="https://miro.com/templates/value-proposition-canvas/"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Miro: Value Proposition Canvas Template <ChevronRight size={12} />
+                              Miro: Value Proposition Canvas Template
                             </a>
                           </li>
                           <li>
@@ -501,9 +607,9 @@ export default function Level3Page() {
                               href="https://perempuaninovasi.id/workshop"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Workshop Branding untuk UMKM <ChevronRight size={12} />
+                              Workshop Branding untuk UMKM
                             </a>
                           </li>
                         </ul>
@@ -516,14 +622,15 @@ export default function Level3Page() {
           </div>
         </main>
       </div>
-      {/* Notification */}
+
+      {/* Notification Modal */}
       <NotificationModalPlan
-       isOpen={showNotification}
-       type="success"
-       xpGained={notificationData.xpGained}
-       badgeName={notificationData.badgeName}
-       onClose={() => setShowNotification(false)}
-       />
+        isOpen={showNotification}
+        type="success"
+        xpGained={notificationData.xpGained}
+        badgeName={notificationData.badgeName}
+        onClose={() => setShowNotification(false)}
+      />
     </div>
   );
 }
