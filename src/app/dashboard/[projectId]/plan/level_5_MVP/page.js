@@ -20,12 +20,92 @@ import {
   Trash2,
   DollarSign,
   Award,
+  Zap,
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import useProjectStore from '@/store/useProjectStore';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
+
+// === CONFETTI (SAMA DENGAN LEVEL 4) ===
+const Confetti = () => {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const confettiCount = 120;
+    const gravity = 0.4;
+    const colors = ['#f02d9c', '#8acfd1', '#fbe2a7', '#ff6b9d', '#4ecdc4'];
+    const confettiPieces = Array.from({ length: confettiCount }, () => ({
+      x: Math.random() * canvas.width,
+      y: -10,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      speedX: (Math.random() - 0.5) * 6,
+      speedY: Math.random() * 8 + 4,
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 8,
+    }));
+    let animationId;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let stillFalling = false;
+      confettiPieces.forEach((piece) => {
+        piece.y += piece.speedY;
+        piece.x += piece.speedX;
+        piece.speedY += gravity;
+        piece.rotation += piece.rotationSpeed;
+        if (piece.y < canvas.height) stillFalling = true;
+        ctx.save();
+        ctx.translate(piece.x, piece.y);
+        ctx.rotate((piece.rotation * Math.PI) / 180);
+        ctx.fillStyle = piece.color;
+        ctx.fillRect(-piece.size / 2, -piece.size / 2, piece.size, piece.size);
+        ctx.restore();
+      });
+      if (stillFalling) animationId = requestAnimationFrame(animate);
+    };
+    animate();
+    return () => cancelAnimationFrame(animationId);
+  }, []);
+  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-[9999]" />;
+};
+
+// === PROGRESS BAR (TANPA TEKS "LANJUT KE LEVEL") ===
+const PhaseProgressBar = ({ currentXp, totalXp }) => {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const calculatedProgress = totalXp > 0
+      ? Math.min(100, Math.floor((currentXp / totalXp) * 100))
+      : 0;
+    setProgress(calculatedProgress);
+  }, [currentXp, totalXp]);
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-3 w-full">
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <span className="text-xs font-bold text-[#5b5b5b]">
+          XP Fase Plan: {currentXp} / {totalXp}
+        </span>
+        <span className="text-xs font-bold text-[#f02d9c]">
+          {progress}%
+        </span>
+      </div>
+      <div className="w-full bg-[#f0f0f0] rounded-full h-1.5">
+        <div
+          className="h-1.5 rounded-full bg-[#f02d9c] transition-all duration-500"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      {progress >= 100 && (
+        <p className="text-[10px] text-[#7a7a7a] mt-1 text-right">Selesai!</p>
+      )}
+    </div>
+  );
+};
 
 export default function Level5Page() {
   const { projectId } = useParams();
@@ -42,6 +122,7 @@ export default function Level5Page() {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [notificationData, setNotificationData] = useState({
     xpGained: 0,
     badgeName: '',
@@ -83,6 +164,12 @@ export default function Level5Page() {
       }
     }
   }, [projectId, projects]);
+
+  // === PROGRESS BAR DATA ===
+  const totalLevels = 7;
+  const completedLevels = project?.levels?.filter((l) => l.completed).length || 0;
+  const currentXp = completedLevels * 10;
+  const totalXp = totalLevels * 10;
 
   const addProduct = () => {
     if (products.length >= 5) return;
@@ -137,35 +224,47 @@ export default function Level5Page() {
     setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const handleSave = () => {
-    const dataToSave = products.map((p) => ({
-      name: p.name,
-      concept: p.concept,
-      price: p.price,
-      previewUrl: p.previewUrl,
-    }));
 
-    localStorage.setItem(`mvp-${projectId}`, JSON.stringify(dataToSave));
+ const handleSave = () => {
+  const dataToSave = products.map((p) => ({
+    name: p.name,
+    concept: p.concept,
+    price: p.price,
+    previewUrl: p.previewUrl,
+  }));
 
-    if (project) {
-      const updatedLevels = [...(project.levels || [])];
-      while (updatedLevels.length <= 4) {
-        updatedLevels.push({ id: updatedLevels.length + 1, completed: false });
-      }
-      updatedLevels[4] = {
-        id: 5,
-        completed: products.some((p) => p.concept || p.previewUrl),
-        mvp: dataToSave,
-      };
-      updateProject(projectId, { levels: updatedLevels });
+  localStorage.setItem(`mvp-${projectId}`, JSON.stringify(dataToSave));
+
+  const isValid = products.some((p) => p.concept || p.previewUrl);
+
+  // Reset dulu agar perubahan state terdeteksi
+  setShowConfetti(false);
+  if (isValid) {
+    setTimeout(() => {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 4000);
+    }, 50);
+  }
+
+  setNotificationData({
+    xpGained: 10,
+    badgeName: 'Product Maker',
+  });
+  setShowNotification(true);
+
+  if (project) {
+    const updatedLevels = [...(project.levels || [])];
+    while (updatedLevels.length <= 4) {
+      updatedLevels.push({ id: updatedLevels.length + 1, completed: false });
     }
-
-    setNotificationData({
-      xpGained: 10,
-      badgeName: 'Product Maker',
-    });
-    setShowNotification(true);
-  };
+    updatedLevels[4] = {
+      id: 5,
+      completed: isValid,
+      mvp: dataToSave,
+    };
+    updateProject(projectId, { levels: updatedLevels });
+  }
+};
 
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },
@@ -179,6 +278,9 @@ export default function Level5Page() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
+      {/* ✅ CONFETTI DI RENDER DI ROOT */}
+      {showConfetti && <Confetti />}
+
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
         <Breadcrumb items={breadcrumbItems} />
       </div>
@@ -405,9 +507,18 @@ export default function Level5Page() {
                       </div>
                     </div>
 
-                    {/* === KOLOM KANAN — DISESUAIKAN DENGAN GAYA LEVEL 1 === */}
+                    {/* KOLOM KANAN */}
                     <div className="space-y-5">
-                      {/* === PENCAPAIAN === */}
+                      {/* PROGRESS BAR */}
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap size={16} className="text-[#f02d9c]" />
+                          <span className="font-bold text-[#5b5b5b]">Progress Fase Plan</span>
+                        </div>
+                        <PhaseProgressBar currentXp={currentXp} totalXp={totalXp} />
+                      </div>
+
+                      {/* PENCAPAIAN */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
                           <Award size={16} className="text-[#f02d9c]" />
@@ -426,7 +537,7 @@ export default function Level5Page() {
                         </p>
                       </div>
 
-                      {/* === PETUNJUK === */}
+                      {/* PETUNJUK */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
                           <BookOpen size={16} className="text-[#f02d9c]" />
@@ -458,7 +569,7 @@ export default function Level5Page() {
                         </div>
                       </div>
 
-                      {/* === RESOURCES === */}
+                      {/* RESOURCES */}
                       <div className="border border-gray-200 rounded-xl p-4 bg-white">
                         <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
                           <BookOpen size={14} /> Resources
@@ -505,7 +616,6 @@ export default function Level5Page() {
         </main>
       </div>
 
-      {/* Modal Notifikasi */}
       <NotificationModalPlan
         isOpen={showNotification}
         type="success"
