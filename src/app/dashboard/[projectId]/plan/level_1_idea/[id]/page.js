@@ -27,21 +27,42 @@ import useBusinessIdeaStore from '@/store/useBusinessIdea';
 import { generateBusinessIdea } from '@/ai/flows/analysisBusinessIdea';
 import Confetti from '@/components/Confetti';
 
-// === HELPER: Parse & Format ===
+// === HELPER: Parse & Format Products & Services ===
 const parseProductsServices = (text) => {
-  if (!text) return {};
-  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
-  const data = {
-    ide: '',
-    jenis: '',
-    deskripsi: '',
-    fitur: '',
-    manfaat: '',
-    harga: '',
-    biayaModal: '',
-    biayaBahanBaku: '',
-    hargaJual: '',
-    margin: '',
+  const lines = text.split('\n').map((l) => l.trim()).filter((l) => l);
+  let ide = '',
+    jenis = '',
+    deskripsi = '',
+    fitur = '',
+    manfaat = '',
+    harga = '',
+    biayaModal = '',
+    biayaBahanBaku = '',
+    hargaJual = '',
+    margin = '';
+  for (const line of lines) {
+    if (line.startsWith('Jenis:')) jenis = line.replace('Jenis:', '').trim();
+    else if (line.startsWith('Deskripsi:')) deskripsi = line.replace('Deskripsi:', '').trim();
+    else if (line.startsWith('Fitur')) fitur = line;
+    else if (line.startsWith('Manfaat')) manfaat = line;
+    else if (line.startsWith('Harga:')) harga = line;
+    else if (line.startsWith('Biaya Modal:')) biayaModal = line;
+    else if (line.startsWith('Biaya Bahan Baku:')) biayaBahanBaku = line;
+    else if (line.startsWith('Harga Jual:')) hargaJual = line;
+    else if (line.startsWith('Margin:')) margin = line;
+    else if (!ide) ide = line;
+  }
+  return {
+    ide,
+    jenis,
+    deskripsi,
+    fitur,
+    manfaat,
+    harga,
+    biayaModal,
+    biayaBahanBaku,
+    hargaJual,
+    margin,
   };
   for (const line of lines) {
     if (line.startsWith('Jenis:')) data.jenis = line.replace('Jenis:', '').trim();
@@ -118,9 +139,6 @@ const formatProductsServices = ({
   biayaBahanBaku,
   hargaJual,
   margin,
-  uniqueAdvantage,
-  keyMetrics,
-  channel,
 }) => {
   const parts = [ide];
   if (jenis) parts.push(`Jenis: ${jenis}`);
@@ -132,16 +150,13 @@ const formatProductsServices = ({
   if (biayaBahanBaku) parts.push(biayaBahanBaku);
   if (hargaJual) parts.push(hargaJual);
   if (margin) parts.push(margin);
-  if (uniqueAdvantage) parts.push(uniqueAdvantage);
-  if (keyMetrics) parts.push(keyMetrics);
-  if (channel) parts.push(channel);
   return parts.join('\n');
 };
 
-
-// === GENERATOR IDE (DIPERBAIKI) ===
+// === GENERATOR IDE DENGAN RINCIAN BIAYA ===
 const generateThreeIdeasFromInterest = (interest) => {
   const baseIdeas = [
+    // ... (data ide tetap sama seperti file Anda)
     {
       interest: 'kuliner',
       customerJobs: 'Ibu bekerja usia 28–45 tahun ingin menyediakan makanan sehat untuk keluarga setiap hari',
@@ -157,14 +172,10 @@ const generateThreeIdeasFromInterest = (interest) => {
         'Biaya Modal: Rp5.000.000 (kompor portable, wadah food-grade 100 pcs, branding awal)\n' +
         'Biaya Bahan Baku: Beras organik (Rp50.000), Ayam kampung (Rp80.000), Sayur lokal (Rp30.000), Bumbu & minyak (Rp20.000) → Total: Rp180.000/minggu\n' +
         'Harga Jual: Rp299.000/minggu\n' +
-        'Margin: ±40%\n' +
-        'Keunggulan Unik: Kita satu-satunya yang pakai bahan organik lokal DAN bisa atur alergi lewat WhatsApp\n' +
-        'Angka Penting: Jumlah langganan aktif per minggu, Rating kepuasan pelanggan (1–5), Jumlah jam yang dihemat pelanggan\n' +
-        'Cara Jualan: Instagram & TikTok (konten harian ibu sibuk), WhatsApp Business (untuk pesan & konsultasi), Rekomendasi dari komunitas ibu di Facebook',
-      painRelievers:
+        'Margin: ±40%',
+      unfairAdvantage:
         'Dikirim setiap Senin pagi → tidak perlu belanja\nSiap saji dalam 5 menit → tidak perlu masak\nBisa atur alergi/makanan pantangan → aman untuk anak',
-      gainCreators:
-        'Hemat 10 jam/minggu\nAnak-anak lebih sehat\nTidak perlu mikir menu\nHarga: Rp299.000/minggu (5 menu)',
+      uniqueValueProposition: 'Hemat 10 jam/minggu\nAnak-anak lebih sehat\nTidak perlu mikir menu\nHarga: Rp299.000/minggu (5 menu)',
     },
     {
       interest: 'fashion',
@@ -181,14 +192,10 @@ const generateThreeIdeasFromInterest = (interest) => {
         'Biaya Modal: Rp10.000.000 (stok awal 50 outfit, gantungan, kemasan, sistem booking sederhana)\n' +
         'Biaya Bahan Baku: Rp0 (tidak ada produksi, hanya perawatan: laundry & steaming @Rp15.000/outfit)\n' +
         'Harga Jual: Rp149.000/3 hari\n' +
-        'Margin: ±60% setelah skala\n' +
-        'Keunggulan Unik: Bisa coba pakai virtual lewat AR sebelum sewa → minim risiko salah pilih\n' +
-        'Angka Penting: Jumlah sewa/hari, Rating kepuasan, Persentase repeat customer\n' +
-        'Cara Jualan: Instagram, TikTok, Website booking, Kolaborasi dengan influencer hijab',
-      painRelievers:
+        'Margin: ±60% setelah skala',
+      unfairAdvantage:
         'Sewa mulai Rp149rb → jauh lebih murah daripada beli\nGratis pengiriman & pengembalian\nBisa coba virtual via AR → minim risiko salah pilih',
-      gainCreators:
-        'Tampil fresh di setiap acara tanpa beli baru\nHemat hingga 70% dibanding beli\nRamah lingkungan\nHarga: Rp149.000/3 hari',
+      uniqueValueProposition: 'Tampil fresh di setiap acara tanpa beli baru\nHemat hingga 70% dibanding beli\nRamah lingkungan\nHarga: Rp149.000/3 hari',
     },
     {
       interest: 'edukasi anak',
@@ -205,14 +212,10 @@ const generateThreeIdeasFromInterest = (interest) => {
         'Biaya Modal: Rp500.000 (pembuatan konten video, desain worksheet, sistem otomatisasi WhatsApp)\n' +
         'Biaya Bahan Baku: Rp0 (digital, tidak ada bahan fisik)\n' +
         'Harga Jual: Rp99.000/program\n' +
-        'Margin: ±95%\n' +
-        'Keunggulan Unik: Cukup pakai WhatsApp — tidak perlu aplikasi baru\n' +
-        'Angka Penting: Jumlah siswa aktif, Persentase penyelesaian modul, Rating kepuasan orang tua\n' +
-        'Cara Jualan: Grup WhatsApp komunitas, Instagram edukasi, Rekomendasi guru SD',
-      painRelievers:
+        'Margin: ±95%',
+      unfairAdvantage:
         'Cukup 10 menit/hari → tidak mengganggu jadwal\nGrup WhatsApp eksklusif dengan mentor → responsif\nTidak perlu laptop → bisa pakai HP orang tua',
-      gainCreators:
-        'Anak belajar mandiri tanpa perlu dampingan\nBiaya terjangkau\nDapat sertifikat digital\nHarga: Rp99.000/program',
+      uniqueValueProposition: 'Anak belajar mandiri tanpa perlu dampingan\nBiaya terjangkau\nDapat sertifikat digital\nHarga: Rp99.000/program',
     },
     {
       interest: 'jasa keuangan',
@@ -229,32 +232,22 @@ const generateThreeIdeasFromInterest = (interest) => {
         'Biaya Modal: Rp15.000.000 (pengembangan MVP, hosting awal, uji coba lapangan)\n' +
         'Biaya Bahan Baku: Rp50.000/bulan (server cloud, biaya API suara, maintenance)\n' +
         'Harga Jual: Rp49.000/bulan\n' +
-        'Margin: ±80% setelah 500 pengguna aktif\n' +
-        'Keunggulan Unik: Cukup bicara — tidak perlu ngetik\n' +
-        'Angka Penting: Jumlah pengguna aktif, Rata-rata transaksi/hari, Retensi bulanan\n' +
-        'Cara Jualan: WhatsApp UMKM, Grup Facebook pedagang, Demo langsung di pasar',
-      painRelievers:
+        'Margin: ±80% setelah 500 pengguna aktif',
+      unfairAdvantage:
         'Cukup ucapkan: “Hari ini jual 50 kopi, modal 200rb” → otomatis jadi laporan\nBackup otomatis ke cloud\nNotifikasi saat stok hampir habis',
-      gainCreators:
-        'Tidak perlu bisa baca/tulis lancar\nLaporan harian & mingguan otomatis\nSiap untuk laporan pajak\nHarga: Rp49.000/bulan',
+      uniqueValueProposition: 'Tidak perlu bisa baca/tulis lancar\nLaporan harian & mingguan otomatis\nSiap untuk laporan pajak\nHarga: Rp49.000/bulan',
     },
   ];
 
   const normalized = interest.toLowerCase().trim();
-
-  const matched = baseIdeas.find((idea) =>
-    idea.interest.toLowerCase().includes(normalized) || normalized.includes(idea.interest.toLowerCase())
+  const matched = baseIdeas.find(
+    (idea) =>
+      idea.interest.toLowerCase().includes(normalized) || normalized.includes(idea.interest.toLowerCase())
   );
-
-  if (matched) {
-    const others = baseIdeas.filter((i) => i !== matched);
-    const shuffled = [...others].sort(() => 0.5 - Math.random());
-    return [matched, ...shuffled.slice(0, 2)];
-  } else {
-    // Jika tidak cocok, tampilkan 3 ide acak — tanpa merusak array asli
-    const shuffled = [...baseIdeas].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 3);
-  }
+  const others = baseIdeas.filter((i) => i !== matched);
+  const randomOthers = others.sort(() => 0.5 - Math.random()).slice(0, 2);
+  const result = matched ? [matched, ...randomOthers] : baseIdeas.sort(() => 0.5 - Math.random()).slice(0, 3);
+  return result;
 };
 
 // === PROGRESS BAR ===
@@ -310,7 +303,6 @@ export default function Level1Page() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFinanceOpen, setIsFinanceOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
   const [notificationData, setNotificationData] = useState({
     message: '',
     xpGained: 0,
@@ -456,7 +448,6 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      {showConfetti && <Confetti />}
       {/* Breadcrumb */}
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
         <Breadcrumb items={breadcrumbItems} />
@@ -464,7 +455,7 @@ useEffect(() => {
 
       {/* Mobile Header */}
       {isMobile && !mobileSidebarOpen && (
-        <header className="p-3 flex items-center border-b border-gray-200 bg-white sticky top-10 z-30">
+        <header className="p-3 flex items-center border-b border-gray-200 bg-white top-10 z-30">
           <button
             onClick={() => setMobileSidebarOpen(true)}
             className="p-1.5 rounded-lg hover:bg-gray-100"
@@ -476,7 +467,8 @@ useEffect(() => {
         </header>
       )}
 
-      <div className="flex">
+      <div className="flex mt-6">
+        {/* Sidebar */}
         <PlanSidebar
           projectId={projectId}
           currentLevelId={1}
@@ -485,10 +477,15 @@ useEffect(() => {
           setMobileSidebarOpen={setMobileSidebarOpen}
         />
 
+        {/* Main Content */}
         <main className="flex-1">
           <div className="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto">
             <div className="relative">
-              <div className="relative bg-white rounded-2xl border-2 border-[#f02d9c] p-4 sm:p-5 md:p-6">
+              <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-2xl"></div>
+              <div
+                className="relative bg-white rounded-2xl border-t border-l border-black p-4 sm:p-5 md:p-6"
+                style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+              >
                 {!isMobile && (
                   <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-4 sm:mb-6">
                     Level 1: Ide Generator
@@ -496,8 +493,9 @@ useEffect(() => {
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Left Column: Form */}
+                  {/* Kolom Kiri: Input & Preview */}
                   <div>
+                    {/* Input Minat */}
                     <div className="mb-5">
                       <label className="block mb-2 font-medium text-[#5b5b5b] text-sm sm:text-base">
                         Minat/Bidang
@@ -513,13 +511,14 @@ useEffect(() => {
                         <button
                           type="button"
                           onClick={handleGenerate}
-                          className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] whitespace-nowrap"
+                          className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] whitespace-nowrap"
                         >
                           Generate
                         </button>
                       </div>
                     </div>
 
+                    {/* 3 Pilihan Ide */}
                     {generatedIdeas.length > 0 && !selectedIdea && (
                       
                       <div className="mb-5">
@@ -587,7 +586,8 @@ useEffect(() => {
                     )}
 
 
-                    {selectedIdea && (
+                    {/* Brand & Product Preview */}
+                    {selectedIdea && !isEditing && (
                       <>
                         {!isEditing ? (
                           <div className="mb-5 p-4 border border-gray-300 rounded-xl bg-white">
@@ -647,84 +647,6 @@ useEffect(() => {
                                   </p>
                                 </div>
                               )}
-                              {ps.keyMetrics && (
-                                <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
-                                  <p className="font-medium text-[#0a5f61] text-sm">Apa yang mau kamu ukur?</p>
-                                  <div className="mt-1 flex flex-wrap gap-1.5">
-                                    {ps.keyMetrics
-                                      .replace('Angka Penting: ', '')
-                                      .split(',')
-                                      .map((item, i) => (
-                                        <span
-                                          key={i}
-                                          className="px-2.5 py-1 bg-white border border-[#c2e9e8] text-[14px] text-[#5b5b5b] rounded-full"
-                                        >
-                                          {item.trim()}
-                                        </span>
-                                      ))}
-                                  </div>
-                                </div>
-                              )}
-                              {ps.channel && (
-                                <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
-                                  <p className="font-medium text-[#0a5f61] text-sm">Di mana kamu jualan?</p>
-                                  <div className="mt-1 flex flex-wrap gap-1.5">
-                                    {ps.channel
-                                      .replace('Cara Jualan: ', '')
-                                      .split(',')
-                                      .map((item, i) => (
-                                        <span
-                                          key={i}
-                                          className="px-2.5 py-1 bg-white border border-[#c2e9e8] text-[14px] text-[#5b5b5b] rounded-full"
-                                        >
-                                          {item.trim()}
-                                        </span>
-                                      ))}
-                                  </div>
-                                </div>
-                              )}
-                              <div className="mt-4">
-                                <button
-                                  onClick={() => setIsFinanceOpen(!isFinanceOpen)}
-                                  className="flex items-center gap-1 text-sm font-medium text-[#f02d9c]"
-                                >
-                                  {isFinanceOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                  Lihat rincian keuangan
-                                </button>
-                                {isFinanceOpen && (
-                                  <div className="mt-2 p-3 bg-white border border-dashed border-[#c2e9e8] rounded text-[15px] text-[#5b5b5b]">
-                                    <h5 className="font-bold text-[#0a5f61] mb-2">Rincian Keuangan</h5>
-                                    {ps.biayaModal && (
-                                      <div className="mb-2">
-                                        <p className="font-medium">Modal Awal:</p>
-                                        <p>{ps.biayaModal.replace('Biaya Modal: ', '')}</p>
-                                        <ul className="list-disc pl-4 mt-1 text-[14px]">
-                                          {parseModalDetails(ps.biayaModal).map((item, i) => (
-                                            <li key={i}>{item}</li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    )}
-                                    {ps.biayaBahanBaku && (
-                                      <div className="mb-2">
-                                        <p className="font-medium">Biaya Bahan Baku:</p>
-                                        <p>{ps.biayaBahanBaku.replace('Biaya Bahan Baku: ', '')}</p>
-                                        <ul className="list-disc pl-4 mt-1 text-[14px]">
-                                          {parseBahanBakuDetails(ps.biayaBahanBaku).map((item, i) => (
-                                            <li key={i}>{item}</li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    )}
-                                    {ps.hargaJual && (
-                                      <p className="font-medium">Harga Jual: {ps.hargaJual.replace('Harga Jual: ', '')}</p>
-                                    )}
-                                    {ps.margin && (
-                                      <p className="font-medium">Margin: {ps.margin.replace('Margin: ', '')}</p>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
                             </div>
                           </div>
                         ) : (
@@ -962,7 +884,7 @@ useEffect(() => {
                     )}
                   </div>
 
-                  {/* Right Column: Edukasi */}
+                  {/* Kolom Kanan: Tujuan, Tips, Resources */}
                   <div className="space-y-5">
                     {/* Progress Bar sebagai Card */}
                     <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
@@ -991,10 +913,6 @@ useEffect(() => {
                           <Award size={12} /> {planLevels.find((p) => p._id === levelId)?.badge || ''}
                         </div>
                       </div>
-                      <p className="mt-3 text-xs text-[#5b5b5b]">
-                        Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
-                      </p>
-                    </div>
 
                     {/* Instructions */}
                     <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
@@ -1027,21 +945,44 @@ useEffect(() => {
                         </div>
                       </div>
                     </div>
-
-                    {/* Resources */}
-                    <div className="border border-gray-200 rounded-xl p-4 bg-white">
-                      <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
-                        <BookOpen size={14} /> Resources
+                    <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
+                      <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
+                        <Lightbulb size={16} /> Tujuan Level 1
                       </h3>
-                      <ul className="text-sm text-[#5b5b5b] space-y-1.5">
+                      <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
+                        <li>Pilih ide produk yang relevan dengan minatmu</li>
+                        <li>Definisikan siapa pelangganmu dan masalah yang mereka hadapi</li>
+                        <li>Buat solusi yang benar-benar membantu mereka dan memberi keuntungan</li>
+                        <li>Sertakan estimasi biaya & harga untuk memastikan ide kamu layak</li>
+                      </ul>
+                    </div>
+
+                    <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
+                      <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
+                        <Award size={16} /> Tips dari Strategyzer & Miro
+                      </h3>
+                      <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
+                        <li>Fokus pada <strong>satu segmen pelanggan</strong> saja dulu</li>
+                        <li>Pikirkan <strong>apa yang ingin diselesaikan</strong> oleh pelanggan (bukan hanya produk)</li>
+                        <li>Pastikan <strong>solusi kamu benar-benar mengurangi masalah</strong> mereka</li>
+                        <li><strong>Keuntungan yang kamu tawarkan</strong> harus membuat pelanggan senang</li>
+                        <li>Sertakan <strong>struktur biaya & harga</strong> sejak awal agar kamu tahu apakah bisnisnya bisa untung</li>
+                      </ul>
+                    </div>
+
+                    <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
+                      <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
+                        <BookOpen size={16} /> Resources Validasi Ide
+                      </h3>
+                      <ul className="text-sm text-[#5b5b5b] space-y-2">
                         <li>
                           <a
                             href="https://www.strategyzer.com/canvas/value-proposition-canvas"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                            className="text-[#f02d9c] hover:underline flex items-center gap-1"
                           >
-                            Strategyzer VPC Guide
+                            Strategyzer VPC Guide <ChevronRight size={12} />
                           </a>
                         </li>
                         <li>
@@ -1049,9 +990,19 @@ useEffect(() => {
                             href="https://miro.com/templates/value-proposition-canvas/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                            className="text-[#f02d9c] hover:underline flex items-center gap-1"
                           >
-                            Miro VPC Template
+                            Miro VPC Template <ChevronRight size={12} />
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            href="https://perempuaninovasi.id/workshop"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#f02d9c] hover:underline flex items-center gap-1"
+                          >
+                            Workshop Perempuan Inovasi <ChevronRight size={12} />
                           </a>
                         </li>
                       </ul>
@@ -1061,9 +1012,11 @@ useEffect(() => {
               </div>
             </div>
           </div>
+          </div>
         </main>
       </div>
 
+      {/*  Modal Notifikasi */}
       <NotificationModalPlan
         isOpen={showNotification}
         type="success"

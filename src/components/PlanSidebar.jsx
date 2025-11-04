@@ -14,7 +14,7 @@ import {
   FileText,
   Box,
   Users,
-  Rocket
+  Rocket,
 } from 'lucide-react';
 
 export default function PlanSidebar({
@@ -22,7 +22,7 @@ export default function PlanSidebar({
   currentLevelId = 'overview',
   isMobile = false,
   mobileSidebarOpen = false,
-  setMobileSidebarOpen = () => {}
+  setMobileSidebarOpen = () => {},
 }) {
   const { planLevels } = useProjectStore();
   const pathname = usePathname();
@@ -97,7 +97,7 @@ export default function PlanSidebar({
             : 'lg:sticky lg:top-0 lg:z-0'
         }
         bg-white transition-all duration-300 ease-in-out
-        ${isMobile ? '' : (isCollapsed ? 'w-12' : 'w-64')}
+        ${isMobile ? '' : isCollapsed ? 'w-12' : 'w-64'}
         `}
       >
         <div className="px-4 pt-4 lg:p-0 mb-4">
@@ -136,7 +136,7 @@ export default function PlanSidebar({
                 ) : (
                   <button
                     onClick={handleToggle}
-                    className="text-[#5b5b5b] hover:text-[#f02d9c]"
+                    className="text-[#5b5b5b] hover:text-[#f02d9c] font-bold"
                     aria-label="Collapse sidebar"
                   >
                     ←
@@ -180,8 +180,8 @@ export default function PlanSidebar({
                   transition-all duration-200 ease-in-out
                   ${
                     !showText
-                      ? 'w-10 h-10 flex items-center justify-center mx-auto hover:bg-[#fbe2a7] hover:text-[#5b5b5b]'
-                      : 'p-3 flex items-center hover:bg-[#fbe2a7] hover:text-[#5b5b5b]'
+                      ? 'w-10 h-10 flex items-center justify-center mx-auto hover:border-[#f02d9c] hover:bg-[#fbe2a7] hover:text-[#5b5b5b]'
+                      : 'p-3 flex items-center hover:border-[#f02d9c] hover:bg-[#fbe2a7] hover:text-[#5b5b5b]'
                   }
                 `}
               >
