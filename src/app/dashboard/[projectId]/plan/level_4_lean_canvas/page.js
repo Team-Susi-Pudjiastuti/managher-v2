@@ -44,16 +44,15 @@ export default function Level4Page() {
     RevenueStreams: '',
   });
 
-  const [selectedField, setSelectedField] = useState(null);
   const [isEditing, setIsEditing] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
-  const [notificationData, setNotificationData] = useState({
-    xpGained: 0,
-    badgeName: '',
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
   useEffect(() => setIsMounted(true), []);
 
@@ -64,31 +63,139 @@ export default function Level4Page() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Utility: deteksi ObjectId MongoDB
+  const isMongoId = (str) => typeof str === 'string' && /^[0-9a-f]{24}$/i.test(str);
+
+  // ✅ FETCH DATA DARI BACKEND
   useEffect(() => {
-    if (projectId) {
-      const saved = localStorage.getItem(`lean-canvas-${projectId}`);
-      if (saved) {
-        try {
-          setCanvas(JSON.parse(saved));
-        } catch (e) {
-          console.error('Gagal parse canvas:', e);
-        }
-      }
+    if (!projectId || projectId === 'undefined' || !isMounted) {
+      setLoading(false);
+      return;
     }
-  }, [projectId]);
+
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/lean-canvas/project/${projectId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.leanCanvas) {
+            const lc = data.leanCanvas;
+            // Jika berisi ID → fallback ke Business Idea (opsional, tapi safe)
+            if (lc.problem && isMongoId(lc.problem)) {
+              // Coba ambil dari Business Idea berdasarkan project ID
+              const ideaRes = await fetch(`${API_BASE}/api/business-idea/project/${projectId}`);
+              if (ideaRes.ok) {
+                const { businessIdea } = await ideaRes.json();
+                if (businessIdea) {
+                  setCanvas({
+                    Problem: businessIdea.problemSolved || '',
+                    Solution: businessIdea.solutionOffered || '',
+                    KeyMetrics: businessIdea.keyMetrics || '',
+                    UniqueValueProp: businessIdea.uniqueValueProposition || '',
+                    UnfairAdvantage: businessIdea.unfairAdvantage || '',
+                    Channels: businessIdea.channel || '',
+                    CustomerSegments: businessIdea.marketPotential || '',
+                    CostStructure: businessIdea.costStructure || '',
+                    RevenueStreams: businessIdea.revenueStream || '',
+                  });
+                }
+              }
+            } else {
+              // Gunakan teks langsung
+              setCanvas({
+                Problem: lc.problem || '',
+                Solution: lc.solution || '',
+                KeyMetrics: lc.keyMetrics || '',
+                UniqueValueProp: lc.uniqueValueProposition || '',
+                UnfairAdvantage: lc.unfairAdvantage || '',
+                Channels: lc.channels || '',
+                CustomerSegments: lc.customerSegments || '',
+                CostStructure: lc.costStructure || '',
+                RevenueStreams: lc.revenueStreams || '',
+              });
+            }
+          } else if (data.initialData && data.isFromBusinessIdea) {
+            // Jika dari auto-fill awal
+            const ini = data.initialData;
+            setCanvas({
+              Problem: ini.problem || '',
+              Solution: ini.solution || '',
+              KeyMetrics: ini.keyMetrics || '',
+              UniqueValueProp: ini.uniqueValueProposition || '',
+              UnfairAdvantage: ini.unfairAdvantage || '',
+              Channels: ini.channels || '',
+              CustomerSegments: ini.customerSegments || '',
+              CostStructure: ini.costStructure || '',
+              RevenueStreams: ini.revenueStreams || '',
+            });
+          }
+        } else {
+          // Jika Lean Canvas belum ada, ambil dari Business Idea
+          const ideaRes = await fetch(`${API_BASE}/api/business-idea/project/${projectId}`);
+          if (ideaRes.ok) {
+            const { businessIdea } = await ideaRes.json();
+            if (businessIdea) {
+              setCanvas({
+                Problem: businessIdea.problemSolved || '',
+                Solution: businessIdea.solutionOffered || '',
+                KeyMetrics: businessIdea.keyMetrics || '',
+                UniqueValueProp: businessIdea.uniqueValueProposition || '',
+                UnfairAdvantage: businessIdea.unfairAdvantage || '',
+                Channels: businessIdea.channel || '',
+                CustomerSegments: businessIdea.marketPotential || '',
+                CostStructure: businessIdea.costStructure || '',
+                RevenueStreams: businessIdea.revenueStream || '',
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Gagal memuat data:', err);
+        setError('Gagal memuat data dari server');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [projectId, isMounted, API_BASE]);
 
   const handleChange = (field, value) => {
-    setCanvas(prev => ({ ...prev, [field]: value }));
+    setCanvas((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    localStorage.setItem(`lean-canvas-${projectId}`, JSON.stringify(canvas));
+  // ✅ SIMPAN KE BACKEND (PUT)
+  const handleSave = async () => {
+    // Validasi: jangan izinkan simpan ID
+    if (Object.values(canvas).some(val => isMongoId(val))) {
+      alert('Data tidak valid: jangan simpan ID sebagai konten.');
+      return;
+    }
 
-    setNotificationData({
-      xpGained: 10,
-      badgeName: 'Lean Strategist',
-    });
-    setShowNotification(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/lean-canvas/project/${projectId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          problem: canvas.Problem,
+          solution: canvas.Solution,
+          keyMetrics: canvas.KeyMetrics,
+          uniqueValueProposition: canvas.UniqueValueProp,
+          unfairAdvantage: canvas.UnfairAdvantage,
+          channels: canvas.Channels,
+          customerSegments: canvas.CustomerSegments,
+          costStructure: canvas.CostStructure,
+          revenueStreams: canvas.RevenueStreams,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Gagal menyimpan ke server');
+
+      setShowNotification(true);
+    } catch (err) {
+      console.error('Error menyimpan:', err);
+      alert('Gagal menyimpan. Coba lagi.');
+    }
   };
 
   const handlePrint = () => {
@@ -137,11 +244,23 @@ export default function Level4Page() {
     { label: 'Level 4: Lean Canvas' },
   ];
 
-  if (!isMounted) {
-    return <div className="min-h-screen bg-white p-6">Loading...</div>;
+  if (!isMounted || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-[#f02d9c] font-medium">Memuat data dari Level 1...</p>
+      </div>
+    );
   }
 
-  // === UPDATED: LEVEL 4 INFO CARDS (GAYA LEVEL 5/6) ===
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  // === INFO CARDS ===
   const Level4InfoCards = () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       {/* Pencapaian */}
@@ -279,345 +398,318 @@ export default function Level4Page() {
                     </h1>
                   </div>
 
-                  {/* === INFO CARDS (HORIZONTAL) === */}
                   <Level4InfoCards />
 
-                  {isEditing ? (
-                    <>
-                      <div className="mb-6">
-                        <div className="hidden md:grid grid-cols-5 gap-4">
-                          {/* Problem */}
-                          <div
-                            className={`col-span-1 row-span-2 ${fieldBgColors.Problem} border-t border-l border-black rounded-2xl p-4 relative`}
-                            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            onClick={() => setSelectedField('Problem')}
-                          >
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <AlertTriangle size={14} /> Problem
-                            </h3>
-                            <textarea
-                              value={canvas.Problem}
-                              onChange={(e) => handleChange('Problem', e.target.value)}
-                              placeholder={fieldPlaceholders.Problem}
-                              className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
-                              rows="10"
-                            />
-                          </div>
+                  {/* Edit / Preview Mode */}
+{isEditing ? (
+  <div className="mb-6">
+    {/* Desktop View */}
+    <div className="hidden md:grid grid-cols-5 gap-4">
+      <div
+        className={`col-span-1 row-span-2 ${fieldBgColors.Problem} border-t border-l border-black rounded-2xl p-4 relative`}
+        style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+      >
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <AlertTriangle size={14} /> Problem
+        </h3>
+        <textarea
+          value={canvas.Problem || ''}
+          onChange={(e) => handleChange('Problem', e.target.value)}
+          placeholder={fieldPlaceholders.Problem || ''}
+          className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
+          rows="10"
+        />
+      </div>
 
-                          {/* Solution */}
-                          <div
-                            className={`col-span-1 ${fieldBgColors.Solution} border-t border-l border-black rounded-2xl p-4 relative`}
-                            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            onClick={() => setSelectedField('Solution')}
-                          >
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <Wrench size={14} /> Solution
-                            </h3>
-                            <textarea
-                              value={canvas.Solution}
-                              onChange={(e) => handleChange('Solution', e.target.value)}
-                              placeholder={fieldPlaceholders.Solution}
-                              className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
-                              rows="6"
-                            />
-                          </div>
+      <div
+        className={`col-span-1 ${fieldBgColors.Solution} border-t border-l border-black rounded-2xl p-4 relative`}
+        style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+      >
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <Wrench size={14} /> Solution
+        </h3>
+        <textarea
+          value={canvas.Solution || ''}
+          onChange={(e) => handleChange('Solution', e.target.value)}
+          placeholder={fieldPlaceholders.Solution || ''}
+          className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
+          rows="6"
+        />
+      </div>
 
-                          {/* UVP */}
-                          <div
-                            className={`col-span-1 row-span-2 ${fieldBgColors.UniqueValueProp} border-t border-l border-black rounded-2xl p-4 relative`}
-                            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            onClick={() => setSelectedField('UniqueValueProp')}
-                          >
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <Target size={14} /> Unique Value Proposition
-                            </h3>
-                            <textarea
-                              value={canvas.UniqueValueProp}
-                              onChange={(e) => handleChange('UniqueValueProp', e.target.value)}
-                              placeholder={fieldPlaceholders.UniqueValueProp}
-                              className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
-                              rows="10"
-                            />
-                          </div>
+      <div
+        className={`col-span-1 row-span-2 ${fieldBgColors.UniqueValueProp} border-t border-l border-black rounded-2xl p-4 relative`}
+        style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+      >
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <Target size={14} /> Unique Value Proposition
+        </h3>
+        <textarea
+          value={canvas.UniqueValueProp || ''}
+          onChange={(e) => handleChange('UniqueValueProp', e.target.value)}
+          placeholder={fieldPlaceholders.UniqueValueProp || ''}
+          className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
+          rows="10"
+        />
+      </div>
 
-                          {/* Unfair Advantage */}
-                          <div
-                            className={`col-span-1 ${fieldBgColors.UnfairAdvantage} border-t border-l border-black rounded-2xl p-4 relative`}
-                            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            onClick={() => setSelectedField('UnfairAdvantage')}
-                          >
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <ShieldCheck size={14} /> Unfair Advantage
-                            </h3>
-                            <textarea
-                              value={canvas.UnfairAdvantage}
-                              onChange={(e) => handleChange('UnfairAdvantage', e.target.value)}
-                              placeholder={fieldPlaceholders.UnfairAdvantage}
-                              className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
-                              rows="6"
-                            />
-                          </div>
+      <div
+        className={`col-span-1 ${fieldBgColors.UnfairAdvantage} border-t border-l border-black rounded-2xl p-4 relative`}
+        style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+      >
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <ShieldCheck size={14} /> Unfair Advantage
+        </h3>
+        <textarea
+          value={canvas.UnfairAdvantage || ''}
+          onChange={(e) => handleChange('UnfairAdvantage', e.target.value)}
+          placeholder={fieldPlaceholders.UnfairAdvantage || ''}
+          className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
+          rows="6"
+        />
+      </div>
 
-                          {/* Customer Segments */}
-                          <div
-                            className={`col-span-1 row-span-2 ${fieldBgColors.CustomerSegments} border-t border-l border-black rounded-2xl p-4 relative`}
-                            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            onClick={() => setSelectedField('CustomerSegments')}
-                          >
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <Users size={14} /> Customer Segments
-                            </h3>
-                            <textarea
-                              value={canvas.CustomerSegments}
-                              onChange={(e) => handleChange('CustomerSegments', e.target.value)}
-                              placeholder={fieldPlaceholders.CustomerSegments}
-                              className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
-                              rows="10"
-                            />
-                          </div>
+      <div
+        className={`col-span-1 row-span-2 ${fieldBgColors.CustomerSegments} border-t border-l border-black rounded-2xl p-4 relative`}
+        style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+      >
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <Users size={14} /> Customer Segments
+        </h3>
+        <textarea
+          value={canvas.CustomerSegments || ''}
+          onChange={(e) => handleChange('CustomerSegments', e.target.value)}
+          placeholder={fieldPlaceholders.CustomerSegments || ''}
+          className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
+          rows="10"
+        />
+      </div>
 
-                          {/* Key Metrics */}
-                          <div
-                            className={`col-span-1 ${fieldBgColors.KeyMetrics} border-t border-l border-black rounded-2xl p-4 relative`}
-                            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            onClick={() => setSelectedField('KeyMetrics')}
-                          >
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <BarChart3 size={14} /> Key Metrics
-                            </h3>
-                            <textarea
-                              value={canvas.KeyMetrics}
-                              onChange={(e) => handleChange('KeyMetrics', e.target.value)}
-                              placeholder={fieldPlaceholders.KeyMetrics}
-                              className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
-                              rows="6"
-                            />
-                          </div>
+      <div
+        className={`col-span-1 ${fieldBgColors.KeyMetrics} border-t border-l border-black rounded-2xl p-4 relative`}
+        style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+      >
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <BarChart3 size={14} /> Key Metrics
+        </h3>
+        <textarea
+          value={canvas.KeyMetrics || ''}
+          onChange={(e) => handleChange('KeyMetrics', e.target.value)}
+          placeholder={fieldPlaceholders.KeyMetrics || ''}
+          className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
+          rows="6"
+        />
+      </div>
 
-                          {/* Channels */}
-                          <div
-                            className={`col-span-1 ${fieldBgColors.Channels} border-t border-l border-black rounded-2xl p-4 relative`}
-                            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            onClick={() => setSelectedField('Channels')}
-                          >
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <Send size={14} /> Channels
-                            </h3>
-                            <textarea
-                              value={canvas.Channels}
-                              onChange={(e) => handleChange('Channels', e.target.value)}
-                              placeholder={fieldPlaceholders.Channels}
-                              className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
-                              rows="6"
-                            />
-                          </div>
+      <div
+        className={`col-span-1 ${fieldBgColors.Channels} border-t border-l border-black rounded-2xl p-4 relative`}
+        style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+      >
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <Send size={14} /> Channels
+        </h3>
+        <textarea
+          value={canvas.Channels || ''}
+          onChange={(e) => handleChange('Channels', e.target.value)}
+          placeholder={fieldPlaceholders.Channels || ''}
+          className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
+          rows="6"
+        />
+      </div>
 
-                          {/* Cost & Revenue */}
-                          <div className="col-span-5 flex gap-4">
-                            <div
-                              className={`w-1/2 ${fieldBgColors.CostStructure} border border-gray-300 rounded-2xl p-4 relative`}
-                              style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                              onClick={() => setSelectedField('CostStructure')}
-                            >
-                              <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                                <Coins size={14} /> Cost Structure
-                              </h3>
-                              <textarea
-                                value={canvas.CostStructure}
-                                onChange={(e) => handleChange('CostStructure', e.target.value)}
-                                placeholder={fieldPlaceholders.CostStructure}
-                                className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
-                                rows="6"
-                              />
-                            </div>
+      <div className="col-span-5 flex gap-4">
+        <div
+          className={`w-1/2 ${fieldBgColors.CostStructure} border border-gray-300 rounded-2xl p-4 relative`}
+          style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+        >
+          <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+            <Coins size={14} /> Cost Structure
+          </h3>
+          <textarea
+            value={canvas.CostStructure || ''}
+            onChange={(e) => handleChange('CostStructure', e.target.value)}
+            placeholder={fieldPlaceholders.CostStructure || ''}
+            className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
+            rows="6"
+          />
+        </div>
 
-                            <div
-                              className={`w-1/2 ${fieldBgColors.RevenueStreams} border border-gray-300 rounded-2xl p-4 relative`}
-                              style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                              onClick={() => setSelectedField('RevenueStreams')}
-                            >
-                              <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                                <TrendingUp size={14} /> Revenue Streams
-                              </h3>
-                              <textarea
-                                value={canvas.RevenueStreams}
-                                onChange={(e) => handleChange('RevenueStreams', e.target.value)}
-                                placeholder={fieldPlaceholders.RevenueStreams}
-                                className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
-                                rows="6"
-                              />
-                            </div>
-                          </div>
-                        </div>
+        <div
+          className={`w-1/2 ${fieldBgColors.RevenueStreams} border border-gray-300 rounded-2xl p-4 relative`}
+          style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+        >
+          <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+            <TrendingUp size={14} /> Revenue Streams
+          </h3>
+          <textarea
+            value={canvas.RevenueStreams || ''}
+            onChange={(e) => handleChange('RevenueStreams', e.target.value)}
+            placeholder={fieldPlaceholders.RevenueStreams || ''}
+            className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
+            rows="6"
+          />
+        </div>
+      </div>
+    </div>
 
-                        <div className="md:hidden space-y-4">
-                          {Object.entries(canvas).map(([field]) => {
-                            const Icon = fieldIcons[field];
-                            return (
-                              <div
-                                key={field}
-                                className={`${fieldBgColors[field]} border border-gray-300 rounded-2xl p-4`}
-                                style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                              >
-                                <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                                  <Icon size={14} /> {field === 'UniqueValueProp'
-                                    ? 'Unique Value Proposition'
-                                    : field === 'CustomerSegments'
-                                      ? 'Customer Segments'
-                                      : field === 'KeyMetrics'
-                                        ? 'Key Metrics'
-                                        : field === 'UnfairAdvantage'
-                                          ? 'Unfair Advantage'
-                                          : field === 'RevenueStreams'
-                                            ? 'Revenue Streams'
-                                            : field === 'CostStructure'
-                                              ? 'Cost Structure'
-                                              : field}
-                                </h3>
-                                <textarea
-                                  value={canvas[field]}
-                                  onChange={(e) => handleChange(field, e.target.value)}
-                                  placeholder={fieldPlaceholders[field]}
-                                  className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
-                                  rows="5"
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="mb-8">
-                        <div className="hidden md:grid grid-cols-5 gap-4">
-                          <div className={`col-span-1 row-span-2 ${fieldBgColors.Problem} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <AlertTriangle size={14} /> Problem
-                            </h3>
-                            <p className="text-sm text-gray-700 whitespace-pre-line min-h-[24px]">
-                              {canvas.Problem || <span className="text-gray-400 italic">Belum diisi</span>}
-                            </p>
-                          </div>
-                          <div className={`col-span-1 ${fieldBgColors.Solution} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <Wrench size={14} /> Solution
-                            </h3>
-                            <p className="text-sm text-gray-700 whitespace-pre-line min-h-[24px]">
-                              {canvas.Solution || <span className="text-gray-400 italic">Belum diisi</span>}
-                            </p>
-                          </div>
-                          <div className={`col-span-1 row-span-2 ${fieldBgColors.UniqueValueProp} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <Target size={14} /> Unique Value Proposition
-                            </h3>
-                            <p className="text-sm text-gray-700 whitespace-pre-line min-h-[24px]">
-                              {canvas.UniqueValueProp || <span className="text-gray-400 italic">Belum diisi</span>}
-                            </p>
-                          </div>
-                          <div className={`col-span-1 ${fieldBgColors.UnfairAdvantage} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <ShieldCheck size={14} /> Unfair Advantage
-                            </h3>
-                            <p className="text-sm text-gray-700 whitespace-pre-line min-h-[24px]">
-                              {canvas.UnfairAdvantage || <span className="text-gray-400 italic">Belum diisi</span>}
-                            </p>
-                          </div>
-                          <div className={`col-span-1 row-span-2 ${fieldBgColors.CustomerSegments} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <Users size={14} /> Customer Segments
-                            </h3>
-                            <p className="text-sm text-gray-700 whitespace-pre-line min-h-[24px]">
-                              {canvas.CustomerSegments || <span className="text-gray-400 italic">Belum diisi</span>}
-                            </p>
-                          </div>
-                          <div className={`col-span-1 ${fieldBgColors.KeyMetrics} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <BarChart3 size={14} /> Key Metrics
-                            </h3>
-                            <p className="text-sm text-gray-700 whitespace-pre-line min-h-[24px]">
-                              {canvas.KeyMetrics || <span className="text-gray-400 italic">Belum diisi</span>}
-                            </p>
-                          </div>
-                          <div className={`col-span-1 ${fieldBgColors.Channels} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
-                            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                              <Send size={14} /> Channels
-                            </h3>
-                            <p className="text-sm text-gray-700 whitespace-pre-line min-h-[24px]">
-                              {canvas.Channels || <span className="text-gray-400 italic">Belum diisi</span>}
-                            </p>
-                          </div>
-                          <div className="col-span-5 flex gap-4">
-                            <div className={`w-1/2 ${fieldBgColors.CostStructure} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
-                              <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                                <Coins size={14} /> Cost Structure
-                              </h3>
-                              <p className="text-sm text-gray-700 whitespace-pre-line min-h-[24px]">
-                                {canvas.CostStructure || <span className="text-gray-400 italic">Belum diisi</span>}
-                              </p>
-                            </div>
-                            <div className={`w-1/2 ${fieldBgColors.RevenueStreams} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
-                              <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                                <TrendingUp size={14} /> Revenue Streams
-                              </h3>
-                              <p className="text-sm text-gray-700 whitespace-pre-line min-h-[24px]">
-                                {canvas.RevenueStreams || <span className="text-gray-400 italic">Belum diisi</span>}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+    {/* Mobile View – AMAN: iterasi dari fieldIcons */}
+    <div className="md:hidden space-y-4">
+      {Object.entries(fieldIcons).map(([field, Icon]) => {
+        const label =
+          field === 'UniqueValueProp'
+            ? 'Unique Value Proposition'
+            : field === 'CustomerSegments'
+            ? 'Customer Segments'
+            : field === 'KeyMetrics'
+            ? 'Key Metrics'
+            : field === 'UnfairAdvantage'
+            ? 'Unfair Advantage'
+            : field === 'RevenueStreams'
+            ? 'Revenue Streams'
+            : field === 'CostStructure'
+            ? 'Cost Structure'
+            : field;
 
-                        <div className="md:hidden space-y-4">
-                          {Object.entries(canvas).map(([field, value]) => {
-                            const Icon = fieldIcons[field];
-                            return (
-                              <div
-                                key={field}
-                                className={`${fieldBgColors[field]} border border-gray-300 rounded-2xl p-4`}
-                                style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                              >
-                                <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
-                                  <Icon size={14} /> {field === 'UniqueValueProp'
-                                    ? 'Unique Value Proposition'
-                                    : field === 'CustomerSegments'
-                                      ? 'Customer Segments'
-                                      : field === 'KeyMetrics'
-                                        ? 'Key Metrics'
-                                        : field === 'UnfairAdvantage'
-                                          ? 'Unfair Advantage'
-                                          : field === 'RevenueStreams'
-                                            ? 'Revenue Streams'
-                                            : field === 'CostStructure'
-                                              ? 'Cost Structure'
-                                              : field}
-                                </h3>
-                                <p className="text-sm text-gray-700 whitespace-pre-line">
-                                  {value || <span className="text-gray-400 italic">Belum diisi</span>}
-                                </p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+        return (
+          <div
+            key={field}
+            className={`${fieldBgColors[field] || 'bg-white'} border border-gray-300 rounded-2xl p-4`}
+            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+          >
+            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+              <Icon size={14} /> {label}
+            </h3>
+            <textarea
+              value={canvas[field] || ''}
+              onChange={(e) => handleChange(field, e.target.value)}
+              placeholder={fieldPlaceholders[field] || ''}
+              className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
+              rows="5"
+            />
+          </div>
+        );
+      })}
+    </div>
+  </div>
+) : (
+  /* Preview Mode */
+  <div className="mb-8">
+    {/* Desktop View */}
+    <div className="hidden md:grid grid-cols-5 gap-4">
+      <div className={`col-span-1 row-span-2 ${fieldBgColors.Problem} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <AlertTriangle size={14} /> Problem
+        </h3>
+        <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
+          {canvas.Problem || <span className="text-gray-400 italic">Belum diisi</span>}
+        </p>
+      </div>
+      <div className={`col-span-1 ${fieldBgColors.Solution} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <Wrench size={14} /> Solution
+        </h3>
+        <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
+          {canvas.Solution || <span className="text-gray-400 italic">Belum diisi</span>}
+        </p>
+      </div>
+      <div className={`col-span-1 row-span-2 ${fieldBgColors.UniqueValueProp} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <Target size={14} /> Unique Value Proposition
+        </h3>
+        <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
+          {canvas.UniqueValueProp || <span className="text-gray-400 italic">Belum diisi</span>}
+        </p>
+      </div>
+      <div className={`col-span-1 ${fieldBgColors.UnfairAdvantage} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <ShieldCheck size={14} /> Unfair Advantage
+        </h3>
+        <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
+          {canvas.UnfairAdvantage || <span className="text-gray-400 italic">Belum diisi</span>}
+        </p>
+      </div>
+      <div className={`col-span-1 row-span-2 ${fieldBgColors.CustomerSegments} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <Users size={14} /> Customer Segments
+        </h3>
+        <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
+          {canvas.CustomerSegments || <span className="text-gray-400 italic">Belum diisi</span>}
+        </p>
+      </div>
+      <div className={`col-span-1 ${fieldBgColors.KeyMetrics} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <BarChart3 size={14} /> Key Metrics
+        </h3>
+        <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
+          {canvas.KeyMetrics || <span className="text-gray-400 italic">Belum diisi</span>}
+        </p>
+      </div>
+      <div className={`col-span-1 ${fieldBgColors.Channels} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
+        <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+          <Send size={14} /> Channels
+        </h3>
+        <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
+          {canvas.Channels || <span className="text-gray-400 italic">Belum diisi</span>}
+        </p>
+      </div>
+      <div className="col-span-5 flex gap-4">
+        <div className={`w-1/2 ${fieldBgColors.CostStructure} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
+          <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+            <Coins size={14} /> Cost Structure
+          </h3>
+          <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
+            {canvas.CostStructure || <span className="text-gray-400 italic">Belum diisi</span>}
+          </p>
+        </div>
+        <div className={`w-1/2 ${fieldBgColors.RevenueStreams} border border-gray-300 rounded-2xl p-4`} style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
+          <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+            <TrendingUp size={14} /> Revenue Streams
+          </h3>
+          <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
+            {canvas.RevenueStreams || <span className="text-gray-400 italic">Belum diisi</span>}
+          </p>
+        </div>
+      </div>
+    </div>
 
-                      {/* === TOMBOL EDIT & PRINT BERDAMPINGAN === */}
-                      <div className="mt-6 flex justify-center gap-3">
-                        <button
-                          onClick={() => setIsEditing(true)}
-                          className="px-5 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
-                        >
-                          <Edit3 size={16} /> Edit Canvas
-                        </button>
-                        <button
-                          onClick={handlePrint}
-                          className="px-5 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
-                        >
-                          <Printer size={16} /> Print Canvas
-                        </button>
-                      </div>
-                    </>
-                  )}
+    {/* Mobile View – Preview */}
+    <div className="md:hidden space-y-4">
+      {Object.entries(fieldIcons).map(([field, Icon]) => {
+        const label =
+          field === 'UniqueValueProp'
+            ? 'Unique Value Proposition'
+            : field === 'CustomerSegments'
+            ? 'Customer Segments'
+            : field === 'KeyMetrics'
+            ? 'Key Metrics'
+            : field === 'UnfairAdvantage'
+            ? 'Unfair Advantage'
+            : field === 'RevenueStreams'
+            ? 'Revenue Streams'
+            : field === 'CostStructure'
+            ? 'Cost Structure'
+            : field;
 
+        return (
+          <div
+            key={field}
+            className={`${fieldBgColors[field] || 'bg-white'} border border-gray-300 rounded-2xl p-4`}
+            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+          >
+            <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
+              <Icon size={14} /> {label}
+            </h3>
+            <p className="text-sm text-gray-700 whitespace-pre-line">
+              {canvas[field] || <span className="text-gray-400 italic">Belum diisi</span>}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
+
+                  {/* Action Buttons */}
                   <div className="mt-6 flex flex-wrap gap-2 justify-center">
                     <button
                       onClick={() => router.push(`/dashboard/${projectId}/plan/level_3_product_brand`)}
@@ -658,12 +750,12 @@ export default function Level4Page() {
         </main>
       </div>
 
-      {/* Modal Notifikasi */}
+      {/* Notification Modal */}
       <NotificationModalPlan
         isOpen={showNotification}
         type="success"
-        xpGained={notificationData.xpGained}
-        badgeName={notificationData.badgeName}
+        xpGained={10}
+        badgeName="Lean Strategist"
         onClose={() => setShowNotification(false)}
       />
     </div>

@@ -3,40 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
-  Menu,
-  Target,
-  BarChart3,
-  Palette,
-  FileText,
-  Award,
-  Rocket,
-  Lightbulb,
-  Users,
-  ClipboardCheck,
-  Goal,
-  Sparkles,
-  Video,
-  BookOpen,
-  Copy,
-  ExternalLink,
-  ChevronLeft,
-  ChevronRight,
-  Instagram,
-  Smartphone,
-  Truck,
-  CreditCard,
-  MessageCircle,
-  Store,
-  Clock,
-  CheckCircle
+  Menu, Target, BarChart3, Palette, FileText, Award, Rocket, Lightbulb,
+  Users, ClipboardCheck, Goal, Sparkles, Video, BookOpen, Copy, ExternalLink,
+  ChevronLeft, ChevronRight, Instagram, Smartphone, Truck, CreditCard,
+  MessageCircle, Store, Clock, CheckCircle
 } from 'lucide-react';
 
 import useProjectStore from '@/store/useProjectStore';
+import { useLaunchChecklistStore } from '@/store/useLaunchChecklistStore'; // ✅ store baru
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 
-// Daftar item checklist
 const CHECKLIST_ITEMS = [
   { id: 'social', label: 'Buat akun Instagram & WhatsApp bisnis', icon: Instagram },
   { id: 'photos', label: 'Siapkan foto produk yang menarik', icon: Smartphone },
@@ -51,71 +29,76 @@ const CHECKLIST_ITEMS = [
 export default function Level7Page() {
   const { projectId } = useParams();
   const router = useRouter();
-  const projects = useProjectStore((state) => state.projects);
-  const updateProject = useProjectStore((state) => state.updateProject);
 
-  const [project, setProject] = useState(null);
+  // 🔹 Gunakan store yang sudah ada
+  const { planLevels, getLevels, updateLevelStatus } = useProjectStore();
+  const { checklist: storedChecklist, loading: storeLoading, fetchChecklist, saveChecklist } = useLaunchChecklistStore();
+
+  const [checklist, setChecklist] = useState({});
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [checklist, setChecklist] = useState({});
+  const [showNotification, setShowNotification] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const handler = () => setIsMobile(window.innerWidth < 1024);
+    handler();
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
   }, []);
 
+  // 🔹 Load data saat mount
   useEffect(() => {
-    if (projectId) {
-      const found = projects.find(p => p.id === projectId);
-      setProject(found);
-      if (found?.levels?.[6]?.data?.checklist) {
-        setChecklist(found.levels[6].data.checklist);
-      } else {
-        const initial = {};
-        CHECKLIST_ITEMS.forEach(item => {
-          initial[item.id] = false;
-        });
-        setChecklist(initial);
-      }
+    if (projectId && projectId !== 'undefined') {
+      getLevels(projectId);
+      fetchChecklist(projectId);
     }
-  }, [projectId, projects]);
+  }, [projectId]);
 
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationData, setNotificationData] = useState({
-    message: '',
-    xpGained: 0,
-    badgeName: '',
-  });
+  // 🔹 Sync store → state
+  useEffect(() => {
+    if (Object.keys(storedChecklist).length > 0) {
+      setChecklist(storedChecklist);
+    } else {
+      const initial = {};
+      CHECKLIST_ITEMS.forEach(item => initial[item.id] = false);
+      setChecklist(initial);
+    }
+  }, [storedChecklist]);
 
-  const toggleChecklistItem = (id) => {
+  // 🔹 Ambil XP & badge
+  const currentLevel = planLevels.find(l => l.order === 7);
+  const xpGained = currentLevel?.xp || 10;
+  const badgeName = currentLevel?.badge || 'Launch Star';
+
+  // 🔹 Simpan checklist ke backend
+  const toggleChecklistItem = async (id) => {
     const newChecklist = { ...checklist, [id]: !checklist[id] };
     setChecklist(newChecklist);
 
-    const updatedLevels = [...(project?.levels || [])];
-    while (updatedLevels.length <= 6) {
-      updatedLevels.push({ id: updatedLevels.length + 1, completed: false, data: {} });
+    try {
+      await saveChecklist(projectId, newChecklist);
+
+      // 🔹 Update status level jika semua selesai
+      const isCompleted = Object.values(newChecklist).every(Boolean);
+      if (currentLevel?._id) {
+        await updateLevelStatus(currentLevel._id, { completed: isCompleted });
+      }
+    } catch (err) {
+      alert('Gagal menyimpan. Coba lagi.');
     }
-    updatedLevels[6] = {
-      id: 7,
-      completed: Object.values(newChecklist).every(Boolean),
-      data: { checklist: newChecklist }
-    };
-
-    updateProject(projectId, { levels: updatedLevels });
   };
 
-  const getLevelData = (levelIndex) => {
-    return project?.levels?.[levelIndex]?.data || null;
+  // 🔹 Ambil data dari level sebelumnya
+  const getLevelData = (levelOrder) => {
+    return planLevels.find(l => l.order === levelOrder)?.data || null;
   };
 
-  const vpc = getLevelData(0);
-  const rww = getLevelData(1);
-  const brand = getLevelData(2);
-  const lean = getLevelData(3);
-  const mvp = getLevelData(4);
-  const beta = getLevelData(5);
+  const vpc = getLevelData(1); // sesuaikan urutan jika perlu
+  const rww = getLevelData(2);
+  const brand = getLevelData(3);
+  const lean = getLevelData(4);
+  const mvp = getLevelData(5);
+  const beta = getLevelData(6);
 
   const getVPCProductTitle = (ps) => {
     if (!ps) return '-';
@@ -128,14 +111,17 @@ export default function Level7Page() {
     { label: 'Level 7: Aset & Checklist Launching' }
   ];
 
-  // Handle klik tombol "Selesai"
   const handleSelesaiClick = () => {
-    setNotificationData({
-      xpGained: 10,
-      badgeName: 'Launch Star',
-    });
     setShowNotification(true);
   };
+
+  if (storeLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-[#f02d9c] font-medium">Memuat checklist launching...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -251,7 +237,7 @@ export default function Level7Page() {
                             <Rocket size={14} /> MVP
                           </h4>
                           <p className="text-xs text-[#5b5b5b] mt-1">
-                            {mvp?.mvpImageUrl ? 'Gambar tersedia' : 'Belum diunggah'}
+                            {mvp?.products && mvp.products.length > 0 ? 'Tersedia' : 'Belum diunggah'}
                           </p>
                         </div>
                         <div className="border border-gray-300 rounded-xl p-3 bg-[#fdf6f0]">
@@ -259,7 +245,7 @@ export default function Level7Page() {
                             <Users size={14} /> Beta Testing
                           </h4>
                           <p className="text-xs text-[#5b5b5b] mt-1">
-                            {beta?.testers ? `${beta.testers} tester` : 'Belum diuji'}
+                            {beta?.responses ? `${beta.responses.length} tester` : 'Belum diuji'}
                           </p>
                         </div>
                       </div>
@@ -283,9 +269,8 @@ export default function Level7Page() {
                     </div>
                   </div>
 
-                  {/* === KOLOM KANAN — DISESUAIKAN DENGAN GAYA LEVEL 5 === */}
+                  {/* Kolom Kanan */}
                   <div className="space-y-5">
-                    {/* === PENCAPAIAN === */}
                     <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                       <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
                         <Award size={16} className="text-[#f02d9c]" />
@@ -293,18 +278,14 @@ export default function Level7Page() {
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         <span className="px-3 py-1.5 bg-[#f02d9c] text-white text-xs font-bold rounded-full flex items-center gap-1">
-                          <Lightbulb size={12} /> +10 XP
+                          <Lightbulb size={12} /> +{xpGained} XP
                         </span>
                         <span className="px-3 py-1.5 bg-[#8acfd1] text-[#0a5f61] text-xs font-bold rounded-full flex items-center gap-1">
-                          <Award size={12} /> Launch Star
+                          <Award size={12} /> {badgeName}
                         </span>
                       </div>
-                      <p className="mt-2 text-xs text-[#5b5b5b]">
-                        Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
-                      </p>
                     </div>
 
-                    {/* === PETUNJUK === */}
                     <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                       <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
                         <BookOpen size={16} className="text-[#f02d9c]" />
@@ -336,7 +317,6 @@ export default function Level7Page() {
                       </div>
                     </div>
 
-                    {/* === RESOURCES === */}
                     <div className="border border-gray-200 rounded-xl p-4 bg-white">
                       <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
                         <BookOpen size={14} /> Resources
@@ -385,8 +365,8 @@ export default function Level7Page() {
       <NotificationModalPlan
         isOpen={showNotification}
         type="success"
-        xpGained={notificationData.xpGained}
-        badgeName={notificationData.badgeName}
+        xpGained={xpGained}
+        badgeName={badgeName}
         onClose={() => {
           setShowNotification(false);
           router.push(`/dashboard/${projectId}`);

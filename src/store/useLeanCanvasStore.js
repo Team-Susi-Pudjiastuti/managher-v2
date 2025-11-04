@@ -18,52 +18,58 @@ export const useLeanCanvasStore = create((set, get) => ({
   canvas: { ...initialCanvas },
   loading: false,
   error: null,
-  isFromBusinessIdea: false, // untuk logika UI opsional
 
-  // Ambil data: dari Lean Canvas atau inisialisasi dari Business Idea
   fetchLeanCanvas: async (projectId) => {
     set({ loading: true, error: null });
     try {
-      const res = await apiRequest(`lean-canvas/${projectId}`, 'GET');
-      const data = res.data;
+      // ✅ PERBAIKAN UTAMA: respons API Anda TIDAK memiliki wrapper "data"
+      const data = await apiRequest(`lean-canvas/project/${projectId}`, 'GET');
+      // ↑ "data" DI SINI SUDAH LANGSUNG BERISI { leanCanvas: ... } ATAU { initialData: ..., isFromBusinessIdea: true }
 
-      // Jika ada field `isFromBusinessIdea`, berarti ini inisialisasi
-      const isFromBI = res.isFromBusinessIdea || false;
+      let source = {};
+
+      if (data.leanCanvas) {
+        source = data.leanCanvas;
+      } else if (data.initialData && data.isFromBusinessIdea) {
+        source = data.initialData;
+      } else {
+        // Jika respons langsung berisi field Lean Canvas
+        source = data;
+      }
 
       set({
         canvas: {
-          problem: data.problem || '',
-          solution: data.solution || '',
-          customerSegments: data.customerSegments || '',
-          uniqueValueProposition: data.uniqueValueProposition || '',
-          unfairAdvantage: data.unfairAdvantage || '',
-          keyMetrics: data.keyMetrics || '',
-          channels: data.channels || '',
-          costStructure: data.costStructure || '',
-          revenueStreams: data.revenueStreams || '',
+          problem: source.problem || '',
+          solution: source.solution || '',
+          customerSegments: source.customerSegments || '',
+          uniqueValueProposition: source.uniqueValueProposition || '',
+          unfairAdvantage: source.unfairAdvantage || '',
+          keyMetrics: source.keyMetrics || '',
+          channels: source.channels || '',
+          costStructure: source.costStructure || '',
+          revenueStreams: source.revenueStreams || '',
         },
-        isFromBusinessIdea: isFromBI,
         loading: false,
       });
     } catch (err) {
-      console.error('Gagal fetch Lean Canvas:', err);
-      set({ error: err.message || 'Gagal memuat data', loading: false });
+      console.error('Gagal memuat Lean Canvas:', err);
+      if (err.message?.includes('404')) {
+        set({ canvas: { ...initialCanvas }, loading: false });
+      } else {
+        set({ error: err.message || 'Gagal memuat data', loading: false });
+      }
     }
   },
 
-  // Update field lokal
   updateField: (field, value) => {
-    set((state) => ({
-      canvas: { ...state.canvas, [field]: value },
-    }));
+    set((state) => ({ canvas: { ...state.canvas, [field]: value } }));
   },
 
-  // Simpan ke Lean Canvas (PUT)
   saveLeanCanvas: async (projectId) => {
     const { canvas } = get();
     set({ loading: true, error: null });
     try {
-      await apiRequest(`lean-canvas/${projectId}`, 'PUT', {
+      await apiRequest(`lean-canvas/project/${projectId}`, 'PUT', {
         problem: canvas.problem,
         solution: canvas.solution,
         customerSegments: canvas.customerSegments,
@@ -74,10 +80,9 @@ export const useLeanCanvasStore = create((set, get) => ({
         costStructure: canvas.costStructure,
         revenueStreams: canvas.revenueStreams,
       });
-      // Setelah simpan, data tidak lagi "dari Business Idea"
-      set({ isFromBusinessIdea: false, loading: false });
+      set({ loading: false });
     } catch (err) {
-      console.error('Gagal simpan Lean Canvas:', err);
+      console.error('Gagal menyimpan Lean Canvas:', err);
       set({ error: err.message || 'Gagal menyimpan', loading: false });
       throw err;
     }

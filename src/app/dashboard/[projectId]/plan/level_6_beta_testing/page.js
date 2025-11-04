@@ -4,38 +4,19 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Menu,
-  Users,
-  Goal,
-  Sparkles,
-  ChevronLeft,
-  ChevronRight,
-  Trash2,
-  BarChart3,
-  CheckCircle,
-  BookOpen,
-  Edit3,
-  AlertTriangle,
-  Award,
-  Lightbulb,
+  Menu, Users, Goal, Sparkles, ChevronLeft, ChevronRight, Trash2,
+  BarChart3, CheckCircle, BookOpen, Edit3, AlertTriangle, Award, Lightbulb,
 } from 'lucide-react';
 
 import useProjectStore from '@/store/useProjectStore';
+import { useBetaTestingStore } from '@/store/useBetaTestingStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell 
 } from 'recharts';
 
 const satisfactionLabels = ['Sangat Tidak Puas', 'Tidak Puas', 'Netral', 'Puas', 'Sangat Puas'];
@@ -44,84 +25,51 @@ const range5 = [1, 2, 3, 4, 5];
 export default function Level6Page() {
   const { projectId } = useParams();
   const router = useRouter();
-  const projects = useProjectStore((state) => state.projects);
-  const updateProject = useProjectStore((state) => state.updateProject);
 
-  const [project, setProject] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationData, setNotificationData] = useState({
-    xpGained: 0,
-    badgeName: '',
-  });
-
-  const [currentResponse, setCurrentResponse] = useState({
-    name: '',
-    gender: '',
-    age: '',
-    activity: '',
-    satisfaction_rate: null,
-    satisfaction_reason: '',
-    suggestion: '',
-    recommendation: '',
-    comment: '',
-  });
+  // 🔹 Gunakan store
+  const { planLevels, getLevels, updateLevelStatus } = useProjectStore();
+  const { responses: storedResponses, loading: storeLoading, fetchResponses, saveResponses } = useBetaTestingStore();
 
   const [allResponses, setAllResponses] = useState([]);
+  const [currentResponse, setCurrentResponse] = useState({
+    name: '', gender: '', age: '', activity: '',
+    scale: null, comment: '', // ⚠️ sesuaikan dengan model: `scale` bukan `satisfaction_rate`
+    suggestion: '', recommendation: '', // tambahkan field ini jika ingin disimpan
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
 
-  // Deteksi mobile
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const handler = () => setIsMobile(window.innerWidth < 1024);
+    handler();
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
   }, []);
 
-  // Load data
+  // 🔹 Load data dari backend
   useEffect(() => {
-    if (!projectId) return;
-
-    const found = projects.find((p) => p.id === projectId);
-    setProject(found);
-
-    // Ambil responden dari Level 2 dengan skor ≥ 3.5
-    const level2Data = found?.levels?.[1]?.data?.rww;
-    if (level2Data?.responses) {
-      const qualifiedRespondents = level2Data.responses
-        .filter(r => parseFloat(r.total) >= 3.5)
-        .map(r => ({
-          id: Date.now() + Math.random(),
-          name: r.name,
-          gender: r.gender,
-          age: r.age?.toString() || '',
-          activity: r.activity,
-          satisfaction_rate: null,
-          satisfaction_reason: '',
-          suggestion: '',
-          recommendation: '',
-          comment: '',
-        }));
-      setAllResponses(qualifiedRespondents);
+    if (projectId && projectId !== 'undefined') {
+      getLevels(projectId);
+      fetchResponses(projectId);
     }
+  }, [projectId]);
 
-    const saved = localStorage.getItem(`beta_data_${projectId}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const responses = Array.isArray(parsed.responses) ? parsed.responses : parsed;
-        setAllResponses(responses || []);
-      } catch (e) {
-        console.error('Gagal load data beta dari localStorage', e);
-        setAllResponses([]);
-      }
-    }
-  }, [projectId, projects]);
+  // 🔹 Sync store → state
+  useEffect(() => {
+    setAllResponses(storedResponses);
+  }, [storedResponses]);
 
+  // 🔹 Ambil XP & badge
+  const currentLevel = planLevels.find(l => l.order === 6);
+  const xpGained = currentLevel?.xp || 10;
+  const badgeName = currentLevel?.badge || 'Beta Master';
+
+  // === Fungsi Form ===
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setCurrentResponse((prev) => ({ ...prev, [name]: value }));
+    setCurrentResponse(prev => ({ ...prev, [name]: value }));
   };
 
   const addNewResponse = () => {
@@ -131,132 +79,99 @@ export default function Level6Page() {
       return;
     }
 
-    const newResp = { ...currentResponse, id: Date.now() };
+    // ✅ Sesuaikan dengan model BetaTesting
+    const newResp = {
+      ...currentResponse,
+      id: Date.now(),
+      // Jika Anda ingin menyimpan suggestion/recommendation, tambahkan ke model
+      // Untuk sekarang, kita simpan sebagai `comment`
+      comment: `${currentResponse.suggestion || ''} | ${currentResponse.recommendation || ''} | ${currentResponse.comment || ''}`,
+    };
+
     const updated = [...allResponses, newResp];
     setAllResponses(updated);
-
-    localStorage.setItem(
-      `beta_data_${projectId}`,
-      JSON.stringify({ responses: updated, updatedAt: new Date().toISOString() })
-    );
-
     setCurrentResponse({
-      name: '',
-      gender: '',
-      age: '',
-      activity: '',
-      satisfaction_rate: null,
-      satisfaction_reason: '',
-      suggestion: '',
-      recommendation: '',
-      comment: '',
+      name: '', gender: '', age: '', activity: '',
+      scale: null, comment: '', suggestion: '', recommendation: '',
     });
-
-    alert('Responden berhasil ditambahkan!');
   };
 
   const deleteResponse = (id) => {
-    const updated = allResponses.filter((r) => r.id !== id);
-    setAllResponses(updated);
-    localStorage.setItem(
-      `beta_data_${projectId}`,
-      JSON.stringify({ responses: updated, updatedAt: new Date().toISOString() })
-    );
+    setAllResponses(prev => prev.filter(r => r.id !== id));
   };
 
-  // Analisis
+  // === Analisis ===
   const satisfactionValues = allResponses
-    .map((r) => (typeof r.satisfaction_rate === 'number' ? r.satisfaction_rate : null))
-    .filter((v) => v !== null);
-
+    .map(r => (typeof r.scale === 'number' ? r.scale : null))
+    .filter(v => v !== null);
   const avgSatisfaction = satisfactionValues.length
     ? (satisfactionValues.reduce((sum, v) => sum + v, 0) / satisfactionValues.length).toFixed(1)
     : 0;
-
-  const recommendCount = allResponses.filter((r) => r.recommendation === 'Ya').length;
+  const recommendCount = allResponses.filter(r => r.recommendation === 'Ya').length;
   const recommendRate = allResponses.length
     ? Math.round((recommendCount / allResponses.length) * 100)
     : 0;
-
   const canLaunch = allResponses.length >= 5 && parseFloat(avgSatisfaction) >= 4.0 && recommendRate >= 70;
 
-  const handleSave = () => {
-    const dataToSave = {
-      responses: allResponses,
-      avgSatisfaction,
-      recommendRate,
-      updatedAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem(`beta_data_${projectId}`, JSON.stringify(dataToSave));
-
-    const updatedLevels = [...(project?.levels || [])];
-    if (!updatedLevels[5]) updatedLevels[5] = { id: 6, completed: false, data: {} };
-    updatedLevels[5] = {
-      ...updatedLevels[5],
-      completed: canLaunch,
-      data: allResponses,
-    };
-    updateProject(projectId, { levels: updatedLevels });
-
-    setNotificationData({
-      xpGained: 10,
-      badgeName: 'Beta Master',
-    });
-    setShowNotification(true);
+  // ✅ Simpan ke backend
+  const handleSave = async () => {
+    try {
+      await saveResponses(projectId, allResponses);
+      if (currentLevel?._id) {
+        await updateLevelStatus(currentLevel._id, { completed: canLaunch });
+      }
+      setShowNotification(true);
+    } catch (err) {
+      alert('Gagal menyimpan. Coba lagi.');
+    }
   };
 
-  // Diagram: Distribusi Kepuasan (1–5)
+  // === CHART DATA ===
   const satisfactionDist = [0, 0, 0, 0, 0];
   allResponses.forEach(r => {
-    if (typeof r.satisfaction_rate === 'number' && r.satisfaction_rate >= 1 && r.satisfaction_rate <= 5) {
-      satisfactionDist[Math.floor(r.satisfaction_rate) - 1]++;
+    if (typeof r.scale === 'number' && r.scale >= 1 && r.scale <= 5) {
+      satisfactionDist[Math.floor(r.scale) - 1]++;
     }
   });
   const satisfactionChartData = satisfactionDist.map((count, i) => ({
-    score: i + 1,
-    label: satisfactionLabels[i],
-    count,
+    score: i + 1, label: satisfactionLabels[i], count,
   }));
 
-  // Utility: age buckets
   const ageBuckets = { '<18': 0, '18-24': 0, '25-34': 0, '35-44': 0, '45+': 0 };
-  allResponses.forEach((r) => {
+  allResponses.forEach(r => {
     const a = Number(r.age);
     if (!a) return;
-    if (a < 18) ageBuckets['<18'] += 1;
-    else if (a <= 24) ageBuckets['18-24'] += 1;
-    else if (a <= 34) ageBuckets['25-34'] += 1;
-    else if (a <= 44) ageBuckets['35-44'] += 1;
-    else ageBuckets['45+'] += 1;
+    if (a < 18) ageBuckets['<18']++;
+    else if (a <= 24) ageBuckets['18-24']++;
+    else if (a <= 34) ageBuckets['25-34']++;
+    else if (a <= 44) ageBuckets['35-44']++;
+    else ageBuckets['45+']++;
   });
   const ageChartData = Object.entries(ageBuckets).map(([k, v]) => ({ name: k, value: v }));
 
-  // Activity counts
   const activityCounts = {};
-  allResponses.forEach((r) => {
+  allResponses.forEach(r => {
     const act = r.activity?.trim() || 'Lainnya';
     activityCounts[act] = (activityCounts[act] || 0) + 1;
   });
   const activityChartData = Object.entries(activityCounts).map(([name, value]) => ({ name, value }));
 
-  // Recommendation distribution
   const recOptions = ['Ya', 'Tidak', 'Mungkin'];
-  const recChartData = recOptions.map((opt) => ({
+  const recChartData = recOptions.map(opt => ({
     name: opt,
-    value: allResponses.filter((r) => r.recommendation === opt).length,
+    value: allResponses.filter(r => r.recommendation === opt).length,
   }));
 
-  // Gender chart data
   const genderChartData = [
-    { name: 'Laki-laki', value: allResponses.filter((r) => r.gender === 'Laki-laki').length, fill: '#4A90E2' },
-    { name: 'Perempuan', value: allResponses.filter((r) => r.gender === 'Perempuan').length, fill: '#f02d9c' },
-    { name: 'Lainnya', value: allResponses.filter((r) => r.gender === 'Lainnya').length, fill: '#C4C4C4' },
+    { name: 'Laki-laki', value: allResponses.filter(r => r.gender === 'Laki-laki').length, fill: '#4A90E2' },
+    { name: 'Perempuan', value: allResponses.filter(r => r.gender === 'Perempuan').length, fill: '#f02d9c' },
+    { name: 'Lainnya', value: allResponses.filter(r => r.gender === 'Lainnya').length, fill: '#C4C4C4' },
   ];
 
+  // === RatingBox ===
   const RatingBox = ({ value, onChange, labels = satisfactionLabels }) => (
     <div className="flex flex-wrap justify-center gap-4 mt-4">
-      {range5.map((num) => (
+      {range5.map(num => (
         <button
           key={num}
           type="button"
@@ -274,6 +189,14 @@ export default function Level6Page() {
       ))}
     </div>
   );
+
+  if (storeLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-[#f02d9c] font-medium">Memuat data beta testing...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white font-[Poppins]">
@@ -301,7 +224,6 @@ export default function Level6Page() {
       )}
 
       <div className="flex mt-6">
-        {/* Sidebar */}
         <PlanSidebar
           projectId={projectId}
           currentLevelId={6}
@@ -310,7 +232,6 @@ export default function Level6Page() {
           setMobileSidebarOpen={setMobileSidebarOpen}
         />
 
-        {/* Main Content */}
         <main className="flex-1">
           <div className="py-8 px-4 md:px-6">
             <div className="max-w-6xl mx-auto">
@@ -328,8 +249,9 @@ export default function Level6Page() {
                   </p>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Kolom Kiri: Form & Data */}
+                    {/* Kolom Kiri: Form & Ringkasan */}
                     <div>
+                      {/* Form Tambah Responden */}
                       <div
                         className="mb-6 p-5 bg-white rounded-xl border-t border-l border-black"
                         style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
@@ -382,15 +304,19 @@ export default function Level6Page() {
                           </div>
                           <div>
                             <label className="block text-sm font-medium mb-2">Aktivitas</label>
-                            <input
-                              type="text"
+                            <select
                               name="activity"
                               value={currentResponse.activity}
                               onChange={handleInputChange}
-                              placeholder="Contoh: Mahasiswa"
-                              className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
+                              className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            />
+                            >
+                              <option value="">Pilih Aktivitas</option>
+                              <option value="Mahasiswa">Mahasiswa</option>
+                              <option value="Ibu rumah tangga">Ibu rumah tangga</option>
+                              <option value="Pekerja">Pekerja</option>
+                              <option value="Lainnya">Lainnya</option>
+                            </select>
                           </div>
                         </div>
 
@@ -403,12 +329,12 @@ export default function Level6Page() {
                             Pilih angka yang paling menggambarkan kepuasan responden terhadap produk.
                           </p>
                           <RatingBox
-                            value={currentResponse.satisfaction_rate}
-                            onChange={(val) => setCurrentResponse((prev) => ({ ...prev, satisfaction_rate: val }))}
+                            value={currentResponse.scale}
+                            onChange={(val) => setCurrentResponse((prev) => ({ ...prev, scale: val }))}
                           />
                           <textarea
-                            value={currentResponse.satisfaction_reason}
-                            onChange={(e) => setCurrentResponse((prev) => ({ ...prev, satisfaction_reason: e.target.value }))}
+                            value={currentResponse.comment}
+                            onChange={(e) => setCurrentResponse((prev) => ({ ...prev, comment: e.target.value }))}
                             placeholder="Alasan kepuasan..."
                             className="w-full mt-3 px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
                             style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
@@ -544,9 +470,9 @@ export default function Level6Page() {
                       )}
                     </div>
 
-                    {/* === KOLOM KANAN — GAYA LEVEL 5, ISI SESUAI LEVEL 6 === */}
+                    {/* Kolom Kanan: Info + Visualisasi */}
                     <div className="space-y-5">
-                      {/* === PENCAPAIAN === */}
+                      {/* Pencapaian */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
                           <Award size={16} className="text-[#f02d9c]" />
@@ -554,18 +480,15 @@ export default function Level6Page() {
                         </h3>
                         <div className="flex flex-wrap gap-2">
                           <span className="px-3 py-1.5 bg-[#f02d9c] text-white text-xs font-bold rounded-full flex items-center gap-1">
-                            <Lightbulb size={12} /> +10 XP
+                            <Lightbulb size={12} /> +{xpGained} XP
                           </span>
                           <span className="px-3 py-1.5 bg-[#8acfd1] text-[#0a5f61] text-xs font-bold rounded-full flex items-center gap-1">
-                            <Award size={12} /> Beta Master
+                            <Award size={12} /> {badgeName}
                           </span>
                         </div>
-                        <p className="mt-2 text-xs text-[#5b5b5b]">
-                          Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
-                        </p>
                       </div>
 
-                      {/* === PETUNJUK === */}
+                      {/* Petunjuk */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
                           <BookOpen size={16} className="text-[#f02d9c]" />
@@ -597,7 +520,7 @@ export default function Level6Page() {
                         </div>
                       </div>
 
-                      {/* === RESOURCES === */}
+                      {/* Resources */}
                       <div className="border border-gray-200 rounded-xl p-4 bg-white">
                         <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
                           <BookOpen size={14} /> Resources
@@ -635,117 +558,119 @@ export default function Level6Page() {
                           </li>
                         </ul>
                       </div>
-                       <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd] mt-5">
-                            <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                              <Users size={16} /> Visualisasi Data Responden
-                            </h3>
-                            <div className="overflow-x-auto mb-4">
-                              <table className="min-w-full border border-gray-300 text-sm">
-                                <thead className="bg-[#f02d9c] text-white">
-                                  <tr>
-                                    <th className="py-2 px-3 border border-gray-300 text-left">Nama</th>
-                                    <th className="py-2 px-3 border border-gray-300 text-left">Jenis Kelamin</th>
-                                    <th className="py-2 px-3 border border-gray-300 text-left">Usia</th>
-                                    <th className="py-2 px-3 border border-gray-300 text-left">Aktivitas</th>
-                                    <th className="py-2 px-3 border border-gray-300 text-left">Kepuasan</th>
-                                    <th className="py-2 px-3 border border-gray-300 text-left">Saran</th>
-                                    <th className="py-2 px-3 border border-gray-300 text-left">Rekomendasi</th>
-                                    <th className="py-2 px-3 border border-gray-300 text-left">Aksi</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {allResponses.map((r) => (
-                                    <tr key={r.id} className="odd:bg-white even:bg-[#f9f9f9]">
-                                      <td className="py-2 px-3 border border-gray-300">{r.name}</td>
-                                      <td className="py-2 px-3 border border-gray-300">{r.gender}</td>
-                                      <td className="py-2 px-3 border border-gray-300">{r.age}</td>
-                                      <td className="py-2 px-3 border border-gray-300">{r.activity}</td>
-                                      <td className="py-2 px-3 border border-gray-300">{r.satisfaction_rate ?? '-'}</td>
-                                      <td className="py-2 px-3 border border-gray-300 max-w-[120px] truncate">{r.suggestion || '-'}</td>
-                                      <td className="py-2 px-3 border border-gray-300">{r.recommendation ?? '-'}</td>
-                                      <td className="py-2 px-3 border border-gray-300">
-                                        <button
-                                          onClick={() => deleteResponse(r.id)}
-                                          className="px-2 py-1 bg-red-100 text-red-600 rounded-md text-xs"
-                                        >
-                                          Hapus
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                            <div className="grid grid-cols-1 gap-4">
-                              {/* Diagram Kepuasan */}
-                              <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
-                                <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Kepuasan</h4>
-                                <ResponsiveContainer width="100%" height={200}>
-                                  <BarChart data={satisfactionChartData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="score" />
-                                    <YAxis allowDecimals={false} />
-                                    <Tooltip formatter={(value) => [value, 'Jumlah Responden']} />
-                                    <Bar dataKey="count" fill="#f02d9c" />
-                                  </BarChart>
-                                </ResponsiveContainer>
-                              </div>
 
-                              {/* Diagram Jenis Kelamin */}
-                              <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
-                                <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Jenis Kelamin</h4>
-                                <ResponsiveContainer width="100%" height={200}>
-                                  <PieChart>
-                                    <Pie
-                                      dataKey="value"
-                                      data={genderChartData}
-                                      cx="50%"
-                                      cy="50%"
-                                      outerRadius={70}
-                                      label
-                                    />
-                                    <Tooltip />
-                                  </PieChart>
-                                </ResponsiveContainer>
-                              </div>
-
-                              {/* Diagram Usia */}
-                              <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
-                                <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Usia</h4>
-                                <ResponsiveContainer width="100%" height={200}>
-                                  <BarChart data={ageChartData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" />
-                                    <YAxis allowDecimals={false} />
-                                    <Tooltip />
-                                    <Bar dataKey="value" fill="#f02d9c" />
-                                  </BarChart>
-                                </ResponsiveContainer>
-                              </div>
-
-                              {/* Diagram Rekomendasi */}
-                              <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
-                                <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Rekomendasi</h4>
-                                <ResponsiveContainer width="100%" height={220}>
-                                  <PieChart>
-                                    <Pie
-                                      dataKey="value"
-                                      data={recChartData}
-                                      cx="50%"
-                                      cy="50%"
-                                      outerRadius={70}
-                                      label
+                      {/* Tabel & Chart */}
+                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd] mt-5">
+                        <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
+                          <Users size={16} /> Visualisasi Data Responden
+                        </h3>
+                        <div className="overflow-x-auto mb-4">
+                          <table className="min-w-full border border-gray-300 text-sm">
+                            <thead className="bg-[#f02d9c] text-white">
+                              <tr>
+                                <th className="py-2 px-3 border border-gray-300 text-left">Nama</th>
+                                <th className="py-2 px-3 border border-gray-300 text-left">Jenis Kelamin</th>
+                                <th className="py-2 px-3 border border-gray-300 text-left">Usia</th>
+                                <th className="py-2 px-3 border border-gray-300 text-left">Aktivitas</th>
+                                <th className="py-2 px-3 border border-gray-300 text-left">Kepuasan</th>
+                                <th className="py-2 px-3 border border-gray-300 text-left">Saran</th>
+                                <th className="py-2 px-3 border border-gray-300 text-left">Rekomendasi</th>
+                                <th className="py-2 px-3 border border-gray-300 text-left">Aksi</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {allResponses.map((r) => (
+                                <tr key={r.id} className="odd:bg-white even:bg-[#f9f9f9]">
+                                  <td className="py-2 px-3 border border-gray-300">{r.name}</td>
+                                  <td className="py-2 px-3 border border-gray-300">{r.gender}</td>
+                                  <td className="py-2 px-3 border border-gray-300">{r.age}</td>
+                                  <td className="py-2 px-3 border border-gray-300">{r.activity}</td>
+                                  <td className="py-2 px-3 border border-gray-300">{r.scale ?? '-'}</td>
+                                  <td className="py-2 px-3 border border-gray-300 max-w-[120px] truncate">{r.suggestion || '-'}</td>
+                                  <td className="py-2 px-3 border border-gray-300">{r.recommendation ?? '-'}</td>
+                                  <td className="py-2 px-3 border border-gray-300">
+                                    <button
+                                      onClick={() => deleteResponse(r.id)}
+                                      className="px-2 py-1 bg-red-100 text-red-600 rounded-md text-xs"
                                     >
-                                      <Cell key="cell-ya" fill="#4A90E2" />
-                                      <Cell key="cell-tidak" fill="#f02d9c" />
-                                      <Cell key="cell-mungkin" fill="#C4C4C4" />
-                                    </Pie>
-                                    <Tooltip />
-                                  </PieChart>
-                                </ResponsiveContainer>
-                              </div>
-                            </div>
+                                      Hapus
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4">
+                          {/* Diagram Kepuasan */}
+                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
+                            <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Kepuasan</h4>
+                            <ResponsiveContainer width="100%" height={200}>
+                              <BarChart data={satisfactionChartData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="score" />
+                                <YAxis allowDecimals={false} />
+                                <Tooltip formatter={(value) => [value, 'Jumlah Responden']} />
+                                <Bar dataKey="count" fill="#f02d9c" />
+                              </BarChart>
+                            </ResponsiveContainer>
                           </div>
+
+                          {/* Diagram Jenis Kelamin */}
+                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
+                            <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Jenis Kelamin</h4>
+                            <ResponsiveContainer width="100%" height={200}>
+                              <PieChart>
+                                <Pie
+                                  dataKey="value"
+                                  data={genderChartData}
+                                  cx="50%"
+                                  cy="50%"
+                                  outerRadius={70}
+                                  label
+                                />
+                                <Tooltip />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+
+                          {/* Diagram Usia */}
+                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
+                            <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Usia</h4>
+                            <ResponsiveContainer width="100%" height={200}>
+                              <BarChart data={ageChartData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis allowDecimals={false} />
+                                <Tooltip />
+                                <Bar dataKey="value" fill="#f02d9c" />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+
+                          {/* Diagram Rekomendasi */}
+                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
+                            <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Rekomendasi</h4>
+                            <ResponsiveContainer width="100%" height={220}>
+                              <PieChart>
+                                <Pie
+                                  dataKey="value"
+                                  data={recChartData}
+                                  cx="50%"
+                                  cy="50%"
+                                  outerRadius={70}
+                                  label
+                                >
+                                  <Cell key="cell-ya" fill="#4A90E2" />
+                                  <Cell key="cell-tidak" fill="#f02d9c" />
+                                  <Cell key="cell-mungkin" fill="#C4C4C4" />
+                                </Pie>
+                                <Tooltip />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -758,8 +683,8 @@ export default function Level6Page() {
       <NotificationModalPlan
         isOpen={showNotification}
         type="success"
-        xpGained={notificationData.xpGained}
-        badgeName={notificationData.badgeName}
+        xpGained={xpGained}
+        badgeName={badgeName}
         onClose={() => setShowNotification(false)}
       />
     </div>

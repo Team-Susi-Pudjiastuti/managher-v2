@@ -3,107 +3,80 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
-  Edit3,
-  Target,
-  Lightbulb,
-  BookOpen,
-  Eye,
-  ChevronLeft,
-  ChevronRight,
-  CheckCircle,
-  Menu,
-  Plus,
-  ImageIcon,
-  X,
-  Camera,
-  FileText,
-  Trash2,
-  DollarSign,
-  Award,
+  Edit3, Lightbulb, BookOpen, Eye, ChevronLeft, ChevronRight,
+  CheckCircle, Menu, Plus, ImageIcon, X, Camera, FileText,
+  Trash2, DollarSign, Award,
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
-import useProjectStore from '@/store/useProjectStore';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
+import { usePrototypeStore } from '@/store/usePrototypeStore';
+import useProjectStore from '@/store/useProjectStore';
 
 export default function Level5Page() {
   const { projectId } = useParams();
   const router = useRouter();
-  const projects = useProjectStore((state) => state.projects);
-  const updateProject = useProjectStore((state) => state.updateProject);
 
-  const [products, setProducts] = useState([
-    { id: Date.now(), name: '', concept: '', price: '', previewUrl: '' }
-  ]);
+  const {
+    planLevels,
+    getLevels,
+    updateLevelStatus,
+  } = useProjectStore();
+
+  const { products: storedProducts, loading: storeLoading, fetchProducts, saveProducts } = usePrototypeStore();
+
+  const [products, setProducts] = useState([{ id: Date.now(), name: '', concept: '', price: '', previewUrl: '' }]);
   const [isEditing, setIsEditing] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
-  const [project, setProject] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
-  const [notificationData, setNotificationData] = useState({
-    xpGained: 0,
-    badgeName: '',
-  });
 
   const fileInputRefs = useRef({});
+  const generateId = () => Date.now() + Math.floor(Math.random() * 1000);
+
+  useEffect(() => setIsMounted(true), []);
 
   useEffect(() => {
-    setIsMounted(true);
+    const handler = () => setIsMobile(window.innerWidth < 1024);
+    handler();
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
   }, []);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  useEffect(() => {
-    if (projectId) {
-      const found = projects.find((p) => p.id === projectId);
-      setProject(found);
-      const saved = localStorage.getItem(`mvp-${projectId}`);
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          setProducts(
-            data.map((item, i) => ({
-              id: Date.now() + i,
-              name: item.name || '',
-              concept: item.concept || '',
-              price: item.price || '',
-              previewUrl: item.previewUrl || '',
-            }))
-          );
-        } catch (e) {
-          console.warn('Failed to parse saved Prototype data', e);
-        }
-      }
+    if (projectId && projectId !== 'undefined' && isMounted) {
+      getLevels(projectId);
+      fetchProducts(projectId);
     }
-  }, [projectId, projects]);
+  }, [projectId, isMounted]);
 
+  useEffect(() => {
+    if (storedProducts.length > 0) {
+      setProducts(storedProducts.map(p => ({
+        id: generateId(),
+        name: p.name || '',
+        concept: p.description || '',
+        price: p.price ? String(p.price) : '',
+        previewUrl: p.image || '',
+      })));
+    }
+  }, [storedProducts]);
+
+  const currentLevel = planLevels.find(l => l.order === 5);
+  const xpGained = currentLevel?.xp || 10;
+  const badgeName = currentLevel?.badge || 'Product Maker';
+
+  // === Fungsi CRUD ===
   const addProduct = () => {
-    if (products.length >= 5) return;
-    setProducts((prev) => [
-      ...prev,
-      { id: Date.now(), name: '', concept: '', price: '', previewUrl: '' }
-    ]);
-  };
-
-  const updateProductName = (id, value) => {
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, name: value } : p)));
-  };
-
-  const updateConcept = (id, value) => {
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, concept: value } : p)));
-  };
-
-  const updatePrice = (id, value) => {
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, price: value } : p)));
+    if (products.length < 5) {
+      setProducts(prev => [...prev, { id: generateId(), name: '', concept: '', price: '', previewUrl: '' }]);
     }
+  };
+
+  const updateField = (id, field, value) => {
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
   };
 
   const handleImageUpload = (id, e) => {
@@ -118,53 +91,36 @@ export default function Level5Page() {
       return;
     }
     const url = URL.createObjectURL(file);
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, previewUrl: url } : p))
-    );
+    updateField(id, 'previewUrl', url);
   };
 
-  const removeImage = (id) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, previewUrl: '' } : p))
-    );
-  };
-
+  const removeImage = (id) => updateField(id, 'previewUrl', '');
   const removeProduct = (id) => {
-    if (products.length <= 1) {
+    if (products.length > 1) {
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } else {
       alert('Minimal harus ada 1 produk.');
-      return;
     }
-    setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const handleSave = () => {
-    const dataToSave = products.map((p) => ({
-      name: p.name,
-      concept: p.concept,
-      price: p.price,
-      previewUrl: p.previewUrl,
-    }));
+  const handleSave = async () => {
+    try {
+      const payload = products.map(p => ({
+        name: p.name,
+        description: p.concept,
+        price: p.price ? parseFloat(p.price) : 0,
+        image: p.previewUrl,
+      }));
 
-    localStorage.setItem(`mvp-${projectId}`, JSON.stringify(dataToSave));
-
-    if (project) {
-      const updatedLevels = [...(project.levels || [])];
-      while (updatedLevels.length <= 4) {
-        updatedLevels.push({ id: updatedLevels.length + 1, completed: false });
+      await saveProducts(projectId, payload);
+      if (currentLevel?._id) {
+        await updateLevelStatus(currentLevel._id, { completed: true });
       }
-      updatedLevels[4] = {
-        id: 5,
-        completed: products.some((p) => p.concept || p.previewUrl),
-        mvp: dataToSave,
-      };
-      updateProject(projectId, { levels: updatedLevels });
+      setShowNotification(true);
+    } catch (err) {
+      console.error('Simpan gagal:', err);
+      alert('Gagal menyimpan. Coba lagi.');
     }
-
-    setNotificationData({
-      xpGained: 10,
-      badgeName: 'Product Maker',
-    });
-    setShowNotification(true);
   };
 
   const breadcrumbItems = [
@@ -173,8 +129,12 @@ export default function Level5Page() {
     { label: 'Level 5: Prototype' },
   ];
 
-  if (!isMounted) {
-    return <div className="min-h-screen bg-white p-6">Loading...</div>;
+  if (!isMounted || storeLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-[#f02d9c] font-medium">Memuat data...</p>
+      </div>
+    );
   }
 
   return (
@@ -185,13 +145,7 @@ export default function Level5Page() {
 
       {isMobile && !mobileSidebarOpen && (
         <header className="p-3 flex items-center border-b border-gray-200 bg-white sticky top-10 z-30">
-          <button
-            onClick={() => setMobileSidebarOpen(true)}
-            className="p-1.5 rounded-lg hover:bg-gray-100"
-            aria-label="Open menu"
-          >
-            <Menu size={20} className="text-[#5b5b5b]" />
-          </button>
+          <button onClick={() => setMobileSidebarOpen(true)}><Menu size={20} /></button>
           <h1 className="ml-2 font-bold text-[#5b5b5b] text-base">Level 5: Prototype</h1>
         </header>
       )}
@@ -205,297 +159,244 @@ export default function Level5Page() {
           setMobileSidebarOpen={setMobileSidebarOpen}
         />
 
-        <main className="flex-1">
-          <div className="py-6 px-3 sm:px-4 md:px-6">
-            <div className="max-w-6xl mx-auto">
-              <div className="relative">
-                <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-2xl" />
-                <div
-                  className="relative bg-white rounded-2xl border-t border-l border-black p-4 sm:p-5 md:p-6"
-                  style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                >
-                  <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-4 sm:mb-6">
-                    Level 5: Prototype
-                  </h1>
+        <main className="flex-1 p-4 max-w-6xl mx-auto">
+          <div className="relative">
+            <div className="absolute inset-0 translate-x-1.5 translate-y-1.5 bg-[#f02d9c] rounded-2xl"></div>
+            <div
+              className="relative bg-white rounded-2xl border-t border-l border-black p-5 md:p-6"
+              style={{ boxShadow: '3px 3px 0 0 #f02d9c' }}
+            >
+              <h1 className="text-2xl font-bold text-[#f02d9c] mb-6">Level 5: Prototype</h1>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      {isEditing ? (
-                        <div className="space-y-4">
-                          {products.map((product) => (
-                            <div
-                              key={product.id}
-                              className="border border-gray-300 rounded-xl p-4 bg-[#f0f9f9] relative"
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Kolom Kiri: Form / Preview */}
+                <div>
+                  {isEditing ? (
+                    <div className="space-y-5">
+                      {products.map((product, idx) => (
+                        <div
+                          key={product.id}
+                          className="relative bg-linear-to-br from-[#fdfcf8] to-[#f0f9f9] border border-[#fbe2a7] rounded-xl p-5"
+                        >
+                          {products.length > 1 && (
+                            <button
+                              onClick={() => removeProduct(product.id)}
+                              className="absolute top-3 right-3 p-1.5 rounded-full bg-white/80 hover:bg-red-50 text-red-500 shadow-sm"
                             >
-                              {products.length > 1 && (
-                                <button
-                                  onClick={() => removeProduct(product.id)}
-                                  className="absolute top-2 right-2 p-1.5 rounded-full bg-white hover:bg-red-50 text-red-500 shadow-sm"
-                                  title="Hapus produk"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              )}
+                              <Trash2 size={14} />
+                            </button>
+                          )}
 
-                              <h3 className="font-bold text-[#f02d9c] mb-3 flex items-center gap-2">
-                                <FileText size={16} />
-                                Product Concept{' '}
-                                {products.length > 1 ? `#${products.indexOf(product) + 1}` : ''}
-                              </h3>
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="w-8 h-8 rounded-full bg-[#f02d9c] flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">{idx + 1}</span>
+                            </div>
+                            <h3 className="font-bold text-[#f02d9c]">Product Concept</h3>
+                          </div>
 
-                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1.5">
                                 Nama Produk
                               </label>
                               <input
-                                type="text"
                                 value={product.name}
-                                onChange={(e) => updateProductName(product.id, e.target.value)}
-                                placeholder="Masukkan nama produk"
-                                className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c] mb-3"
+                                onChange={(e) => updateField(product.id, 'name', e.target.value)}
+                                placeholder="Contoh: Skincare Alami"
+                                className="w-full px-3.5 py-2.5 text-sm border border-[#fbe2a7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
                               />
+                            </div>
 
-                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1">
+                            <div>
+                              <label className="block text-xs font-medium text-[#5b5b5b] mb-1.5">
                                 Deskripsi Produk
                               </label>
                               <textarea
                                 value={product.concept}
-                                onChange={(e) => updateConcept(product.id, e.target.value)}
-                                placeholder="Deskripsi Produk Anda (fitur, bentuk, manfaat)"
-                                className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c]"
-                                rows={3}
+                                onChange={(e) => updateField(product.id, 'concept', e.target.value)}
+                                placeholder="Jelaskan manfaat dan keunggulan produkmu"
+                                className="w-full px-3.5 py-2.5 text-sm border border-[#fbe2a7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
+                                rows="3"
                               />
+                            </div>
 
-                              <label className="block text-xs font-medium text-[#5b5b5b] mt-3 mb-1 flex items-center gap-1">
-                                <DollarSign size={14} />
-                                Harga (Rp)
+                            <div>
+                              <label className="flex text-xs font-medium text-[#5b5b5b] mb-1.5 items-center gap-1">
+                                <DollarSign size={14} /> Harga (Rp)
                               </label>
                               <input
-                                type="text"
                                 value={product.price}
-                                onChange={(e) => updatePrice(product.id, e.target.value)}
-                                placeholder="Contoh: 25000"
-                                className="w-full p-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#f02d9c] mb-3"
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                    updateField(product.id, 'price', val);
+                                  }
+                                }}
+                                placeholder="Contoh: 75000"
+                                className="w-full px-3.5 py-2.5 text-sm border border-[#fbe2a7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
                               />
+                            </div>
 
-                              <div className="mt-3">
-                                <label className="block text-xs font-medium text-[#5b5b5b] mb-1 flex items-center gap-1">
-                                  <Camera size={14} />
-                                  Upload Gambar Prototype
-                                </label>
-                                <div
-                                  className="mt-1 border-2 border-dashed border-[#7a7a7a] rounded-lg p-3 text-center cursor-pointer hover:border-[#f02d9c]"
-                                  onClick={() => fileInputRefs.current[product.id]?.click()}
-                                >
-                                  {product.previewUrl ? (
-                                    <div className="relative w-full h-32 flex items-center justify-center">
-                                      <img
-                                        src={product.previewUrl}
-                                        alt="Preview"
-                                        className="max-h-full max-w-full object-contain"
-                                      />
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          removeImage(product.id);
-                                        }}
-                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
-                                      >
-                                        <X size={12} />
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <p className="text-sm text-[#5b5b5b]">
-                                      Klik untuk upload (JPG/PNG/GIF, max 5MB)
-                                    </p>
-                                  )}
-                                  <input
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/gif"
-                                    onChange={(e) => handleImageUpload(product.id, e)}
-                                    ref={(el) => (fileInputRefs.current[product.id] = el)}
-                                    className="hidden"
-                                  />
-                                </div>
+                            <div>
+                              <label className="flex text-xs font-medium text-[#5b5b5b] mb-1.5 items-center gap-1">
+                                <Camera size={14} /> Upload Gambar Prototype
+                              </label>
+                              <div
+                                className="mt-1 border-2 border-dashed border-[#fbe2a7] rounded-lg p-4 text-center cursor-pointer hover:border-[#f02d9c]"
+                                onClick={() => fileInputRefs.current[product.id]?.click()}
+                              >
+                                {product.previewUrl ? (
+                                  <div className="relative w-full h-32 flex items-center justify-center bg-white rounded">
+                                    <img
+                                      src={product.previewUrl}
+                                      alt="Preview"
+                                      className="max-h-full max-w-full object-contain"
+                                    />
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeImage(product.id);
+                                      }}
+                                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="text-center">
+                                    <ImageIcon size={24} className="text-[#8acfd1] mx-auto mb-1" />
+                                    <p className="text-sm text-[#5b5b5b]">Klik untuk upload (max 5MB)</p>
+                                  </div>
+                                )}
+                                <input
+                                  type="file"
+                                  accept="image/jpeg,image/png,image/gif"
+                                  onChange={(e) => handleImageUpload(product.id, e)}
+                                  ref={(el) => (fileInputRefs.current[product.id] = el)}
+                                  className="hidden"
+                                />
                               </div>
                             </div>
-                          ))}
+                          </div>
+                        </div>
+                      ))}
 
-                          {products.length < 5 && (
-                            <button
-                              onClick={addProduct}
-                              className="w-full px-3 py-2 bg-white border border-pink-500 text-pink-600 text-sm rounded-lg flex items-center justify-center gap-1 hover:bg-pink-50"
-                            >
-                              <Plus size={14} />
-                              Tambah Produk
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {products.map((product, idx) => (
-                            <div
-                              key={product.id}
-                              className="border border-gray-300 rounded-xl overflow-hidden"
-                              style={{ backgroundColor: '#f0f2f5' }}
-                            >
-                              <div className="p-4" style={{ backgroundColor: '#fdf6f0' }}>
-                                <h4 className="text-xs font-semibold text-[#5b5b5b] mb-2">
-                                  Prototype Preview {products.length > 1 ? `#${idx + 1}` : ''}
-                                </h4>
-                                <div className="flex items-start gap-3">
-                                  <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                                    {product.previewUrl ? (
-                                      <img
-                                        src={product.previewUrl}
-                                        alt="Prototype"
-                                        className="w-full h-full object-contain"
-                                      />
-                                    ) : (
-                                      <ImageIcon size={20} className="text-gray-500" />
-                                    )}
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-semibold text-[#f02d9c]">
-                                      {product.name || 'Tanpa Nama'}
-                                    </p>
-                                    <p className="text-xs text-[#5b5b5b] mt-1 whitespace-pre-line line-clamp-2">
-                                      {product.concept || 'Belum ada deskripsi'}
-                                    </p>
-                                    {product.price && (
-                                      <p className="text-xs font-medium text-green-600 mt-1">
-                                        Harga: Rp{Number(product.price).toLocaleString('id-ID')}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                      {products.length < 5 && (
+                        <button
+                          onClick={addProduct}
+                          className="w-full py-3 bg-white border-2 border-dashed border-[#f02d9c] text-[#f02d9c] font-medium rounded-xl flex items-center justify-center gap-2 hover:bg-[#fdf6f0]"
+                        >
+                          <Plus size={18} /> Tambah Produk
+                        </button>
                       )}
-
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        <button
-                          onClick={handleSave}
-                          className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
-                        >
-                          <CheckCircle size={16} />
-                          Simpan
-                        </button>
-                        <button
-                          onClick={() => setIsEditing(!isEditing)}
-                          className="px-4 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1"
-                        >
-                          {isEditing ? <Eye size={16} /> : <Edit3 size={16} />}
-                          {isEditing ? 'Lihat Preview' : 'Edit'}
-                        </button>
-                        <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas`)}
-                          className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
-                        >
-                          <ChevronLeft size={16} />
-                          Prev
-                        </button>
-                        <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_6_beta_testing`)}
-                          className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
-                        >
-                          Next <ChevronRight size={16} />
-                        </button>
-                      </div>
                     </div>
-
-                    {/* === KOLOM KANAN — DISESUAIKAN DENGAN GAYA LEVEL 1 === */}
-                    <div className="space-y-5">
-                      {/* === PENCAPAIAN === */}
-                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
-                        <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
-                          <Award size={16} className="text-[#f02d9c]" />
-                          Pencapaian
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-3 py-1.5 bg-[#f02d9c] text-white text-xs font-bold rounded-full flex items-center gap-1">
-                            <Lightbulb size={12} /> +10 XP
-                          </span>
-                          <span className="px-3 py-1.5 bg-[#8acfd1] text-[#0a5f61] text-xs font-bold rounded-full flex items-center gap-1">
-                            <Award size={12} /> Product Maker
-                          </span>
-                        </div>
-                        <p className="mt-2 text-xs text-[#5b5b5b]">
-                          Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
-                        </p>
-                      </div>
-
-                      {/* === PETUNJUK === */}
-                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
-                        <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
-                          <BookOpen size={16} className="text-[#f02d9c]" />
-                          Petunjuk
-                        </h3>
-                        <div className="space-y-2">
-                          {[
-                            'Isi nama produk dan deskripsi singkat',
-                            'Tentukan harga jual (opsional)',
-                            'Upload gambar prototype (JPG/PNG/GIF, max 5MB)',
-                            'Klik “Simpan” untuk menyimpan konsep produk',
-                            'Klik “Lihat Preview” untuk melihat hasil sebelum lanjut ke Level 6',
-                          ].map((text, i) => (
-                            <div key={i} className="flex items-start gap-2 text-sm text-[#5b5b5b]">
-                              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#f02d9c] text-white text-xs font-bold mt-0.5">
-                                {i + 1}
-                              </span>
-                              {text}
+                  ) : (
+                    <div className="space-y-4">
+                      {products.map((p, i) => (
+                        <div
+                          key={p.id}
+                          className="border border-[#fbe2a7] rounded-xl overflow-hidden bg-[#fdfcf8]"
+                        >
+                          <div className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="shrink-0 w-14 h-14 bg-white border border-[#fbe2a7] rounded-lg flex items-center justify-center">
+                                {p.previewUrl ? (
+                                  <img
+                                    src={p.previewUrl}
+                                    alt="Produk"
+                                    className="w-full h-full object-contain p-1"
+                                  />
+                                ) : (
+                                  <ImageIcon size={20} className="text-gray-400" />
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-xs px-2 py-0.5 bg-[#fbe2a7] text-[#5b5b5b] rounded-full">
+                                    #{i + 1}
+                                  </span>
+                                  <h4 className="text-sm font-bold text-[#f02d9c]">
+                                    {p.name || 'Tanpa Nama'}
+                                  </h4>
+                                </div>
+                                <p className="text-sm text-[#5b5b5b] mt-1 line-clamp-2">
+                                  {p.concept || 'Belum ada deskripsi'}
+                                </p>
+                                {p.price && (
+                                  <p className="text-sm font-semibold text-green-600 mt-1">
+                                    Rp{Number(p.price).toLocaleString('id-ID')}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          ))}
+                          </div>
                         </div>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <span className="px-2.5 py-1.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full flex items-center gap-1">
-                            <Lightbulb size={12} /> Tujuan: Buat versi sederhana produkmu untuk uji coba
-                          </span>
-                          <span className="px-2.5 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full flex items-center gap-1">
-                            <Award size={12} /> Tips: Gunakan Canva/Figma atau foto HP untuk visual
-                          </span>
-                        </div>
-                      </div>
+                      ))}
+                    </div>
+                  )}
 
-                      {/* === RESOURCES === */}
-                      <div className="border border-gray-200 rounded-xl p-4 bg-white">
-                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
-                          <BookOpen size={14} /> Resources
-                        </h3>
-                        <ul className="text-sm text-[#5b5b5b] space-y-1.5">
-                          <li>
-                            <a
-                              href="https://miro.com/templates/lean-canvas/"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
-                            >
-                              Miro: Lean Canvas Template
-                            </a>
-                          </li>
-                          <li>
-                            <a
-                              href="https://www.canva.com/templates/EAFhWMaXv5c-pink-modern-fashion-business-plan-presentation/"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
-                            >
-                              Template Canva UMKM
-                            </a>
-                          </li>
-                          <li>
-                            <a
-                              href="https://perempuaninovasi.id/workshop"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
-                            >
-                              Workshop Prototype untuk Pemula
-                            </a>
-                          </li>
-                        </ul>
-                      </div>
+                  {/* Aksi Tombol */}
+                  <div className="mt-6 pt-4 border-t border-gray-200 flex flex-wrap gap-3">
+                    <button
+                      onClick={handleSave}
+                      className="px-5 py-2.5 bg-[#f02d9c] text-white font-medium rounded-xl border border-black hover:bg-pink-600 flex items-center gap-1.5"
+                    >
+                      <CheckCircle size={18} /> Simpan
+                    </button>
+                    <button
+                      onClick={() => setIsEditing(!isEditing)}
+                      className="px-5 py-2.5 bg-white text-[#f02d9c] font-medium rounded-xl border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1.5"
+                    >
+                      {isEditing ? <Eye size={18} /> : <Edit3 size={18} />}
+                      {isEditing ? 'Lihat Preview' : 'Edit'}
+                    </button>
+                    <button
+                      onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas`)}
+                      className="px-5 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-xl border border-gray-300 hover:bg-gray-200 flex items-center gap-1.5"
+                    >
+                      <ChevronLeft size={18} /> Prev
+                    </button>
+                    <button
+                      onClick={() => router.push(`/dashboard/${projectId}/plan/level_6_beta_testing`)}
+                      className="px-5 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-xl border border-black hover:bg-[#7abfc0] flex items-center gap-1.5"
+                    >
+                      Next <ChevronRight size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Kolom Kanan: Info Panel */}
+                <div className="space-y-5">
+                  <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-5">
+                    <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
+                      <Award size={20} className="text-[#f02d9c]" />
+                      Pencapaian
+                    </h3>
+                    <div className="flex flex-wrap gap-2.5">
+                      <span className="px-3 py-1.5 bg-[#f02d9c] text-white text-xs font-bold rounded-full flex items-center gap-1">
+                        <Lightbulb size={12} /> +{xpGained} XP
+                      </span>
+                      <span className="px-3 py-1.5 bg-[#8acfd1] text-[#0a5f61] text-xs font-bold rounded-full flex items-center gap-1">
+                        <Award size={12} /> {badgeName}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-5">
+                    <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
+                      <BookOpen size={20} className="text-[#f02d9c]" />
+                      Petunjuk
+                    </h3>
+                    <ul className="text-sm text-[#5b5b5b] space-y-2 list-disc pl-5">
+                      <li>Buat versi sederhana produkmu untuk uji coba</li>
+                      <li>Upload gambar (bisa foto langsung dari HP)</li>
+                      <li>Isi harga & deskripsi secara jelas</li>
+                      <li>Simpan untuk lanjut ke tahap Beta Testing</li>
+                    </ul>
+                    <div className="mt-4">
+                      <span className="inline-block px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                        💡 Tujuan: Validasi ide produk sebelum produksi massal
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -505,12 +406,11 @@ export default function Level5Page() {
         </main>
       </div>
 
-      {/* Modal Notifikasi */}
       <NotificationModalPlan
         isOpen={showNotification}
         type="success"
-        xpGained={notificationData.xpGained}
-        badgeName={notificationData.badgeName}
+        xpGained={xpGained}
+        badgeName={badgeName}
         onClose={() => setShowNotification(false)}
       />
     </div>
