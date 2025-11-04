@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import useProjectStore from '@/store/useProjectStore';
+import Link from 'next/link';
 import {
   Lightbulb,
   CheckCircle,
@@ -23,19 +24,6 @@ import {
   Facebook,
   Linkedin,
 } from 'lucide-react';
-
-const AssetCard = ({ title, iconBg, children, className = '' }) => (
-  <div className={`relative mb-5 ${className}`}>
-    <div className={`absolute inset-0 translate-x-1 translate-y-1 ${iconBg} rounded-2xl`}></div>
-    <div
-      className="relative bg-white rounded-2xl border-t border-l border-black p-4 sm:p-5"
-      style={{ boxShadow: `2px 2px 0 0 ${iconBg.replace('bg-[', '').replace(']', '')}` }}
-    >
-      <h3 className="font-bold text-[#5b5b5b] text-base sm:text-lg mb-3">{title}</h3>
-      {children}
-    </div>
-  </div>
-);
 
 export default function BusinessProfilePage() {
   const { projectId } = useParams();
@@ -61,29 +49,26 @@ export default function BusinessProfilePage() {
   const [editingSection, setEditingSection] = useState(null);
 
   useEffect(() => {
-    if (!projectId) return;
-
-    const found = projects.find((p) => p.id === projectId);
-    if (!found) return;
-
-    setProject(found);
-
-    if (editingSection) return;
-
-    const profile = found.businessProfile || {};
-    const jenisProyek = found.levels?.[0]?.data?.productType || 'Belum diisi';
-    setFormData({
-      businessName: profile.businessName || found.name || '',
-      businessType: profile.businessType || jenisProyek,
-      description: profile.description || '',
-      linkedin: profile.linkedin || '',
-      whatsapp: profile.whatsapp || '',
-      instagram: profile.instagram || '',
-      facebook: profile.facebook || '',
-      profileImage: profile.profileImage || '',
-      backgroundImage: profile.backgroundImage || '',
-    });
-  }, [projectId, projects, editingSection]); // editingSection sebagai dependensi
+    if (projectId) {
+      const found = projects.find((p) => p.id === projectId);
+      setProject(found);
+      if (found) {
+        const profile = found.businessProfile || {};
+        const jenisProyek = found.levels?.[0]?.data?.productType || 'Belum diisi';
+        setFormData({
+          businessName: profile.businessName || found.name || '',
+          businessType: profile.businessType || jenisProyek,
+          description: profile.description || '',
+          linkedin: profile.linkedin || '',
+          whatsapp: profile.whatsapp || '',
+          instagram: profile.instagram || '',
+          facebook: profile.facebook || '',
+          profileImage: profile.profileImage || '',
+          backgroundImage: profile.backgroundImage || '',
+        });
+      }
+    }
+  }, [projectId, projects]);
 
   if (!projectId) {
     return <div className="p-4 text-center">ID proyek tidak valid</div>;
@@ -108,6 +93,9 @@ export default function BusinessProfilePage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData((prev) => ({ ...prev, [field]: reader.result }));
+        updateProject(projectId, {
+          businessProfile: { ...formData, [field]: reader.result },
+        });
       };
       reader.readAsDataURL(file);
     }
@@ -124,7 +112,7 @@ export default function BusinessProfilePage() {
     setEditingSection(editingSection === section ? null : section);
   };
 
-  // === PORTFOLIO DARI LEVEL YANG SUDAH SELESAI ===
+  // === PORTFOLIO DARI LEVEL ===
   const completedLevels = project.levels?.filter(l => l?.completed) || [];
 
   const getLevelIcon = (id) => {
@@ -148,7 +136,7 @@ export default function BusinessProfilePage() {
   const getLevelTitle = (id) => {
     const titles = {
       1: "Ide Generator",
-      2: "RWW Analysis",
+      2: "RWW Analysist",
       3: "Brand Identity",
       4: "Lean Canvas",
       5: "MVP",
@@ -168,6 +156,19 @@ export default function BusinessProfilePage() {
     if (id <= 11) return 'bg-[#8acfd1]';
     return 'bg-[#c5a8e0]';
   };
+
+  const AssetCard = ({ title, iconBg, children, className = '' }) => (
+    <div className={`relative mb-5 ${className}`}>
+      <div className={`absolute inset-0 translate-x-1 translate-y-1 ${iconBg} rounded-2xl`}></div>
+      <div
+        className="relative bg-white rounded-2xl border-t border-l border-black p-4 sm:p-5"
+        style={{ boxShadow: `2px 2px 0 0 ${iconBg.replace('bg-[', '').replace(']', '')}` }}
+      >
+        <h3 className="font-bold text-[#5b5b5b] text-base sm:text-lg mb-3">{title}</h3>
+        {children}
+      </div>
+    </div>
+  );
 
   const jenisProyek = formData.businessType || project.levels?.[0]?.data?.productType || 'Belum diisi';
 
@@ -203,6 +204,7 @@ export default function BusinessProfilePage() {
 
         {/* Avatar + Info Proyek */}
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
+          {/* Foto Profil */}
           <div className="relative">
             <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white overflow-hidden shadow-lg">
               {formData.profileImage ? (
@@ -233,6 +235,7 @@ export default function BusinessProfilePage() {
             />
           </div>
 
+          {/* Nama Proyek & Jenis Proyek */}
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1 sm:gap-2 mb-1">
               <h1 className="text-xl sm:text-2xl font-bold text-[#5b5b5b]">{formData.businessName}</h1>
@@ -289,7 +292,7 @@ export default function BusinessProfilePage() {
           </AssetCard>
         )}
 
-        {/* === TENTANG BISNIS === */}
+        {/* === SECTION: ABOUT === */}
         <AssetCard title="Tentang Bisnis" iconBg="bg-[#fbe2a7]">
           <div className="flex flex-wrap justify-between items-start mb-3 gap-2">
             <h4 className="font-semibold text-[#5b5b5b]">Deskripsi</h4>
@@ -334,7 +337,7 @@ export default function BusinessProfilePage() {
           )}
         </AssetCard>
 
-        {/* === KONTAK & MEDIA SOSIAL === */}
+        {/* === SECTION: CONTACT === */}
         <AssetCard title="Kontak & Media Sosial" iconBg="bg-[#8acfd1]">
           <div className="flex flex-wrap justify-between items-start mb-3 gap-2">
             <h4 className="font-semibold text-[#5b5b5b]">Informasi Kontak</h4>
@@ -404,7 +407,24 @@ export default function BusinessProfilePage() {
           )}
         </AssetCard>
 
-        {/* === PORTFOLIO BISNIS (LEVEL SELESAI) === */}
+        {/* === SECTION: ASSET DOKUMEN === */}
+        <AssetCard title="Asset Dokumen" iconBg="bg-[#c5a8e0]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+            {['Plan', 'Sell', 'Scale Up'].map((phase) => (
+              <div
+                key={phase}
+                className="border border-dashed border-[#c5a8e0] rounded-xl p-3 sm:p-4 text-center hover:bg-[#f9f5ff] transition cursor-pointer"
+                onClick={() => alert(`Fitur upload dokumen ${phase} akan segera hadir!`)}
+              >
+                <Upload size={18} className="mx-auto text-[#c5a8e0] mb-1.5" />
+                <h5 className="font-semibold text-[#5b5b5b] text-sm sm:text-base mb-1">{phase}</h5>
+                <p className="text-[#7a7a7a] text-xs sm:text-sm">Unggah dokumen</p>
+              </div>
+            ))}
+          </div>
+        </AssetCard>
+
+        {/* === PORTFOLIO === */}
         {completedLevels.length > 0 && (
           <AssetCard title="Portfolio Bisnis" iconBg="bg-[#f02d9c]">
             <div className="space-y-2.5">

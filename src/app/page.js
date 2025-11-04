@@ -17,6 +17,8 @@ import {
   Palette,
   Box,
   ClipboardCheck,
+  TrendingUp,
+  Award,
   Brain
 } from 'lucide-react';
 import Image from 'next/image';
@@ -32,21 +34,42 @@ export default function LandingPage() {
       subtitle: 'New Product Development Process',
       color: '#8acfd1',
       levels: [
-        { id: 1, name: 'AI Idea & VPC Generator', desc: 'Dapatkan ide bisnis dan Value Proposition Canvas (VPC) secara instan dengan bantuan AI.', xp: 10, badge: 'AI Innovator', icon: Lightbulb },
-        { id: 2, name: 'RWW Analysis', desc: 'Validasi ide bisnismu: Real? Win? Worth It?', xp: 10, badge: 'Validator Pro', icon: CheckCircle },
-        { id: 3, name: 'Brand Identity', desc: 'Bangun identitas brand yang konsisten dan mudah dikenali.', xp: 10, badge: 'Brand Builder', icon: Palette },
-        { id: 4, name: 'Lean Canvas', desc: 'Rancang model bisnismu dalam satu halaman yang ringkas.', xp: 10, badge: 'Canvas Master', icon: FileText },
-        { id: 5, name: 'MVP', desc: 'Buat versi minimal produkmu untuk diuji ke pasar.', xp: 10, badge: 'MVP Maker', icon: Box },
-        { id: 6, name: 'Beta Testing', desc: 'Uji produkmu ke calon pelanggan nyata dan kumpulkan masukan.', xp: 10, badge: 'Tester Hero', icon: Users },
-        { id: 7, name: 'Persiapan Launching', desc: 'Siapkan checklist dan aset penting sebelum rilis resmi.', xp: 10, badge: 'Launch Ready', icon: ClipboardCheck }
+        { id: 1, name: 'AI Idea & VPC Generator', desc: 'Pakai Gemini API untuk generate ide & VPC', xp: 10, badge: 'AI Innovator', icon: Lightbulb },
+        { id: 2, name: 'RWW Analysis', desc: 'Validasi: Real? Win? Worth It?', xp: 10, badge: 'Validator Pro', icon: CheckCircle },
+        { id: 3, name: 'Brand Identity', desc: 'Buat identitas brand yang konsisten', xp: 10, badge: 'Brand Builder', icon: Palette },
+        { id: 4, name: 'Lean Canvas', desc: 'Rancang model bisnis dalam 1 halaman', xp: 10, badge: 'Canvas Master', icon: FileText },
+        { id: 5, name: 'MVP', desc: 'Bangun versi minimal produkmu', xp: 10, badge: 'MVP Maker', icon: Box },
+        { id: 6, name: 'Beta Testing', desc: 'Uji ke pelanggan nyata', xp: 10, badge: 'Tester Hero', icon: Users },
+        { id: 7, name: 'Persiapan Launching', desc: 'Checklist & aset siap rilis', xp: 10, badge: 'Launch Ready', icon: ClipboardCheck }
+      ]
+    },
+    {
+      id: 'sell',
+      title: 'Sell',
+      subtitle: 'Mini ERP untuk UMKM',
+      color: '#f02d9c',
+      levels: [
+        { id: 8, name: 'Product', desc: 'Kelola stok & varian produk', xp: 10, badge: 'Product Manager', icon: Box },
+        { id: 9, name: 'Customer', desc: 'Catat & kelola data pelanggan', xp: 10, badge: 'Customer Care', icon: Users },
+        { id: 10, name: 'Order', desc: 'Proses transaksi & pengiriman', xp: 10, badge: 'Order Ninja', icon: ClipboardCheck },
+        { id: 11, name: 'Laba Rugi', desc: 'Pantau keuangan harian', xp: 10, badge: 'Finance Guru', icon: TrendingUp }
+      ]
+    },
+    {
+      id: 'scale',
+      title: 'Scale Up',
+      subtitle: 'Ekspansi & Pertumbuhan',
+      color: '#8acfd1',
+      levels: [
+        { id: 12, name: 'Scale Up', desc: 'Siapkan strategi ekspansi', xp: 20, badge: 'CEO Mode', icon: Award }
       ]
     }
   ];
 
   const usps = [
     {
-      title: 'AI Generator',
-      desc: 'Dapatkan ide bisnis dan Value Proposition Canvas (VPC) otomatis dari AI berbasis Gemini API.',
+      title: 'AI di Level 1',
+      desc: 'Dapatkan ide bisnis & Value Proposition Canvas (VPC) otomatis dari AI berbasis Gemini API.',
       icon: Brain
     },
     {
@@ -55,17 +78,17 @@ export default function LandingPage() {
       icon: Target
     },
     {
-      title: 'Gamifikasi Menyenangkan',
-      desc: 'Level, XP, badge, dan progress bar membuat proses perencanaan bisnis terasa seperti bermain game.',
+      title: 'Gamifikasi Lengkap',
+      desc: 'Fase, level, XP, badges, dan progress bar membuat perjalanan bisnismu menyenangkan seperti game.',
       icon: Gamepad2
     }
   ];
 
   const totalXP = useMemo(() => {
-    return phases.reduce((acc, p) => acc + p.levels.reduce((s, l) => s + (l.xp || 0), 0), 0); // 70 XP
+    return phases.reduce((acc, p) => acc + p.levels.reduce((s, l) => s + (l.xp || 0), 0), 0);
   }, [phases]);
 
-  const currentXP = 30;
+  const [currentXP, setCurrentXP] = useState(75);
   const progressPercent = Math.min(100, Math.round((currentXP / totalXP) * 100));
 
   useEffect(() => {
@@ -82,7 +105,9 @@ export default function LandingPage() {
       >
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Sparkle size={24} className="text-[#f02d9c]" />
+            <div className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-[#f02d9c]">
+              <Sparkle size={22} className="text-[#f02d9c]" />
+            </div>
             <div className="hidden sm:flex flex-col leading-tight">
               <span className="font-extrabold text-lg text-black">
                 Manag<span className="text-[#f02d9c]">Her</span>
@@ -134,7 +159,7 @@ export default function LandingPage() {
               className="max-w-lg"
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f02d9c]/10 text-[#f02d9c] mb-5 text-sm font-medium">
-                <Sparkle size={16} /> Empowering Women Solopreneur
+                <Sparkle size={16} /> Empowering Female Founders
               </div>
 
               <h1 className="text-3xl sm:text-4xl font-extrabold mb-3 text-black">
@@ -142,13 +167,13 @@ export default function LandingPage() {
               </h1>
 
               <p className="text-base text-slate-700 mb-5">
-                Platform panduan step-by-step roadmap bisnis untuk solopreneur perempuan. Dengan mengintegrasikan framework bisnis teruji ke dalam 7 level gamifikasi, kamu bisa merancang bisnis impianmu secara sistematis dan menyenangkan.
+                Platform step-by-step roadmap business untuk founder perempuan, ManagHer membagi perjalanan bisnis menjadi tiga fase: PLAN (NPD Process) dan SELL (Mini ERP) serta fase SCALE UP yang akan memastikan setiap langkah diambil dengan strategi yang valid.
               </p>
 
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-semibold text-black">From Zero</span>
-                  <span className="text-xs font-semibold text-black">to CEO</span>
+                  <span className="text-xs font-semibold text-black">To CEO</span>
                 </div>
                 <div className="relative w-full h-2 bg-black/10 rounded-full overflow-hidden">
                   <motion.div
@@ -159,7 +184,7 @@ export default function LandingPage() {
                   />
                 </div>
                 <div className="flex justify-between mt-1.5 text-[11px]">
-                  <span className="text-[#f02d9c] font-medium">{progressPercent}% Selesai</span>
+                  <span className="text-[#f02d9c] font-medium">{progressPercent}% Complete</span>
                   <span className="text-slate-600">{currentXP} / {totalXP} XP</span>
                 </div>
               </div>
@@ -225,14 +250,14 @@ export default function LandingPage() {
               Cara Kerja
             </motion.h2>
             <p className="text-slate-600 mb-8 max-w-xl mx-auto text-sm">
-              Ikuti 7 langkah terstruktur untuk merancang bisnismu dari nol hingga siap diluncurkan.
+              Ikuti 3 langkah utama untuk membangun bisnismu dari nol hingga siap scale up.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               {[
-                { step: 1, title: 'Ide & Validasi', desc: 'Dapatkan ide bisnis dan validasi awal dengan AI.', icon: Lightbulb },
-                { step: 2, title: 'Rancang Strategi', desc: 'Bangun model bisnis dan identitas brand.', icon: Palette },
-                { step: 3, title: 'Uji & Siapkan', desc: 'Buat MVP, uji ke pengguna, dan siapkan launching.', icon: Box }
+                { step: 1, title: 'Plan', desc: 'Mulai dari ide, validasi, hingga persiapan launching.', icon: Lightbulb },
+                { step: 2, title: 'Sell', desc: 'Kelola produk, pelanggan, order, dan keuangan.', icon: Box },
+                { step: 3, title: 'Scale Up', desc: 'Siapkan strategi ekspansi & pertumbuhan.', icon: Award }
               ].map((item, i) => {
                 const Icon = item.icon;
                 return (
@@ -268,7 +293,7 @@ export default function LandingPage() {
               Keunggulan Utama ManagHer
             </motion.h2>
             <p className="text-slate-600 mb-8 max-w-2xl mx-auto text-sm">
-              Dibangun khusus untuk solopreneur perempuan yang ingin merancang bisnis secara terstruktur.
+              Dibangun untuk founder perempuan dengan fitur yang mempermudah perjalanan bisnis dari nol.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -305,10 +330,10 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 className="text-2xl font-bold text-black mb-3"
               >
-                Fitur Utama: 7 Level Perencanaan
+                Fitur Utama: 3 Fase, 12 Level
               </motion.h2>
               <p className="text-slate-600 max-w-xl mx-auto text-sm">
-                Setiap level adalah quest yang memberimu XP dan badge.
+                Setiap level adalah quest yang memberimu XP & Badge.
               </p>
             </div>
 
@@ -380,10 +405,10 @@ export default function LandingPage() {
             >
               <Trophy size={40} className="mx-auto mb-4 text-[#f02d9c]" />
               <h2 className="text-2xl font-bold text-black mb-4">
-                Siap Merancang Bisnismu?
+                Siap Jadi CEO Berikutnya?
               </h2>
               <p className="text-slate-700 mb-6 max-w-lg mx-auto text-sm">
-                Gabung bersama ribuan solopreneur perempuan yang membangun bisnis dari nol — dengan panduan, komunitas, dan semangat.
+                Gabung ribuan perempuan yang membangun bisnis dari nol — dengan panduan, komunitas, dan semangat.
               </p>
               <Link
                 href="/auth/register"

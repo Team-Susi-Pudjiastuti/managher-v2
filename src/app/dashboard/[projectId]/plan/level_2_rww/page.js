@@ -1,5 +1,6 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react'; // Tambahkan useRef
+
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -7,6 +8,8 @@ import {
   Lightbulb,
   Award,
   BookOpen,
+  Video,
+  FileText,
   ChevronRight,
   ChevronLeft,
   Edit3,
@@ -17,158 +20,23 @@ import {
   Users,
   AlertTriangle,
   BarChart3,
-  Eye,
-  Zap,
-  Package,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
-import NotificationModalPlan from '@/components/NotificationModalPlan';
-
-// === CONFETTI ANIMATION (SAMA DENGAN LEVEL 1) ===
-const Confetti = () => {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const confettiCount = 120;
-    const gravity = 0.4;
-    const colors = ['#f02d9c', '#8acfd1', '#fbe2a7', '#ff6b9d', '#4ecdc4'];
-    const confettiPieces = Array.from({ length: confettiCount }, () => ({
-      x: Math.random() * canvas.width,
-      y: -10,
-      size: Math.random() * 8 + 4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      speedX: (Math.random() - 0.5) * 6,
-      speedY: Math.random() * 8 + 4,
-      rotation: Math.random() * 360,
-      rotationSpeed: (Math.random() - 0.5) * 8,
-    }));
-    let animationId;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      let stillFalling = false;
-      confettiPieces.forEach((piece) => {
-        piece.y += piece.speedY;
-        piece.x += piece.speedX;
-        piece.speedY += gravity;
-        piece.rotation += piece.rotationSpeed;
-        if (piece.y < canvas.height) stillFalling = true;
-        ctx.save();
-        ctx.translate(piece.x, piece.y);
-        ctx.rotate((piece.rotation * Math.PI) / 180);
-        ctx.fillStyle = piece.color;
-        ctx.fillRect(-piece.size / 2, -piece.size / 2, piece.size, piece.size);
-        ctx.restore();
-      });
-      if (stillFalling) animationId = requestAnimationFrame(animate);
-    };
-    animate();
-    return () => cancelAnimationFrame(animationId);
-  }, []);
-  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-[9999]" />;
-};
+import {
+  PieChart,
+  Pie,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 
-// === PROGRESS BAR  ===
-const PhaseProgressBar = ({ currentXp, totalXp }) => {
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    const calculatedProgress = totalXp > 0 ? Math.min(100, Math.floor((currentXp / totalXp) * 100)) : 0;
-    setProgress(calculatedProgress);
-  }, [currentXp, totalXp]);
-
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 p-3 w-full">
-      <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-xs font-bold text-[#5b5b5b]">
-          XP Fase Plan: {currentXp} / {totalXp}
-        </span>
-        <span className="text-xs font-bold text-[#f02d9c]">{progress}%</span>
-      </div>
-      <div className="w-full bg-[#f0f0f0] rounded-full h-1.5">
-        <div
-          className="h-1.5 rounded-full bg-[#f02d9c] transition-all duration-500"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-      {progress >= 100 && (
-        <p className="text-[10px] text-[#7a7a7a] mt-1 text-right">Selesai!</p>
-      )}
-    </div>
-  );
-};
-
-// === HELPER: Parse & Format Products & Services ===
-const parseProductsServices = (text) => {
-  if (!text) return {};
-  const lines = text.split('\n').map((l) => l.trim()).filter((l) => l);
-  let ide = '',
-    jenis = '',
-    deskripsi = '',
-    fitur = '',
-    manfaat = '',
-    harga = '',
-    biayaModal = '',
-    biayaBahanBaku = '',
-    hargaJual = '',
-    margin = '',
-    uniqueAdvantage = '',
-    keyMetrics = '',
-    channel = '';
-  for (const line of lines) {
-    if (line.startsWith('Jenis:')) jenis = line.replace('Jenis:', '').trim();
-    else if (line.startsWith('Deskripsi:')) deskripsi = line.replace('Deskripsi:', '').trim();
-    else if (line.startsWith('Fitur')) fitur = line;
-    else if (line.startsWith('Manfaat')) manfaat = line;
-    else if (line.startsWith('Harga:')) harga = line;
-    else if (line.startsWith('Biaya Modal:')) biayaModal = line;
-    else if (line.startsWith('Biaya Bahan Baku:')) biayaBahanBaku = line;
-    else if (line.startsWith('Harga Jual:')) hargaJual = line;
-    else if (line.startsWith('Margin:')) margin = line;
-    else if (line.startsWith('Keunggulan Unik:')) uniqueAdvantage = line;
-    else if (line.startsWith('Angka Penting:')) keyMetrics = line;
-    else if (line.startsWith('Cara Jualan:')) channel = line;
-    else if (!ide) ide = line;
-  }
-  return {
-    ide,
-    jenis,
-    deskripsi,
-    fitur,
-    manfaat,
-    harga,
-    biayaModal,
-    biayaBahanBaku,
-    hargaJual,
-    margin,
-    uniqueAdvantage,
-    keyMetrics,
-    channel,
-  };
-};
-
-const parseModalDetails = (text) => {
-  if (!text) return [];
-  const clean = text.replace('Biaya Modal: ', '').trim();
-  const match = clean.match(/\((.+)\)/);
-  return match ? match[1].split(',').map((item) => item.trim()) : [clean];
-};
-
-const parseBahanBakuDetails = (text) => {
-  if (!text) return [];
-  const clean = text.replace('Biaya Bahan Baku: ', '').trim();
-  const parts = clean.split('→')[0].split(',');
-  return parts.map((part) => part.trim());
-};
-
-// === MAIN COMPONENT ===
 const scaleLabels = ['Tidak Pernah', 'Pernah', 'Kadang', 'Sering', 'Sangat Sering'];
 const range5 = [1, 2, 3, 4, 5];
 
@@ -178,19 +46,11 @@ export default function RWW() {
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
 
-  // --- Tambahkan state untuk confetti ---
-  const [showConfetti, setShowConfetti] = useState(false);
-
-  // Top-level states
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationData, setNotificationData] = useState({
-    xpGained: 0,
-    badgeName: '',
-  });
   const [respondenName, setRespondenName] = useState('');
   const [jenisKelamin, setJenisKelamin] = useState('');
   const [usia, setUsia] = useState('');
   const [aktivitas, setAktivitas] = useState('');
+
   const [q1, setQ1] = useState(null);
   const [q2, setQ2] = useState(null);
   const [q3, setQ3] = useState(null);
@@ -200,62 +60,45 @@ export default function RWW() {
   const [q7, setQ7] = useState(null);
   const [q8, setQ8] = useState(null);
   const [q9, setQ9] = useState(null);
+
+  const [notes, setNotes] = useState({});
+
   const [isEditing, setIsEditing] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [project, setProject] = useState(null);
   const [responses, setResponses] = useState([]);
-  const [vpcDataFromLevel1, setVpcDataFromLevel1] = useState(null);
-  const [isFinanceOpen, setIsFinanceOpen] = useState(false);
 
+  // Deteksi mobile
   useEffect(() => {
-    const checkMobile = () => setIsMobile(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', checkMobile);
-    }
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('resize', checkMobile);
-      }
-    };
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Load data dari store dan localStorage
   useEffect(() => {
     if (!projectId) return;
-    const found = (projects || []).find((p) => p.id === projectId);
+
+    const found = projects.find((p) => p.id === projectId);
     setProject(found);
-    const level1Data = found?.levels?.[0]?.data;
-    if (level1Data) {
-      setVpcDataFromLevel1({
-        customerJobs: level1Data.customerJobs || '',
-        pains: level1Data.pains || '',
-        gains: level1Data.gains || '',
-        productsServices: level1Data.productsServices || '',
-        painRelievers: level1Data.painRelievers || '',
-        gainCreators: level1Data.gainCreators || '',
-      });
-    }
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`rww_data_${projectId}`);
-      if (saved) {
-        try {
-          const { responses: savedResponses } = JSON.parse(saved);
-          setResponses(Array.isArray(savedResponses) ? savedResponses : []);
-        } catch (e) {
-          console.error('Gagal memuat data RWW dari localStorage:', e);
-          setResponses([]);
-        }
+
+    const saved = localStorage.getItem(`rww_data_${projectId}`);
+    if (saved) {
+      try {
+        const { responses: savedResponses } = JSON.parse(saved);
+        setResponses(Array.isArray(savedResponses) ? savedResponses : []);
+      } catch (e) {
+        console.error('Gagal memuat data RWW dari localStorage:', e);
+        setResponses([]);
       }
     }
   }, [projectId, projects]);
 
-  // --- PROGRESS BAR LOGIC ---
-  const totalLevels = 7;
-  const completedLevels = project?.levels?.filter((l) => l.completed).length || 0;
-  const currentXp = completedLevels * 10;
-  const totalXp = totalLevels * 10;
-  const firstIncompleteLevel = project?.levels?.find(l => !l.completed) || { id: 3 };
+  const handleNoteChange = (key, value) => {
+    setNotes((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handleAddResponden = () => {
     const allAnswered = [q1, q2, q3, q4, q5, q6, q7, q8, q9].every((val) => val !== null);
@@ -263,18 +106,33 @@ export default function RWW() {
       alert('Mohon lengkapi semua penilaian (1–5) terlebih dahulu.');
       return;
     }
+
     const newResponse = {
       id: Date.now(),
       name: respondenName || '—',
       gender: jenisKelamin || '—',
-      age: usia ? parseInt(usia, 10) : null,
+      age: usia || '—',
       activity: aktivitas || '—',
       real: (q1 + q2 + q3) / 3,
       win: (q4 + q5 + q6) / 3,
       worth: (q7 + q8 + q9) / 3,
       total: ((q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8 + q9) / 9).toFixed(1),
+      notes: {
+        q1: notes.q1 || '',
+        q2: notes.q2 || '',
+        q3: notes.q3 || '',
+        q4: notes.q4 || '',
+        q5: notes.q5 || '',
+        q6: notes.q6 || '',
+        q7: notes.q7 || '',
+        q8: notes.q8 || '',
+        q9: notes.q9 || '',
+      },
     };
-    setResponses((prev) => [...prev, newResponse]);
+
+    setResponses([...responses, newResponse]);
+
+    // Reset form
     setRespondenName('');
     setJenisKelamin('');
     setUsia('');
@@ -288,14 +146,17 @@ export default function RWW() {
     setQ7(null);
     setQ8(null);
     setQ9(null);
+    setNotes({});
   };
 
   const calculateAverages = () => {
     if (responses.length === 0) return { real: 0, win: 0, worth: 0, total: 0 };
+
     const totalReal = responses.reduce((sum, r) => sum + r.real, 0);
     const totalWin = responses.reduce((sum, r) => sum + r.win, 0);
     const totalWorth = responses.reduce((sum, r) => sum + r.worth, 0);
     const totalOverall = responses.reduce((sum, r) => sum + parseFloat(r.total), 0);
+
     return {
       real: (totalReal / responses.length).toFixed(1),
       win: (totalWin / responses.length).toFixed(1),
@@ -306,44 +167,6 @@ export default function RWW() {
 
   const averages = calculateAverages();
 
-  const getGenderSummary = () => {
-    const genderMap = {};
-    responses.forEach((r) => {
-      if (r.gender && r.gender !== '—') {
-        if (!genderMap[r.gender]) genderMap[r.gender] = [];
-        genderMap[r.gender].push(parseFloat(r.total));
-      }
-    });
-    return Object.entries(genderMap)
-      .map(([gender, scores]) => {
-        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-        return { gender, avg: parseFloat(avg.toFixed(1)) };
-      })
-      .filter((item) => item.avg >= 3.5);
-  };
-
-  const getAgeGroupSummary = () => {
-    const ageGroups = {};
-    responses.forEach((r) => {
-      if (r.age && !isNaN(r.age)) {
-        let group;
-        if (r.age < 20) group = '<20';
-        else if (r.age <= 25) group = '21–25';
-        else if (r.age <= 30) group = '26–30';
-        else if (r.age <= 40) group = '31–40';
-        else group = '>40';
-        if (!ageGroups[group]) ageGroups[group] = [];
-        ageGroups[group].push(parseFloat(r.total));
-      }
-    });
-    return Object.entries(ageGroups)
-      .map(([range, scores]) => {
-        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-        return { range, avg: parseFloat(avg.toFixed(1)) };
-      })
-      .filter((item) => item.avg >= 3.5);
-  };
-
   const RatingBox = ({ value, onChange, labels = scaleLabels }) => (
     <div className="flex flex-wrap justify-center gap-4 mt-4">
       {range5.map((num) => (
@@ -351,7 +174,7 @@ export default function RWW() {
           key={num}
           type="button"
           onClick={() => onChange(num)}
-          className={`w-14 h-14 flex flex-col items-center justify-center rounded-lg text-xs font-medium transition-all border-t border-l border-black`}
+          className={`w-14 h-14 flex flex-col items-center justify-center rounded-lg text-xs font-[Poppins] font-medium transition-all border-t border-l border-black`}
           style={{
             backgroundColor: value === num ? '#f02d9c' : '#ffffff',
             color: value === num ? '#ffffff' : '#5b5b5b',
@@ -371,35 +194,19 @@ export default function RWW() {
       averages,
       updatedAt: new Date().toISOString(),
     };
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(`rww_data_${projectId}`, JSON.stringify(dataToSave));
-    }
-    const updatedLevels = Array.isArray(project?.levels) ? [...project.levels] : [];
+    localStorage.setItem(`rww_data_${projectId}`, JSON.stringify(dataToSave));
+
+    // Simpan ke store juga
+    const updatedLevels = [...(project?.levels || [])];
     if (!updatedLevels[1]) updatedLevels[1] = { id: 2, completed: false, data: {} };
-    const isValid = parseFloat(averages.total) >= 3.5;
     updatedLevels[1] = {
       ...updatedLevels[1],
-      completed: isValid,
-      data: {
-        ...(updatedLevels[1].data || {}),
-        rww: dataToSave,
-      },
+      completed: parseFloat(averages.total) >= 3.5,
+      data: { rww: dataToSave },
     };
-    if (typeof updateProject === 'function') {
-      updateProject(projectId, { levels: updatedLevels });
-    }
+    updateProject(projectId, { levels: updatedLevels });
 
-    // Tampilkan confetti & notifikasi jika valid
-    if (isValid) {
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
-    }
-
-    setNotificationData({
-      xpGained: 10,
-      badgeName: 'Validator Pro',
-    });
-    setShowNotification(true);
+    alert('Data RWW berhasil disimpan!');
   };
 
   const breadcrumbItems = [
@@ -408,18 +215,14 @@ export default function RWW() {
     { label: 'Level 2: Validasi RWW' },
   ];
 
-  const genderSummary = getGenderSummary();
-  const ageGroupSummary = getAgeGroupSummary();
-
   return (
     <div className="min-h-screen bg-white font-[Poppins]">
-      {/* Tampilkan Confetti jika kondisi terpenuhi */}
-      {showConfetti && <Confetti />}
-
+      {/* Breadcrumb */}
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
         <Breadcrumb items={breadcrumbItems} />
       </div>
 
+      {/* Mobile Header */}
       {isMobile && !mobileSidebarOpen && (
         <header className="p-3 flex items-center border-b border-gray-200 bg-white top-10 z-30">
           <button
@@ -434,6 +237,7 @@ export default function RWW() {
       )}
 
       <div className="flex mt-6">
+        {/* Sidebar */}
         <PlanSidebar
           projectId={projectId}
           currentLevelId={2}
@@ -441,6 +245,8 @@ export default function RWW() {
           mobileSidebarOpen={mobileSidebarOpen}
           setMobileSidebarOpen={setMobileSidebarOpen}
         />
+
+        {/* Main Content */}
         <main className="flex-1">
           <div className="py-8 px-4 md:px-6">
             <div className="max-w-6xl mx-auto">
@@ -458,131 +264,8 @@ export default function RWW() {
                   </p>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Kolom Kiri: Preview Ide + Form */}
+                    {/* Kolom Kiri: Form RWW */}
                     <div>
-                      {/* ... (sama seperti file asli) */}
-                      {!vpcDataFromLevel1 ? (
-                        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
-                          <p className="text-sm text-yellow-800">
-                            ❗ Belum ada data dari Level 1. Silakan lengkapi{' '}
-                            <Link href={`/dashboard/${projectId}/plan/level_1_idea`} className="text-[#f02d9c] underline">
-                              Level 1
-                            </Link>{' '}
-                            terlebih dahulu.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="mb-6 p-3 bg-[#f8fbfb] rounded-xl border border-[#c2e9e8]">
-                          <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
-                            <Eye size={16} /> 💡 Ide yang Akan Divalidasi
-                          </h3>
-                          {(() => {
-                            const ps = parseProductsServices(vpcDataFromLevel1.productsServices);
-                            return (
-                              <>
-                                <ul className="text-[15px] text-[#5b5b5b] space-y-1.5">
-                                  <li><span className="font-medium">Apa yang kamu jual?</span> {ps.ide || '-'}</li>
-                                  {ps.jenis && <li><span className="font-medium">Jenis:</span> {ps.jenis}</li>}
-                                  {ps.deskripsi && <li><span className="font-medium">Deskripsi:</span> {ps.deskripsi}</li>}
-                                  {ps.fitur && <li><span className="font-medium">Fitur utama:</span> {ps.fitur}</li>}
-                                  {ps.manfaat && <li><span className="font-medium">Manfaat:</span> {ps.manfaat}</li>}
-                                  {ps.harga && <li><span className="font-medium">Harga:</span> {ps.harga}</li>}
-                                </ul>
-                                {(ps.biayaModal || ps.biayaBahanBaku || ps.hargaJual || ps.margin) && (
-                                  <div className="mt-3">
-                                    <button
-                                      onClick={() => setIsFinanceOpen(!isFinanceOpen)}
-                                      className="flex items-center gap-1 text-sm font-medium text-[#f02d9c]"
-                                    >
-                                      {isFinanceOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                      Lihat rincian keuangan
-                                    </button>
-                                    {isFinanceOpen && (
-                                      <div className="mt-2 p-3 bg-white border border-dashed border-[#c2e9e8] rounded text-[15px] text-[#5b5b5b]">
-                                        <h5 className="font-bold text-[#0a5f61] mb-2">Rincian Keuangan</h5>
-                                        {ps.biayaModal && (
-                                          <div className="mb-2">
-                                            <p className="font-medium">Modal Awal:</p>
-                                            <p>{ps.biayaModal.replace('Biaya Modal: ', '')}</p>
-                                            <ul className="list-disc pl-4 mt-1 text-[14px]">
-                                              {parseModalDetails(ps.biayaModal).map((item, i) => (
-                                                <li key={i}>{item}</li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                        {ps.biayaBahanBaku && (
-                                          <div className="mb-2">
-                                            <p className="font-medium">Biaya Bahan Baku:</p>
-                                            <p>{ps.biayaBahanBaku.replace('Biaya Bahan Baku: ', '')}</p>
-                                            <ul className="list-disc pl-4 mt-1 text-[14px]">
-                                              {parseBahanBakuDetails(ps.biayaBahanBaku).map((item, i) => (
-                                                <li key={i}>{item}</li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                        {ps.hargaJual && (
-                                          <p className="font-medium">Harga Jual: {ps.hargaJual.replace('Harga Jual: ', '')}</p>
-                                        )}
-                                        {ps.margin && (
-                                          <p className="font-medium">Margin: {ps.margin.replace('Margin: ', '')}</p>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                {ps.uniqueAdvantage && (
-                                  <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
-                                    <p className="font-medium text-[#0a5f61] text-sm">Apa yang bikin kamu beda?</p>
-                                    <p className="text-[15px] text-[#5b5b5b] mt-1">
-                                      {ps.uniqueAdvantage.replace('Keunggulan Unik: ', '')}
-                                    </p>
-                                  </div>
-                                )}
-                                {ps.keyMetrics && (
-                                  <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
-                                    <p className="font-medium text-[#0a5f61] text-sm">Apa yang mau kamu ukur?</p>
-                                    <div className="mt-1 flex flex-wrap gap-1.5">
-                                      {ps.keyMetrics
-                                        .replace('Angka Penting: ', '')
-                                        .split(',')
-                                        .map((item, i) => (
-                                          <span
-                                            key={i}
-                                            className="px-2.5 py-1 bg-white border border-[#c2e9e8] text-[14px] text-[#5b5b5b] rounded-full"
-                                          >
-                                            {item.trim()}
-                                          </span>
-                                        ))}
-                                    </div>
-                                  </div>
-                                )}
-                                {ps.channel && (
-                                  <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
-                                    <p className="font-medium text-[#0a5f61] text-sm">Di mana kamu jualan?</p>
-                                    <div className="mt-1 flex flex-wrap gap-1.5">
-                                      {ps.channel
-                                        .replace('Cara Jualan: ', '')
-                                        .split(',')
-                                        .map((item, i) => (
-                                          <span
-                                            key={i}
-                                            className="px-2.5 py-1 bg-white border border-[#c2e9e8] text-[14px] text-[#5b5b5b] rounded-full"
-                                          >
-                                            {item.trim()}
-                                          </span>
-                                        ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      )}
-
-                      {/* FORM RWW */}
                       <div
                         className="mb-6 p-5 bg-white rounded-xl border-t border-l border-black"
                         style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
@@ -665,6 +348,13 @@ export default function RWW() {
                                     {q}. {questionText}
                                   </label>
                                   <RatingBox value={value} onChange={setValue} />
+                                  <textarea
+                                    value={notes[`q${q}`] || ''}
+                                    onChange={(e) => handleNoteChange(`q${q}`, e.target.value)}
+                                    placeholder="Opsional: Jelaskan..."
+                                    className="w-full mt-3 px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
+                                    style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+                                  />
                                 </div>
                               );
                             })}
@@ -698,6 +388,13 @@ export default function RWW() {
                                     {q}. {questionText}
                                   </label>
                                   <RatingBox value={value} onChange={setValue} />
+                                  <textarea
+                                    value={notes[`q${q}`] || ''}
+                                    onChange={(e) => handleNoteChange(`q${q}`, e.target.value)}
+                                    placeholder="Opsional: Jelaskan..."
+                                    className="w-full mt-3 px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
+                                    style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+                                  />
                                 </div>
                               );
                             })}
@@ -731,6 +428,13 @@ export default function RWW() {
                                     {q}. {questionText}
                                   </label>
                                   <RatingBox value={value} onChange={setValue} />
+                                  <textarea
+                                    value={notes[`q${q}`] || ''}
+                                    onChange={(e) => handleNoteChange(`q${q}`, e.target.value)}
+                                    placeholder="Opsional: Jelaskan..."
+                                    className="w-full mt-3 px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
+                                    style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+                                  />
                                 </div>
                               );
                             })}
@@ -746,7 +450,7 @@ export default function RWW() {
                         </button>
                       </div>
 
-                      {/* Ringkasan & Tombol */}
+                      {/* Ringkasan & Navigasi */}
                       {responses.length > 0 && (
                         <div className="mt-6">
                           <div
@@ -775,6 +479,7 @@ export default function RWW() {
                                 </div>
                               ))}
                             </div>
+
                             <div className="text-center mb-5">
                               {parseFloat(averages.total) >= 3.5 ? (
                                 <span className="inline-flex items-center gap-1.5 bg-[#e8f5f4] text-[#0d8a85] px-4 py-2 rounded-full font-bold text-sm border border-[#8acfd1]">
@@ -788,14 +493,17 @@ export default function RWW() {
                                 </span>
                               )}
                             </div>
+
+                            {/* Tombol Navigasi */}
                             <div className="flex flex-wrap gap-2 justify-center">
                               <Link
-                                href={`/dashboard/${projectId}/plan/level_1_idea`}
+                                href={`/dashboard/${projectId}/level_1_idea`}
                                 className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
                               >
                                 <ChevronLeft size={16} />
-                                Prev
+                                Preview
                               </Link>
+
                               <button
                                 onClick={() => setIsEditing(!isEditing)}
                                 className="px-4 py-2 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] flex items-center gap-1"
@@ -803,6 +511,7 @@ export default function RWW() {
                                 <Edit3 size={16} />
                                 {isEditing ? 'Batal Edit' : 'Edit'}
                               </button>
+
                               <button
                                 onClick={handleSave}
                                 className="px-4 py-2 bg-[#f02d9c] text-white font-medium rounded-lg border border-black flex items-center gap-1"
@@ -810,6 +519,7 @@ export default function RWW() {
                                 <CheckCircle size={16} />
                                 Simpan
                               </button>
+
                               <Link
                                 href={`/dashboard/${projectId}/plan/level_3_product_brand`}
                                 className="px-4 py-2 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black flex items-center gap-1"
@@ -823,120 +533,115 @@ export default function RWW() {
                       )}
                     </div>
 
-                    {/* Kolom Kanan */}
+                    {/* Kolom Kanan: Edukasi */}
                     <div className="space-y-5">
-                      {/* === PROGRESS BAR: DISAMAKAN DENGAN LEVEL 1 & 3 === */}
-                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Zap size={16} className="text-[#f02d9c]" />
-                          <span className="font-bold text-[#5b5b5b]">Progress Fase Plan</span>
-                        </div>
-                        <PhaseProgressBar
-                          currentXp={currentXp}
-                          totalXp={totalXp}
-                          firstIncompleteLevel={firstIncompleteLevel}
-                        />
-                      </div>
-
-                      {/* Pencapaian */}
-                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Award size={16} className="text-[#f02d9c]" />
-                          <span className="font-bold text-[#5b5b5b]">Pencapaian</span>
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                          <div className="flex items-center gap-1.5 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Lightbulb size={12} /> +10 XP
-                          </div>
-                          <div className="flex items-center gap-1.5 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Award size={12} /> Validator Pro
-                          </div>
-                        </div>
-                        <p className="mt-3 text-xs text-[#5b5b5b]">
-                          Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
-                        </p>
-                      </div>
-
-                      {/* Petunjuk */}
-                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <BookOpen size={16} className="text-[#f02d9c]" />
-                          <span className="font-bold text-[#5b5b5b]">Petunjuk</span>
-                        </div>
-                        <div className="space-y-2">
-                          {[
-                            'Gunakan teknik REAL-WIN-WORTH untuk memastikan ide bisnismu:',
-                            '• REAL: Masalah yang diangkat benar-benar nyata',
-                            '• WIN: Solusimu unggul dari alternatif yang ada',
-                            '• WORTH: Pelanggan bersedia membayar karena nilai yang jelas',
-                            'Wawancara minimal 5–10 responden berbeda (bukan teman dekat)',
-                            'Fokus pada perilaku nyata, bukan opini (“Sudah pernah beli?” vs “Menarik?”)',
-                            'Skor rata-rata ≥3.5 berarti ide layak dilanjutkan',
-                            'Jika skor rendah, perbaiki dulu sebelum lanjut ke Level 3',
-                          ].map((text, i) => (
-                            <div key={i} className="text-sm text-[#5b5b5b]">
-                              {text}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Resources */}
-                      <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                        <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                          <BookOpen size={16} /> Resources Validasi Ide
+                      {/* Tujuan Level */}
+                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
+                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
+                          <Lightbulb size={16} /> Tujuan Level 2 (Validasi RWW)
                         </h3>
-                        <ul className="text-sm space-y-1">
+                        <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
                           <li>
-                            <a
-                              href="https://www.youtube.com/watch?v=VlX9Kq2e5qU"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline"
-                            >
-                              Cara Validasi Ide dalam 15 Menit
-                            </a>
+                            Uji apakah masalah yang diangkat <strong>benar-benar nyata</strong> (REAL)
                           </li>
                           <li>
-                            <a
-                              href="https://www.strategyzer.com/blog/validate-your-ideas-before-you-build"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline"
-                            >
-                              Validate Before You Build (Strategyzer)
-                            </a>
+                            Validasi apakah solusimu <strong>lebih unggul</strong> dari alternatif (WIN)
                           </li>
                           <li>
-                            <a
-                              href="https://perempuaninovasi.id/workshop"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline"
-                            >
-                              Panduan Validasi Ide (Perempuan Inovasi)
-                            </a>
+                            Ukur kesiapan pasar untuk <strong>membayar</strong> (WORTH)
+                          </li>
+                          <li>
+                            Kumpulkan <strong>bukti empiris</strong> sebelum investasi lebih lanjut
                           </li>
                         </ul>
                       </div>
 
-                      {/* Data Responden */}
+                      {/* Tips & Trick */}
+                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
+                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-2">
+                          <Award size={16} /> Tips Validasi Ide
+                        </h3>
+                        <ul className="text-sm text-[#5b5b5b] list-disc pl-5 space-y-1">
+                          <li>
+                            Wawancara minimal <strong>5–10 responden</strong> berbeda
+                          </li>
+                          <li>Hindari leading question — biarkan mereka bicara bebas</li>
+                          <li>
+                            Fokus pada <strong>perilaku nyata</strong>, bukan opini
+                          </li>
+                          <li>
+                            Skor rata-rata <strong>≥3.5</strong> menunjukkan ide layak dilanjutkan
+                          </li>
+                        </ul>
+                      </div>
+
+                      {/* Resources */}
                       <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
                         <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                          <Users size={16} /> Data Responden
+                          <BookOpen size={16} /> Resources Validasi Ide
                         </h3>
-                        {responses.length === 0 ? (
-                          <p className="text-sm text-[#7a7a7a] italic">Belum ada data responden.</p>
-                        ) : (
-                          <div className="overflow-x-auto">
+                        <div className="space-y-3">
+                          <div>
+                            <ul className="text-sm space-y-1">
+                              <li>
+                                <a
+                                  href="https://www.youtube.com/watch?v=VlX9Kq2e5qU"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#f02d9c] hover:underline"
+                                >
+                                  Cara Validasi Ide dalam 15 Menit
+                                </a>
+                              </li>
+                            </ul>
+                          </div>
+                          <div>
+                            <ul className="text-sm space-y-1">
+                              <li>
+                                <a
+                                  href="https://www.strategyzer.com/blog/validate-your-ideas-before-you-build"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#f02d9c] hover:underline"
+                                >
+                                  Validate Before You Build (Strategyzer)
+                                </a>
+                              </li>
+                              <li>
+                                <a
+                                  href="https://perempuaninovasi.id/workshop"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#f02d9c] hover:underline"
+                                >
+                                  Panduan Validasi Ide (Perempuan Inovasi)
+                                </a>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Daftar Responden */}
+                    <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd] mt-5">
+                      <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
+                        <Users size={16} /> Data Responden
+                      </h3>
+
+                      {responses.length === 0 ? (
+                        <p className="text-sm text-[#7a7a7a] italic">Belum ada data responden yang ditambahkan.</p>
+                      ) : (
+                        <>
+                          {/* Tabel Responden */}
+                          <div className="overflow-x-auto mb-6">
                             <table className="min-w-full border border-gray-300 text-sm">
                               <thead className="bg-[#f02d9c] text-white">
                                 <tr>
                                   <th className="py-2 px-3 border border-gray-300 text-left">Nama</th>
-                                  <th className="py-2 px-3 border border-gray-300 text-left">JK</th>
+                                  <th className="py-2 px-3 border border-gray-300 text-left">Jenis Kelamin</th>
                                   <th className="py-2 px-3 border border-gray-300 text-left">Usia</th>
                                   <th className="py-2 px-3 border border-gray-300 text-left">Aktivitas</th>
-                                  <th className="py-2 px-3 border border-gray-300 text-center">Skor</th>
+                                  <th className="py-2 px-3 border border-gray-300 text-center">Total Skor</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -944,7 +649,7 @@ export default function RWW() {
                                   <tr key={r.id} className="odd:bg-white even:bg-[#f9f9f9]">
                                     <td className="py-2 px-3 border border-gray-300">{r.name}</td>
                                     <td className="py-2 px-3 border border-gray-300">{r.gender}</td>
-                                    <td className="py-2 px-3 border border-gray-300">{r.age || '—'}</td>
+                                    <td className="py-2 px-3 border border-gray-300">{r.age}</td>
                                     <td className="py-2 px-3 border border-gray-300">{r.activity}</td>
                                     <td className="py-2 px-3 border border-gray-300 text-center font-bold text-[#f02d9c]">
                                       {r.total}
@@ -954,56 +659,88 @@ export default function RWW() {
                               </tbody>
                             </table>
                           </div>
-                        )}
-                      </div>
 
-                      {genderSummary.length > 0 && (
-                        <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                          <h3 className="font-bold text-[#0a5f61] mb-3">Skor ≥3.5 per Jenis Kelamin</h3>
-                          <table className="min-w-full border border-gray-300 text-sm">
-                            <thead className="bg-[#8acfd1] text-[#0a5f61]">
-                              <tr>
-                                <th className="py-2 px-3 border border-gray-300 text-left">Jenis Kelamin</th>
-                                <th className="py-2 px-3 border border-gray-300 text-center">Rata-rata Skor</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {genderSummary.map((item, i) => (
-                                <tr key={i} className="odd:bg-white even:bg-[#f9f9f9]">
-                                  <td className="py-2 px-3 border border-gray-300">{item.gender}</td>
-                                  <td className="py-2 px-3 border border-gray-300 text-center font-bold text-[#f02d9c]">
-                                    {item.avg.toFixed(1)}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                          {/* Diagram Responden */}
+                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
+                              <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Jenis Kelamin</h4>
+                              <ResponsiveContainer width="100%" height={220}>
+                                <PieChart>
+                                  <Pie
+                                    dataKey="value"
+                                    data={[
+                                      { name: 'Laki-laki', value: responses.filter(r => r.gender === 'Laki-laki').length, fill: '#4A90E2' }, // biru
+                                      { name: 'Perempuan', value: responses.filter(r => r.gender === 'Perempuan').length, fill: '#f02d9c' }, // pink
+                                      { name: 'Lainnya', value: responses.filter(r => r.gender === 'Lainnya').length, fill: '#C4C4C4' }, // abu
+                                    ]}
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={70}
+                                    label
+                                  />
+                                  <Tooltip />
+                                </PieChart>
+                              </ResponsiveContainer>
+                          </div>
 
-                      {ageGroupSummary.length > 0 && (
-                        <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
-                          <h3 className="font-bold text-[#0a5f61] mb-3">Skor ≥3.5 per Kelompok Usia</h3>
-                          <table className="min-w-full border border-gray-300 text-sm">
-                            <thead className="bg-[#8acfd1] text-[#0a5f61]">
-                              <tr>
-                                <th className="py-2 px-3 border border-gray-300 text-left">Kelompok Usia</th>
-                                <th className="py-2 px-3 border border-gray-300 text-center">Rata-rata Skor</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {ageGroupSummary.map((item, i) => (
-                                <tr key={i} className="odd:bg-white even:bg-[#f9f9f9]">
-                                  <td className="py-2 px-3 border border-gray-300">{item.range}</td>
-                                  <td className="py-2 px-3 border border-gray-300 text-center font-bold text-[#f02d9c]">
-                                    {item.avg.toFixed(1)}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+
+                          {/*Diagram Aktivitas*/}
+                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
+                              <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Rata-rata Skor per Aktivitas</h4>
+                              <ResponsiveContainer width="100%" height={220}>
+                                <BarChart
+                                  data={Object.entries(
+                                    responses.reduce((acc, r) => {
+                                      if (!acc[r.activity]) acc[r.activity] = [];
+                                      acc[r.activity].push(parseFloat(r.total));
+                                      return acc;
+                                    }, {})
+                                  ).map(([activity, totals]) => ({
+                                    name: activity,
+                                    avg: (totals.reduce((a, b) => a + b, 0) / totals.length).toFixed(1),
+                                  }))}
+                                >
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="name" />
+                                  <YAxis />
+                                  <Tooltip />
+                                  <Bar dataKey="avg" fill="#8acfd1" />
+                                </BarChart>
+                              </ResponsiveContainer>
+                          </div>
+
+                          {/* Diagram Usia */}
+                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm mt-6">
+                            <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Usia Responden</h4>
+                            <ResponsiveContainer width="100%" height={250}>
+                              <BarChart
+                                data={Object.entries(
+                                  responses.reduce((acc, r) => {
+                                    const ageGroup =
+                                      r.age < 20
+                                        ? '<20'
+                                        : r.age <= 25
+                                        ? '21-25'
+                                        : r.age <= 30
+                                        ? '26-30'
+                                        : r.age <= 40
+                                        ? '31-40'
+                                        : '>40';
+                                    acc[ageGroup] = (acc[ageGroup] || 0) + 1;
+                                    return acc;
+                                  }, {})
+                                ).map(([range, count]) => ({ range, count }))}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="range" />
+                                <YAxis />
+                                <Tooltip />
+                                <Bar dataKey="count" fill="#f02d9c" />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </>
                       )}
+                    </div>
                     </div>
                   </div>
                 </div>
@@ -1012,14 +749,6 @@ export default function RWW() {
           </div>
         </main>
       </div>
-
-      <NotificationModalPlan
-        isOpen={showNotification}
-        type="success"
-        xpGained={notificationData.xpGained}
-        badgeName={notificationData.badgeName}
-        onClose={() => setShowNotification(false)}
-      />
     </div>
   );
 }
