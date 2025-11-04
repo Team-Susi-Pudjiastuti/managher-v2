@@ -4,42 +4,22 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Menu,
-  Users,
-  Goal,
-  Sparkles,
-  ChevronLeft,
-  ChevronRight,
-  Trash2,
-  BarChart3,
-  CheckCircle,
-  BookOpen,
-  Edit3,
-  AlertTriangle,
-  Award,
-  Lightbulb,
-  Zap,
+  Menu, Users, Goal, Sparkles, ChevronLeft, ChevronRight, Trash2,
+  BarChart3, CheckCircle, BookOpen, Edit3, AlertTriangle, Award, Lightbulb, Zap,
 } from 'lucide-react';
 
 import useProjectStore from '@/store/useProjectStore';
+import { useBetaTestingStore } from '@/store/useBetaTestingStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell 
 } from 'recharts';
 
-// === CONFETTI ANIMATION ===
+// === CONFETTI ===
 const Confetti = () => {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -83,16 +63,14 @@ const Confetti = () => {
     animate();
     return () => cancelAnimationFrame(animationId);
   }, []);
-  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-[9999]" />;
+  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-9999" />;
 };
 
-// === PROGRESS BAR (SAMA DENGAN LEVEL 5) ===
+// === PROGRESS BAR ===
 const PhaseProgressBar = ({ currentXp, totalXp }) => {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
-    const calculatedProgress = totalXp > 0
-      ? Math.min(100, Math.floor((currentXp / totalXp) * 100))
-      : 0;
+    const calculatedProgress = totalXp > 0 ? Math.min(100, Math.floor((currentXp / totalXp) * 100)) : 0;
     setProgress(calculatedProgress);
   }, [currentXp, totalXp]);
 
@@ -102,9 +80,7 @@ const PhaseProgressBar = ({ currentXp, totalXp }) => {
         <span className="text-xs font-bold text-[#5b5b5b]">
           XP Fase Plan: {currentXp} / {totalXp}
         </span>
-        <span className="text-xs font-bold text-[#f02d9c]">
-          {progress}%
-        </span>
+        <span className="text-xs font-bold text-[#f02d9c]">{progress}%</span>
       </div>
       <div className="w-full bg-[#f0f0f0] rounded-full h-1.5">
         <div
@@ -125,84 +101,29 @@ const range5 = [1, 2, 3, 4, 5];
 export default function Level6Page() {
   const { projectId } = useParams();
   const router = useRouter();
-  const projects = useProjectStore((state) => state.projects);
-  const updateProject = useProjectStore((state) => state.updateProject);
 
-  const [project, setProject] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationData, setNotificationData] = useState({
-    xpGained: 0,
-    badgeName: '',
-  });
-  const [showConfetti, setShowConfetti] = useState(false); // ✨ Confetti state
+  const { planLevels, getLevels } = useProjectStore();
+  const { responses: storedResponses, loading: storeLoading, fetchResponses, saveResponses } = useBetaTestingStore();
 
+  const [allResponses, setAllResponses] = useState([]);
   const [currentResponse, setCurrentResponse] = useState({
-    name: '',
-    gender: '',
-    age: '',
-    activity: '',
-    satisfaction_rate: null,
+    name: '', gender: '', age: '', activity: '',
+    scale: null, 
     satisfaction_reason: '',
     suggestion: '',
     recommendation: '',
     comment: '',
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
-  const [allResponses, setAllResponses] = useState([]);
-
-  // Deteksi mobile
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Load data
-  useEffect(() => {
-    if (!projectId) return;
-
-    const found = projects.find((p) => p.id === projectId);
-    setProject(found);
-
-    const level2Data = found?.levels?.[1]?.data?.rww;
-    if (level2Data?.responses) {
-      const qualifiedRespondents = level2Data.responses
-        .filter(r => parseFloat(r.total) >= 3.5)
-        .map(r => ({
-          id: Date.now() + Math.random(),
-          name: r.name,
-          gender: r.gender,
-          age: r.age?.toString() || '',
-          activity: r.activity,
-          satisfaction_rate: null,
-          satisfaction_reason: '',
-          suggestion: '',
-          recommendation: '',
-          comment: '',
-        }));
-      setAllResponses(qualifiedRespondents);
-    }
-
-    const saved = localStorage.getItem(`beta_data_${projectId}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const responses = Array.isArray(parsed.responses) ? parsed.responses : parsed;
-        setAllResponses(responses || []);
-      } catch (e) {
-        console.error('Gagal load data beta dari localStorage', e);
-        setAllResponses([]);
-      }
-    }
-  }, [projectId, projects]);
-
+  // === Fungsi Form ===
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setCurrentResponse((prev) => ({ ...prev, [name]: value }));
+    setCurrentResponse(prev => ({ ...prev, [name]: value }));
   };
 
   const addNewResponse = () => {
@@ -211,103 +132,97 @@ export default function Level6Page() {
       alert('Nama dan usia harus diisi.');
       return;
     }
-
-    const newResp = { ...currentResponse, id: Date.now() };
-    const updated = [...allResponses, newResp];
-    setAllResponses(updated);
-    localStorage.setItem(
-      `beta_data_${projectId}`,
-      JSON.stringify({ responses: updated, updatedAt: new Date().toISOString() })
-    );
-    setCurrentResponse({ name: '', gender: '', age: '', activity: '', satisfaction_rate: null, satisfaction_reason: '', suggestion: '', recommendation: '', comment: '' });
-    alert('Responden berhasil ditambahkan!');
+    const newResp = { ...currentResponse, id: Date.now() + Math.random() };
+    setAllResponses(prev => [...prev, newResp]);
+    setCurrentResponse({
+      name: '', gender: '', age: '', activity: '',
+      scale: null, satisfaction_reason: '',
+      suggestion: '', recommendation: '', comment: '',
+    });
   };
 
-  const deleteResponse = (id) => {
-    const updated = allResponses.filter((r) => r.id !== id);
-    setAllResponses(updated);
-    localStorage.setItem(
-      `beta_data_${projectId}`,
-      JSON.stringify({ responses: updated, updatedAt: new Date().toISOString() })
-    );
+  // logika delete
+  const deleteResponse = (idToDelete) => {
+    setAllResponses(prev => prev.filter(r => r.id !== idToDelete));
   };
 
+  // === Analisis ===
   const satisfactionValues = allResponses
-    .map((r) => (typeof r.satisfaction_rate === 'number' ? r.satisfaction_rate : null))
-    .filter((v) => v !== null);
+    .map(r => (typeof r.scale === 'number' ? r.scale : null)) // ✅ gunakan "scale"
+    .filter(v => v !== null);
   const avgSatisfaction = satisfactionValues.length
     ? (satisfactionValues.reduce((sum, v) => sum + v, 0) / satisfactionValues.length).toFixed(1)
     : 0;
-  const recommendCount = allResponses.filter((r) => r.recommendation === 'Ya').length;
+  const recommendCount = allResponses.filter(r => r.recommendation === 'Ya').length;
   const recommendRate = allResponses.length
     ? Math.round((recommendCount / allResponses.length) * 100)
     : 0;
   const canLaunch = allResponses.length >= 5 && parseFloat(avgSatisfaction) >= 4.0 && recommendRate >= 70;
 
-  const handleSave = () => {
-    const dataToSave = {
-      responses: allResponses,
-      avgSatisfaction,
-      recommendRate,
-      updatedAt: new Date().toISOString(),
-    };
-    localStorage.setItem(`beta_data_${projectId}`, JSON.stringify(dataToSave));
-    const updatedLevels = [...(project?.levels || [])];
-    if (!updatedLevels[5]) updatedLevels[5] = { id: 6, completed: false, data: {} };
-    updatedLevels[5] = {
-      ...updatedLevels[5],
-      completed: canLaunch,
-      data: allResponses,
-    };
-    updateProject(projectId, { levels: updatedLevels });
+  // Simpan ke backend
+  const handleSave = async () => {
+    try {
+      await saveResponses(projectId, allResponses);
+      const currentLevel = planLevels.find(l => l.order === 6);
+      if (currentLevel?._id) {
+        const { updateLevelStatus } = useProjectStore.getState();
+        await updateLevelStatus(currentLevel._id, { completed: canLaunch });
+      }
 
-    setNotificationData({ xpGained: 10, badgeName: 'Beta Master' });
-    setShowNotification(true);
-
-    if (canLaunch) {
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000); 
+      setShowNotification(true);
+      if (canLaunch) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+      }
+    } catch (err) {
+      alert('Gagal menyimpan. Coba lagi.');
     }
   };
 
-  // Chart data utilities
+  // === Chart Data ===
   const satisfactionDist = [0, 0, 0, 0, 0];
   allResponses.forEach(r => {
-    if (typeof r.satisfaction_rate === 'number' && r.satisfaction_rate >= 1 && r.satisfaction_rate <= 5) {
-      satisfactionDist[Math.floor(r.satisfaction_rate) - 1]++;
+    if (typeof r.scale === 'number' && r.scale >= 1 && r.scale <= 5) { // ✅ scale
+      satisfactionDist[Math.floor(r.scale) - 1]++;
     }
   });
-  const satisfactionChartData = satisfactionDist.map((count, i) => ({ score: i + 1, label: satisfactionLabels[i], count }));
+  const satisfactionChartData = satisfactionDist.map((count, i) => ({
+    score: i + 1, label: satisfactionLabels[i], count,
+  }));
+
   const ageBuckets = { '<18': 0, '18-24': 0, '25-34': 0, '35-44': 0, '45+': 0 };
-  allResponses.forEach((r) => {
+  allResponses.forEach(r => {
     const a = Number(r.age);
     if (!a) return;
-    if (a < 18) ageBuckets['<18'] += 1;
-    else if (a <= 24) ageBuckets['18-24'] += 1;
-    else if (a <= 34) ageBuckets['25-34'] += 1;
-    else if (a <= 44) ageBuckets['35-44'] += 1;
-    else ageBuckets['45+'] += 1;
+    if (a < 18) ageBuckets['<18']++;
+    else if (a <= 24) ageBuckets['18-24']++;
+    else if (a <= 34) ageBuckets['25-34']++;
+    else if (a <= 44) ageBuckets['35-44']++;
+    else ageBuckets['45+']++;
   });
   const ageChartData = Object.entries(ageBuckets).map(([k, v]) => ({ name: k, value: v }));
+
   const activityCounts = {};
-  allResponses.forEach((r) => {
+  allResponses.forEach(r => {
     const act = r.activity?.trim() || 'Lainnya';
     activityCounts[act] = (activityCounts[act] || 0) + 1;
   });
   const activityChartData = Object.entries(activityCounts).map(([name, value]) => ({ name, value }));
-  const recChartData = ['Ya', 'Tidak', 'Mungkin'].map((opt) => ({
+
+  const recChartData = ['Ya', 'Tidak', 'Mungkin'].map(opt => ({
     name: opt,
-    value: allResponses.filter((r) => r.recommendation === opt).length,
+    value: allResponses.filter(r => r.recommendation === opt).length,
   }));
+
   const genderChartData = [
-    { name: 'Laki-laki', value: allResponses.filter((r) => r.gender === 'Laki-laki').length, fill: '#4A90E2' },
-    { name: 'Perempuan', value: allResponses.filter((r) => r.gender === 'Perempuan').length, fill: '#f02d9c' },
-    { name: 'Lainnya', value: allResponses.filter((r) => r.gender === 'Lainnya').length, fill: '#C4C4C4' },
+    { name: 'Laki-laki', value: allResponses.filter(r => r.gender === 'Laki-laki').length, fill: '#4A90E2' },
+    { name: 'Perempuan', value: allResponses.filter(r => r.gender === 'Perempuan').length, fill: '#f02d9c' },
+    { name: 'Lainnya', value: allResponses.filter(r => r.gender === 'Lainnya').length, fill: '#C4C4C4' },
   ];
 
   const RatingBox = ({ value, onChange, labels = satisfactionLabels }) => (
     <div className="flex flex-wrap justify-center gap-4 mt-4">
-      {range5.map((num) => (
+      {range5.map(num => (
         <button
           key={num}
           type="button"
@@ -326,22 +241,54 @@ export default function Level6Page() {
     </div>
   );
 
-  // --- PROGRESS BAR LOGIC ---
+  // === Load Data ===
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 1024);
+    handler();
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
+  useEffect(() => {
+    if (projectId && projectId !== 'undefined') {
+      getLevels(projectId);
+      fetchResponses(projectId);
+    }
+  }, [projectId]);
+
+  // Sync store → state (tanpa reset)
+  useEffect(() => {
+    setAllResponses(storedResponses);
+  }, [storedResponses]);
+
+  // === XP & Badge ===
+  const currentLevel = planLevels.find(l => l.order === 6);
+  const xpGained = currentLevel?.xp || 10;
+  const badgeName = currentLevel?.badge || 'Beta Master';
   const totalLevels = 7;
-  const completedLevels = project?.levels?.filter((l) => l.completed).length || 0;
-  const currentXp = completedLevels * 10;
+  const currentXp = planLevels.filter(l => l.completed).length * 10;
   const totalXp = totalLevels * 10;
+
+  const breadcrumbItems = [
+    { href: `/dashboard/${projectId}`, label: 'Dashboard' },
+    { href: `/dashboard/${projectId}/plan`, label: 'Fase Plan' },
+    { label: 'Level 6: Beta Testing' },
+  ];
+
+  if (storeLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-[#f02d9c] font-medium">Memuat data beta testing...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white font-[Poppins]">
       {showConfetti && <Confetti />}
 
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
-        <Breadcrumb items={[
-          { href: `/dashboard/${projectId}`, label: 'Dashboard' },
-          { href: `/dashboard/${projectId}/plan`, label: 'Fase Plan' },
-          { label: 'Level 6: Beta Testing' },
-        ]} />
+        <Breadcrumb items={breadcrumbItems} />
       </div>
 
       {isMobile && !mobileSidebarOpen && (
@@ -379,7 +326,7 @@ export default function Level6Page() {
                   </p>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Kolom Kiri: Form & Ringkasan */}
+                    {/* Kolom Kiri */}
                     <div>
                       <div
                         className="mb-6 p-5 bg-white rounded-xl border-t border-l border-black"
@@ -432,19 +379,22 @@ export default function Level6Page() {
                           </div>
                           <div>
                             <label className="block text-sm font-medium mb-2">Aktivitas</label>
-                            <input
-                              type="text"
+                            <select
                               name="activity"
                               value={currentResponse.activity}
                               onChange={handleInputChange}
-                              placeholder="Contoh: Mahasiswa"
-                              className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
+                              className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            />
+                            >
+                              <option value="">Pilih Aktivitas</option>
+                              <option value="Mahasiswa">Mahasiswa</option>
+                              <option value="Ibu rumah tangga">Ibu rumah tangga</option>
+                              <option value="Pekerja">Pekerja</option>
+                              <option value="Lainnya">Lainnya</option>
+                            </select>
                           </div>
                         </div>
 
-                        {/* Kepuasan */}
                         <div className="mb-6 p-4 bg-[#fdf6f0] rounded-lg border border-[#f0d5c2]">
                           <h3 className="font-bold text-[#0a5f61] mb-4">
                             Tingkat Kepuasan Produk (1–5)
@@ -453,8 +403,8 @@ export default function Level6Page() {
                             Pilih angka yang paling menggambarkan kepuasan responden terhadap produk.
                           </p>
                           <RatingBox
-                            value={currentResponse.satisfaction_rate}
-                            onChange={(val) => setCurrentResponse((prev) => ({ ...prev, satisfaction_rate: val }))}
+                            value={currentResponse.scale} 
+                            onChange={(val) => setCurrentResponse((prev) => ({ ...prev, scale: val }))}
                           />
                           <textarea
                             value={currentResponse.satisfaction_reason}
@@ -465,7 +415,6 @@ export default function Level6Page() {
                           />
                         </div>
 
-                        {/* Saran & Rekomendasi */}
                         <div className="mb-6 p-4 bg-[#f8fbff] rounded-lg border border-[#d0e7f9]">
                           <h3 className="font-bold text-[#0a5f61] mb-4">Saran & Rekomendasi</h3>
                           <textarea
@@ -513,88 +462,88 @@ export default function Level6Page() {
                         </button>
                       </div>
 
+                      {/* Ringkasan & Navigasi */}
                       {allResponses.length > 0 && (
-                    <div className="mt-6">
-                      <div
-                        className="bg-white p-5 rounded-xl border-t border-l border-black"
-                        style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                      >
-                        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                          <BarChart3 size={16} /> Ringkasan Beta Testing
-                        </h2>
-                        <div className="flex justify-center">
-                          <div className="grid grid-cols-3 gap-3 mb-5 max-w-md w-full">
-                            {[
-                              { label: 'Kepuasan', value: avgSatisfaction, color: '#f02d9c' },
-                              { label: 'Rekomendasi', value: `${recommendRate}%`, color: '#8acfd1' },
-                              { label: 'Responden', value: allResponses.length, color: '#f02d9c' },
-                            ].map((item, i) => (
-                              <div
-                                key={i}
-                                className="text-center p-3 bg-white rounded-lg border-t border-l border-black"
-                                style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                              >
-                                <div className="text-xl font-bold" style={{ color: item.color }}>
-                                  {item.value}
-                                </div>
-                                <div className="text-xs mt-1">{item.label}</div>
+                        <div className="mt-6">
+                          <div
+                            className="bg-white p-5 rounded-xl border-t border-l border-black"
+                            style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+                          >
+                            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                              <BarChart3 size={16} /> Ringkasan Beta Testing
+                            </h2>
+                            <div className="flex justify-center">
+                              <div className="grid grid-cols-3 gap-3 mb-5 max-w-md w-full">
+                                {[
+                                  { label: 'Kepuasan', value: avgSatisfaction, color: '#f02d9c' },
+                                  { label: 'Rekomendasi', value: `${recommendRate}%`, color: '#8acfd1' },
+                                  { label: 'Responden', value: allResponses.length, color: '#f02d9c' },
+                                ].map((item, i) => (
+                                  <div
+                                    key={i}
+                                    className="text-center p-3 bg-white rounded-lg border-t border-l border-black"
+                                    style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+                                  >
+                                    <div className="text-xl font-bold" style={{ color: item.color }}>
+                                      {item.value}
+                                    </div>
+                                    <div className="text-xs mt-1">{item.label}</div>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            </div>
+
+                            <div className="text-center mb-5">
+                              {canLaunch ? (
+                                <span className="inline-flex items-center gap-1.5 bg-[#e8f5f4] text-[#0d8a85] px-4 py-2 rounded-full font-bold text-sm border border-[#8acfd1]">
+                                  <CheckCircle size={16} />
+                                  MVP SIAP DILUNCURKAN!
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 bg-[#fff8e1] text-[#c98a00] px-4 py-2 rounded-full font-bold text-sm border border-[#fbe2a7]">
+                                  <AlertTriangle size={16} />
+                                  BUTUH PENYEMPURNAAN
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 justify-center">
+                              <Link
+                                href={`/dashboard/${projectId}/plan/level_5_MVP`}
+                                className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
+                              >
+                                <ChevronLeft size={16} />
+                                Prev
+                              </Link>
+                              <button
+                                onClick={() => setIsEditing(!isEditing)}
+                                className="px-4 py-2 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] flex items-center gap-1"
+                              >
+                                <Edit3 size={16} />
+                                {isEditing ? 'Batal Edit' : 'Edit'}
+                              </button>
+                              <button
+                                onClick={handleSave}
+                                className="px-4 py-2 bg-[#f02d9c] text-white font-medium rounded-lg border border-black flex items-center gap-1"
+                              >
+                                <CheckCircle size={16} />
+                                Simpan
+                              </button>
+                              <Link
+                                href={`/dashboard/${projectId}/plan/level_7_launch`}
+                                className="px-4 py-2 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black flex items-center gap-1"
+                              >
+                                Next
+                                <ChevronRight size={16} />
+                              </Link>
+                            </div>
                           </div>
                         </div>
-
-                        <div className="text-center mb-5">
-                          {canLaunch ? (
-                            <span className="inline-flex items-center gap-1.5 bg-[#e8f5f4] text-[#0d8a85] px-4 py-2 rounded-full font-bold text-sm border border-[#8acfd1]">
-                              <CheckCircle size={16} />
-                              MVP SIAP DILUNCURKAN!
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 bg-[#fff8e1] text-[#c98a00] px-4 py-2 rounded-full font-bold text-sm border border-[#fbe2a7]">
-                              <AlertTriangle size={16} />
-                              BUTUH PENYEMPURNAAN
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 justify-center">
-                          <Link
-                            href={`/dashboard/${projectId}/plan/level_5_MVP`}
-                            className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
-                          >
-                            <ChevronLeft size={16} />
-                            Prev
-                          </Link>
-                          <button
-                            onClick={() => setIsEditing(!isEditing)}
-                            className="px-4 py-2 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] flex items-center gap-1"
-                          >
-                            <Edit3 size={16} />
-                            {isEditing ? 'Batal Edit' : 'Edit'}
-                          </button>
-                          <button
-                            onClick={handleSave}
-                            className="px-4 py-2 bg-[#f02d9c] text-white font-medium rounded-lg border border-black flex items-center gap-1"
-                          >
-                            <CheckCircle size={16} />
-                            Simpan
-                          </button>
-                          <Link
-                            href={`/dashboard/${projectId}/plan/level_7_launch`}
-                            className="px-4 py-2 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black flex items-center gap-1"
-                          >
-                            Next
-                            <ChevronRight size={16} />
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
                       )}
                     </div>
 
                     {/* Kolom Kanan */}
                     <div className="space-y-5">
-                      {/* PROGRESS BAR */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-3">
                           <Zap size={16} className="text-[#f02d9c]" />
@@ -603,7 +552,6 @@ export default function Level6Page() {
                         <PhaseProgressBar currentXp={currentXp} totalXp={totalXp} />
                       </div>
 
-                      {/* Pencapaian */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
                           <Award size={16} className="text-[#f02d9c]" />
@@ -611,18 +559,14 @@ export default function Level6Page() {
                         </h3>
                         <div className="flex flex-wrap gap-2">
                           <span className="px-3 py-1.5 bg-[#f02d9c] text-white text-xs font-bold rounded-full flex items-center gap-1">
-                            <Lightbulb size={12} /> +10 XP
+                            <Lightbulb size={12} /> +{xpGained} XP
                           </span>
                           <span className="px-3 py-1.5 bg-[#8acfd1] text-[#0a5f61] text-xs font-bold rounded-full flex items-center gap-1">
-                            <Award size={12} /> Beta Master
+                            <Award size={12} /> {badgeName}
                           </span>
                         </div>
-                        <p className="mt-2 text-xs text-[#5b5b5b]">
-                          Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
-                        </p>
                       </div>
 
-                      {/* Petunjuk */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
                           <BookOpen size={16} className="text-[#f02d9c]" />
@@ -654,7 +598,6 @@ export default function Level6Page() {
                         </div>
                       </div>
 
-                      {/* Resources */}
                       <div className="border border-gray-200 rounded-xl p-4 bg-white">
                         <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
                           <BookOpen size={14} /> Resources
@@ -678,7 +621,6 @@ export default function Level6Page() {
                         </ul>
                       </div>
 
-                      {/* Visualisasi Data */}
                       <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd] mt-5">
                         <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
                           <Users size={16} /> Visualisasi Data Responden
@@ -699,17 +641,17 @@ export default function Level6Page() {
                             </thead>
                             <tbody>
                               {allResponses.map((r) => (
-                                <tr key={r.id} className="odd:bg-white even:bg-[#f9f9f9]">
+                                <tr key={r.id} className="odd:bg-white even:bg-[#f9f9f9]"> 
                                   <td className="py-2 px-3 border border-gray-300">{r.name}</td>
                                   <td className="py-2 px-3 border border-gray-300">{r.gender}</td>
                                   <td className="py-2 px-3 border border-gray-300">{r.age}</td>
                                   <td className="py-2 px-3 border border-gray-300">{r.activity}</td>
-                                  <td className="py-2 px-3 border border-gray-300">{r.satisfaction_rate ?? '-'}</td>
+                                  <td className="py-2 px-3 border border-gray-300">{r.scale ?? '-'}</td>
                                   <td className="py-2 px-3 border border-gray-300 max-w-[120px] truncate">{r.suggestion || '-'}</td>
                                   <td className="py-2 px-3 border border-gray-300">{r.recommendation ?? '-'}</td>
                                   <td className="py-2 px-3 border border-gray-300">
                                     <button
-                                      onClick={() => deleteResponse(r.id)}
+                                      onClick={() => deleteResponse(r.id)} 
                                       className="px-2 py-1 bg-red-100 text-red-600 rounded-md text-xs"
                                     >
                                       Hapus
@@ -720,6 +662,7 @@ export default function Level6Page() {
                             </tbody>
                           </table>
                         </div>
+                        {/* Chart tetap sama */}
                         <div className="grid grid-cols-1 gap-4">
                           <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
                             <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Kepuasan</h4>
@@ -737,14 +680,7 @@ export default function Level6Page() {
                             <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Jenis Kelamin</h4>
                             <ResponsiveContainer width="100%" height={200}>
                               <PieChart>
-                                <Pie
-                                  dataKey="value"
-                                  data={genderChartData}
-                                  cx="50%"
-                                  cy="50%"
-                                  outerRadius={70}
-                                  label
-                                />
+                                <Pie dataKey="value" data={genderChartData} cx="50%" cy="50%" outerRadius={70} label />
                                 <Tooltip />
                               </PieChart>
                             </ResponsiveContainer>
@@ -765,14 +701,7 @@ export default function Level6Page() {
                             <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Rekomendasi</h4>
                             <ResponsiveContainer width="100%" height={220}>
                               <PieChart>
-                                <Pie
-                                  dataKey="value"
-                                  data={recChartData}
-                                  cx="50%"
-                                  cy="50%"
-                                  outerRadius={70}
-                                  label
-                                >
+                                <Pie dataKey="value" data={recChartData} cx="50%" cy="50%" outerRadius={70} label>
                                   <Cell key="cell-ya" fill="#4A90E2" />
                                   <Cell key="cell-tidak" fill="#f02d9c" />
                                   <Cell key="cell-mungkin" fill="#C4C4C4" />
@@ -795,8 +724,8 @@ export default function Level6Page() {
       <NotificationModalPlan
         isOpen={showNotification}
         type="success"
-        xpGained={notificationData.xpGained}
-        badgeName={notificationData.badgeName}
+        xpGained={xpGained}
+        badgeName={badgeName}
         onClose={() => setShowNotification(false)}
       />
     </div>

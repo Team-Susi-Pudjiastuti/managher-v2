@@ -14,7 +14,7 @@ import {
   FileText,
   Box,
   Users,
-  Rocket
+  Rocket,
 } from 'lucide-react';
 
 export default function PlanSidebar({
@@ -22,11 +22,17 @@ export default function PlanSidebar({
   currentLevelId = 'overview',
   isMobile = false,
   mobileSidebarOpen = false,
-  setMobileSidebarOpen = () => {}
+  setMobileSidebarOpen = () => {},
 }) {
   const pathname = usePathname();
-  const projects = useProjectStore((state) => state.projects);
-  const project = projects.find(p => p.id === projectId);
+  const { planLevels, getLevels } = useProjectStore();
+
+  // Fetch levels jika belum ada
+  useEffect(() => {
+    if (projectId && planLevels.length === 0) {
+      getLevels(projectId);
+    }
+  }, [projectId, planLevels.length]);
 
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -61,18 +67,20 @@ export default function PlanSidebar({
     { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas` },
     { id: 5, title: 'MVP', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP` },
     { id: 6, title: 'Beta Testing', icon: Users, href: `/dashboard/${projectId}/plan/level_6_beta_testing` },
-    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch` }
+    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch` },
   ];
 
+  // Cek Status
   const isLevelCompleted = (id) => {
     if (id === 'overview') return true;
-    return project?.levels?.[id - 1]?.completed || false;
+    const level = planLevels.find((l) => l.order === id);
+    return level ? level.completed : false;
   };
 
   const isActive = (id) => {
     if (id === 'overview') return pathname === `/dashboard/${projectId}`;
-    const levelPath = sidebarItems.find(item => item.id === id)?.href;
-    return levelPath && pathname.startsWith(levelPath);
+    const item = sidebarItems.find((item) => item.id === id);
+    return item && pathname.startsWith(item.href);
   };
 
   const showText = isMobile ? mobileSidebarOpen : !isCollapsed;
@@ -97,7 +105,7 @@ export default function PlanSidebar({
             : 'lg:sticky lg:top-0 lg:z-0'
         }
         bg-white transition-all duration-300 ease-in-out
-        ${isMobile ? '' : (isCollapsed ? 'w-12' : 'w-64')}
+        ${isMobile ? '' : isCollapsed ? 'w-12' : 'w-64'}
         `}
       >
         <div className="px-4 pt-4 lg:p-0 mb-4">
@@ -136,7 +144,7 @@ export default function PlanSidebar({
                 ) : (
                   <button
                     onClick={handleToggle}
-                    className="text-[#5b5b5b] hover:text-[#f02d9c]"
+                    className="text-[#5b5b5b] hover:text-[#f02d9c] font-bold"
                     aria-label="Collapse sidebar"
                   >
                     ←
@@ -180,8 +188,8 @@ export default function PlanSidebar({
                   transition-all duration-200 ease-in-out
                   ${
                     !showText
-                      ? 'w-10 h-10 flex items-center justify-center mx-auto hover:bg-[#fbe2a7] hover:text-[#5b5b5b]'
-                      : 'p-3 flex items-center hover:bg-[#fbe2a7] hover:text-[#5b5b5b]'
+                      ? 'w-10 h-10 flex items-center justify-center mx-auto hover:border-[#f02d9c] hover:bg-[#fbe2a7] hover:text-[#5b5b5b]'
+                      : 'p-3 flex items-center hover:border-[#f02d9c] hover:bg-[#fbe2a7] hover:text-[#5b5b5b]'
                   }
                 `}
               >
