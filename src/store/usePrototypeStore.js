@@ -1,4 +1,3 @@
-// store/usePrototypeStore.js
 import { create } from 'zustand';
 import { apiRequest } from '@/lib/api';
 
