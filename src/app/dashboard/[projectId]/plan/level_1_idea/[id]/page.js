@@ -64,19 +64,6 @@ const parseProductsServices = (text) => {
     hargaJual,
     margin,
   };
-  for (const line of lines) {
-    if (line.startsWith('Jenis:')) data.jenis = line.replace('Jenis:', '').trim();
-    else if (line.startsWith('Deskripsi:')) data.deskripsi = line.replace('Deskripsi:', '').trim();
-    else if (line.startsWith('Fitur')) data.fitur = line;
-    else if (line.startsWith('Manfaat')) data.manfaat = line;
-    else if (line.startsWith('Harga:')) data.harga = line;
-    else if (line.startsWith('Biaya Modal:')) data.biayaModal = line;
-    else if (line.startsWith('Biaya Bahan Baku:')) data.biayaBahanBaku = line;
-    else if (line.startsWith('Harga Jual:')) data.hargaJual = line;
-    else if (line.startsWith('Margin:')) data.margin = line;
-    else if (!data.ide) data.ide = line;
-  }
-  return data;
 }
 
 
@@ -302,6 +289,8 @@ export default function Level1Page() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFinanceOpen, setIsFinanceOpen] = useState(false);
+    // --- Tambahkan state untuk confetti ---
+  const [showConfetti, setShowConfetti] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationData, setNotificationData] = useState({
     message: '',
@@ -470,7 +459,6 @@ useEffect(() => {
       <div className="flex mt-6">
         {/* Sidebar */}
         <PlanSidebar
-          projectId={projectId}
           currentLevelId={1}
           isMobile={isMobile}
           mobileSidebarOpen={mobileSidebarOpen}

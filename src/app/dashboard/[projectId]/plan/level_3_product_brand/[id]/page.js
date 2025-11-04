@@ -80,9 +80,9 @@ export default function Level3Page() {
   const brandIdentityId = id;
   const router = useRouter();
 console.log(brandIdentityId)
-  const { planLevels, updateStatusLevel } = useProjectStore()
+  const { planLevels, updateLevelStatus } = useProjectStore()
   const projectId = planLevels[0].project._id;
-  const { brandIdentity, getBrandIdentity, updateBrandIdentity } = useBrandIdentityStore();
+  const { brandIdentity, getBrandIdentity, updateBrandIdentity, uploadBrandIdentityImage } = useBrandIdentityStore();
 
   console.log(projectId)
   useEffect(() => {
@@ -171,10 +171,10 @@ console.log(brandIdentityId)
     setActivePickerIndex(Math.max(0, activePickerIndex - 1));
   };
 
-  // Logo upload
-  const handleLogoUpload = (e) => {
+  const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
     if (!validTypes.includes(file.type)) {
       alert('Format gambar tidak didukung. Gunakan JPG, PNG, atau GIF.');
@@ -184,15 +184,32 @@ console.log(brandIdentityId)
       alert('Ukuran gambar terlalu besar. Maksimal 5MB.');
       return;
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setLogoPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
+
+    // simpan preview di UI
+    setLogoPreview(URL.createObjectURL(file));
+
+    // upload ke backend
+    const formData = new FormData();
+    formData.append('file', file); // kirim file asli
+
+    try {
+      const res = await fetch(`http://localhost:3000/api/brand-identity/${brandIdentityId}/logoPreview`, {
+        method: 'PUT',
+        body: formData,
+      });
+      const data = await res.json();
+      console.log('Upload success:', data);
+
+      // misal respon Cloudinary ada url-nya
+      setLogoPreview(data.secure_url);
+    } catch (err) {
+      console.error('Error uploading logo:', err);
+    }
   };
 
+
   // Save
-  const handleSave = () => {
+  const handleSave = async () => {
     const data = {
       brandName,
       tagline,
@@ -204,6 +221,7 @@ console.log(brandIdentityId)
     if (brandIdentity) {
       updateBrandIdentity(brandIdentityId, data);
     }
+    await updateLevelStatus(planLevels[2]._id, { completed: true });
     if (project) {
       const updatedLevels = [...(project.levels || [])];
       while (updatedLevels.length <= 2) {
@@ -212,7 +230,7 @@ console.log(brandIdentityId)
       updatedLevels[2] = {
         id: 3,
         completed: !!brandName,
-        data: { concept: data },
+        data: { concept : data },
       };
       updateProject(projectId, { levels: updatedLevels });
     }

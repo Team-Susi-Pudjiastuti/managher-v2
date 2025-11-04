@@ -14,12 +14,12 @@ export default function ProjectCard({ project, onClick }) {
   const id = project._id;
   const { getLevels, levels, deleteProject} = useProjectStore();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
   useEffect(() => {
     getLevels(id);
   }, [id]);
+  console.log(project)
 
-  const totalLevels = levels.length;
+  const totalLevels = levels.map((l) => l.id).length;
   const completedLevels = levels.filter((l) => l.completed).length;
   const progress = Math.min(100, Math.floor((completedLevels / totalLevels) * 100));
   const isCompleted = completedLevels === totalLevels;

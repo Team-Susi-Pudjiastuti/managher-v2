@@ -23,6 +23,14 @@ const useBrandIdentityStore = create(
           console.error('Error updating brand identity:', error);
         }
       },
+      // uploadBrandIdentityImage: async (id, formData) => {
+      //   try {
+      //     const res = await apiRequest(`brand-identity/${id}/image`, 'PUT', formData);
+      //     set((state) => ({ brandIdentity: { ...state.brandIdentity, ...res.data } }));
+      //   } catch (error) {
+      //     console.error('Error uploading brand identity image:', error);
+      //   }
+      // },
     }),
     {
       name: 'brand-identity-storage',

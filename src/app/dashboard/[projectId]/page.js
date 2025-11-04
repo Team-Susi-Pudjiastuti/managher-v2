@@ -43,7 +43,7 @@ export default function DashboardPage() {
   }
 
   const enrichedLevels = levels.map(level => {
-    const existing = levels?.find(l => l.id === level._id);
+    const existing = levels?.find(l => l.order === level.order);
     return {
       ...level,
       completed: existing?.completed || false,
@@ -61,7 +61,7 @@ export default function DashboardPage() {
     // Fase Sell & Scale Up selalu dianggap "belum selesai"
     const isLockedPhase = level.phase.name !== 'plan';
     const isCompleted = !isLockedPhase && level.completed;
-    const isActive = !isLockedPhase && level._id === currentLevel._id && !isCompleted;
+    const isActive = !isLockedPhase && level.order === currentLevel.order && !isCompleted;
 
     let bgColor, textColor, borderColor, badgeBg;
 

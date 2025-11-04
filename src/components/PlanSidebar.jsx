@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 
 export default function PlanSidebar({
-  projectId,
   currentLevelId = 'overview',
   isMobile = false,
   mobileSidebarOpen = false,
@@ -26,6 +25,7 @@ export default function PlanSidebar({
 }) {
   const { planLevels } = useProjectStore();
   const pathname = usePathname();
+  const projectId = planLevels?.[0]?.project._id;
 
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
