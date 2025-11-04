@@ -34,6 +34,14 @@ Gunakan format seperti contoh berikut (tulis dalam Bahasa Indonesia):
 
 Contoh format hasil:
 {
+  "marketPotential": "Ibu bekerja usia 28–45 tahun ingin menyediakan makanan sehat untuk keluarga setiap hari",
+  "problemSolved": "Waktu terbatas, tidak sempat belanja & masak, takut anak kurang gizi, stres mengatur menu",
+  "solutionOffered": "Anak sehat dan tumbuh optimal, hemat waktu, tidak perlu mikir masak, tenang secara mental",
+  "productsServices": "Meal Prep Box untuk Ibu Bekerja\\nJenis: Layanan Langganan Makanan Sehat\\nDeskripsi: Kotak makanan siap saji mingguan dengan resep bergizi dari ahli nutrisi, bahan organik lokal\\nFitur utama: Dikirim setiap Senin, siap saji dalam 5 menit, bisa atur alergi\\nManfaat: Hemat 10 jam/minggu, anak lebih sehat, tidak perlu mikir menu\\nHarga: Rp299.000/minggu (5 menu)\\nBiaya Modal: Rp5.000.000 (kompor portable, wadah food-grade 100 pcs, branding awal)\\nBiaya Bahan Baku: ±Rp180.000/minggu\\nMargin: ±40%",
+  "unfairAdvantage": "Dikirim setiap Senin pagi → tidak perlu belanja\\nSiap saji dalam 5 menit → tidak perlu masak\\nBisa atur alergi → aman untuk anak",
+  "uniqueValueProposition": "Hemat 10 jam/minggu\\nAnak-anak lebih sehat\\nTidak perlu mikir menu\\nHarga: Rp299.000/minggu (5 menu)"
+}
+  {
   "interest": "makanan sehat",
   "marketPotential": "Ibu bekerja usia 28–45 tahun ingin menyediakan makanan sehat untuk keluarga setiap hari",
   "problemSolved": "Waktu terbatas, tidak sempat belanja & masak, takut anak kurang gizi, stres mengatur menu",

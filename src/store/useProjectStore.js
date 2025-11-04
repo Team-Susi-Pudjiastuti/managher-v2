@@ -74,9 +74,9 @@ const useProjectStore = create(
       const res = await apiRequest(`level/${projectId}`, 'GET');
       const levels = res.data || [];
       set({ levels: levels });
-      set({ planLevels: levels.filter(l => l.phase.name === 'plan') });  
-      set({ sellLevels: levels.filter(l => l.phase.name === 'sell') });
-      set({ scaleUpLevels: levels.filter(l => l.phase.name === 'scale_up') });  
+      set({ planLevels: levels.filter(l => l.phase.name === 'plan') || [] });  
+      set({ sellLevels: levels.filter(l => l.phase.name === 'sell') || [] });
+      set({ scaleUpLevels: levels.filter(l => l.phase.name === 'scale_up') || [] });  
       return levels;
     },
     updateLevelStatus: async (id, updates) => {

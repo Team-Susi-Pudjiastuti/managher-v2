@@ -135,6 +135,10 @@ export default function RWW() {
   const updateProject = useProjectStore((state) => state.updateProject);
   const { rwwTesting, getRWWTesting, updateRWWTesting, addRWWTesting } = useRWWTestingStore();
   const { getBusinessIdeas, businessIdeas} = useBusinessIdeaStore();
+  const { planLevels, updateLevelStatus } = useProjectStore();
+
+  console.log(planLevels)
+
   
   // --- Tambahkan state untuk confetti ---
   const [showConfetti, setShowConfetti] = useState(false);
@@ -164,7 +168,7 @@ export default function RWW() {
   const [jenisKelamin, setJenisKelamin] = useState('');
   const [usia, setUsia] = useState('');
   const [aktivitas, setAktivitas] = useState('');
-  const { planLevels } = useProjectStore();;
+
   // const businessIdeaId = planLevels?.[0].entities[0].entity_ref || null;
 
   useEffect(() => {
@@ -221,8 +225,9 @@ useEffect(() => {
   // --- PROGRESS BAR LOGIC ---
   const totalLevels = planLevels.length;
   const completedLevels = planLevels?.filter((l) => l.completed).length || 0;
-  const currentXp = completedLevels * 10;
-  const totalXp = totalLevels * 10;
+  const currentXp = planLevels[0]?.xp + planLevels[1]?.xp;
+  const totalXp = totalLevels * planLevels[1]?.xp;
+
   const firstIncompleteLevel = planLevels?.find(l => !l.completed) || { id: 3 };
   
   <Confetti />
@@ -364,7 +369,7 @@ useEffect(() => {
     </div>
   );
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const dataToSave = {
       responses,
       averages,
@@ -382,10 +387,10 @@ useEffect(() => {
       addRWWTesting({
         projectId,
         responses,
-        averages,
         isValid: parseFloat(averages.total) >= 3.5
       });
     }
+    await updateLevelStatus(planLevels[1]._id, { completed: true });
     
     // Also save to localStorage as backup
     if (typeof window !== 'undefined') {
@@ -813,7 +818,7 @@ useEffect(() => {
                             </div>
                             <div className="flex flex-wrap gap-2 justify-center">
                               <Link
-                                href={`/dashboard/${projectId}/plan/level_1_idea/${planLevels[0]._id}`}
+                                href={`/dashboard/${projectId}/plan/level_1_idea/${planLevels?.[0]?._id}`}
                                 className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
                               >
                                 <ChevronLeft size={16} />
@@ -869,10 +874,10 @@ useEffect(() => {
                         </div>
                         <div className="flex flex-wrap gap-3">
                           <div className="flex items-center gap-1.5 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Lightbulb size={12} /> {planLevels[1].xp} XP
+                            <Lightbulb size={12} /> {planLevels[1]?.xp} XP
                           </div>
                           <div className="flex items-center gap-1.5 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Award size={12} /> {planLevels[1].badge}
+                            <Award size={12} /> {planLevels[1]?.badge}
                           </div>
                         </div>
                         <p className="mt-3 text-xs text-[#5b5b5b]">

@@ -63,14 +63,15 @@ export default function PlanSidebar({
     { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch/${planLevels?.[6]?._id}` }
   ];
 
-  const isLevelCompleted = (id) => {
-    if (id === 'overview') return true;
-    return planLevels?.[id - 1]?.completed || false;
+  const order = planLevels.order
+  const isLevelCompleted = (order) => {
+    if (order === 'overview') return true;
+    return planLevels?.[order - 1]?.completed || false;
   };
 
-  const isActive = (id) => {
-    if (id === 'overview') return pathname === `/dashboard/${projectId}`;
-    const levelPath = sidebarItems.find(item => item.id === id)?.href;
+  const isActive = (order) => {
+    if (order === 'overview') return pathname === `/dashboard/${projectId}`;
+    const levelPath = sidebarItems.find(item => item.id === order)?.href;
     return levelPath && pathname.startsWith(levelPath);
   };
 
