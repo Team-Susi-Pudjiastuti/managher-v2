@@ -3,39 +3,49 @@
 import { useState } from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import useAuthStore from '@/store/useAuthStore';
 import Link from 'next/link';
 import NotificationModal from '@/components/NotificationModal';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login } = useAuthStore();
+  const router = useRouter();
+
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+  });
+
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [modalType, setModalType] = useState('success');
-  const router = useRouter();
 
-  const handleLogin = () => {
-    if (!email.trim() || !password.trim()) {
-      setModalMessage('Email dan kata sandi wajib diisi.');
+  const closeModal = () => setShowModal(false);
+
+  const handleLogin = async () => {
+    const { username, password } = formData;
+    if (!username.trim() || !password.trim()) {
+      setModalMessage('Username dan kata sandi wajib diisi.');
       setModalType('error');
       setShowModal(true);
       return;
     }
 
-    // Simulasi login berhasil
-    setModalMessage('Login berhasil!');
-    setModalType('success');
-    setShowModal(true);
-
-    // Arahkan ke onboarding setelah 1.5 detik
-    setTimeout(() => {
-      router.push('/onboarding');
-    }, 1500);
+    const result = await login(username, password);
+    if (result.success) {
+      setModalMessage(result.message || 'Login berhasil!');
+      setModalType('success');
+      setShowModal(true);
+      setTimeout(() => {
+        router.push(`/onboarding/${result.user.id}`);
+      }, 1500);
+    } else {
+      setModalMessage(result.message || 'Login gagal. Coba lagi.');
+      setModalType('error');
+      setShowModal(true);
+    }
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-  };
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-white font-[Poppins] p-6">
@@ -52,7 +62,7 @@ export default function LoginPage() {
             Masuk ke akun <span className="font-semibold">ManagHer</span> Anda
           </p>
 
-          {/* Input Email */}
+          {/* Input Username */}
           <div
             className="flex items-center gap-2 border-t border-l border-black rounded-lg px-3 py-2 mb-4"
             style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
@@ -68,10 +78,10 @@ export default function LoginPage() {
           >
             <Mail className="text-[#7a7a7a]" size={20} strokeWidth={2} />
             <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              placeholder="Username"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins]"
             />
           </div>
@@ -94,8 +104,8 @@ export default function LoginPage() {
             <input
               type="password"
               placeholder="Kata Sandi"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="flex-1 bg-transparent text-[#5b5b5b] text-sm placeholder:text-[#7a7a7a] focus:outline-none font-[Poppins]"
             />
           </div>

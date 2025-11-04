@@ -5,35 +5,30 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import useProjectStore from '@/store/useProjectStore';
 import Breadcrumb from '@/components/Breadcrumb';
+import { Lock, Check, Sparkle } from 'lucide-react';
+import * as Icons from 'lucide-react';
 
-import { 
-  Lightbulb, CheckCircle, Palette, FileText, Box, Users, Rocket,
-  Lock, Check, Sparkle 
-} from 'lucide-react';
-
-const PLAN_LEVELS = [
-  { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb, path: "level_1_idea", badge: "AI Innovator" },
-  { id: 2, title: "RWW Analysis", phase: "plan", xp: 10, icon: CheckCircle, path: "level_2_rww", badge: "Validator Pro" },
-  { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette, path: "level_3_product_brand", badge: "Brand Builder" },
-  { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText, path: "level_4_lean_canvas", badge: "Canvas Master" },
-  { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box, path: "level_5_MVP", badge: "MVP Maker" },
-  { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users, path: "level_6_beta_testing", badge: "Tester Hero" },
-  { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket, path: "level_7_launch", badge: "Launch Ready" },
-];
+// const PLAN_LEVELS = [
+//   { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb, path: "level_1_idea", badge: "AI Innovator" },
+//   { id: 2, title: "RWW Analysis", phase: "plan", xp: 10, icon: CheckCircle, path: "level_2_rww", badge: "Validator Pro" },
+//   { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette, path: "level_3_product_brand", badge: "Brand Builder" },
+//   { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText, path: "level_4_lean_canvas", badge: "Canvas Master" },
+//   { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box, path: "level_5_MVP", badge: "MVP Maker" },
+//   { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users, path: "level_6_beta_testing", badge: "Tester Hero" },
+//   { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket, path: "level_7_launch", badge: "Launch Ready" },
+// ];
 
 export default function PlanLevelsPage() {
   const { projectId } = useParams();
-  const [project, setProject] = useState(null);
-  const projects = useProjectStore((state) => state.projects);
+  const { getLevels, levels, planLevels } = useProjectStore();
 
   useEffect(() => {
-    if (projectId) {
-      const found = projects.find((p) => p.id === projectId);
-      setProject(found);
+    if (projectId) {;
+      getLevels(projectId);
     }
-  }, [projectId, projects]);
+  }, [projectId]);
 
-  if (!project) {
+  if (!levels) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white p-4">
         Memuat...
@@ -41,8 +36,8 @@ export default function PlanLevelsPage() {
     );
   }
 
-  const enrichedLevels = PLAN_LEVELS.map(level => {
-    const existing = project?.levels?.find(l => l.id === level.id);
+  const enrichedLevels = planLevels.map(level => {
+    const existing = levels?.find(l => l.id === level._id);
     return {
       ...level,
       completed: existing?.completed || false,
@@ -51,7 +46,7 @@ export default function PlanLevelsPage() {
 
   const completedLevels = enrichedLevels.filter(l => l.completed);
   const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
-  const totalXp = PLAN_LEVELS.reduce((sum, l) => sum + l.xp, 0);
+  const totalXp = planLevels.reduce((sum, l) => sum + l.xp, 0);
   const phaseProgress = Math.min(100, Math.floor((currentXp / totalXp) * 100));
 
   const firstIncompleteLevel = enrichedLevels.find(l => !l.completed);
@@ -63,7 +58,7 @@ export default function PlanLevelsPage() {
 
   const renderLevelBadge = (level) => {
     const isCompleted = level.completed;
-    const isActive = level.id === firstIncompleteLevel?.id;
+    const isActive = level._id === firstIncompleteLevel?._id;
 
     let bgColor, textColor, borderColor, badgeBg;
 
@@ -84,9 +79,25 @@ export default function PlanLevelsPage() {
       badgeBg = 'bg-gray-300 text-gray-700';
     }
 
-    const Icon = level.icon;
+    const iconMap = {
+        Lightbulb: Icons.Lightbulb,
+        CheckCircle: Icons.CheckCircle,
+        Palette: Icons.Palette,
+        FileText: Icons.FileText,
+        Box: Icons.Box,
+        Users: Icons.Users,
+        Rocket: Icons.Rocket,
+        Package: Icons.Package,
+        User: Icons.User,
+        ShoppingBag: Icons.ShoppingBag,
+        BarChart3: Icons.BarChart3,
+        TrendingUp: Icons.TrendingUp,
+      };
+      
+      const Icon = iconMap[level.icon] || Icons.HelpCircle;
 
-    return (
+      
+      return (
       <div
         className={`w-[120px] h-[130px] rounded-lg border ${borderColor} ${bgColor} ${textColor} p-2 flex flex-col items-center justify-between`}
       >
@@ -94,7 +105,7 @@ export default function PlanLevelsPage() {
           <Icon size={16} className="text-[#f02d9c]" />
         </div>
         <div className="text-center mt-1">
-          <h4 className="font-bold text-xs">L{level.id}</h4>
+          <h4 className="font-bold text-xs">L{level.order}</h4>
           <p className="text-[10px] mt-0.5">{level.title}</p>
           <span className="block text-[8px] font-semibold mt-1">+{level.xp} XP</span>
         </div>
@@ -139,12 +150,13 @@ export default function PlanLevelsPage() {
         <div className="space-y-4 sm:space-y-6">
           {enrichedLevels.map((level) => {
             const isCompleted = level.completed;
-            const isUnlocked = level.id <= (firstIncompleteLevel?.id || Infinity);
+            const isUnlocked = level._id <= (firstIncompleteLevel?._id || Infinity);
+            const isActive = level._id === firstIncompleteLevel?._id;
 
             if (!isUnlocked) {
               // TERKUNCI
               return (
-                <div key={level.id} className="relative opacity-70 cursor-not-allowed">
+                <div key={level._id} className="relative opacity-70 cursor-not-allowed">
                   <div className="absolute inset-0 translate-x-1 translate-y-1 bg-gray-300 rounded-xl sm:rounded-2xl"></div>
                   <div
                     className="relative bg-white rounded-xl sm:rounded-2xl border-t border-l border-gray-400 p-3 sm:p-5"
@@ -166,12 +178,12 @@ export default function PlanLevelsPage() {
                 </div>
               );
             }
-
+            console.log(level)
             // SELURUH CARD
             return (
               <Link
-                key={level.id}
-                href={`/dashboard/${projectId}/plan/${level.path}`}
+                key={level._id}
+                href={`/dashboard/${projectId}/plan/${level.path}/${level.entities[0].entity_ref}`}
                 className="block"
               >
                 <div className="relative group">
@@ -194,7 +206,7 @@ export default function PlanLevelsPage() {
                               <Check size={14} className="text-green-600 mt-0.5 shrink-0" />
                               <span>Sudah selesai</span>
                             </>
-                          ) : level.id === firstIncompleteLevel?.id ? (
+                          ) : level._id === firstIncompleteLevel?.id ? (
                             <>
                               <Sparkle size={14} className="text-[#f02d9c] mt-0.5 shrink-0" />
                               <span>Klik card ini untuk mulai mengerjakan</span>
@@ -231,4 +243,4 @@ export default function PlanLevelsPage() {
       </div>
     </div>
   );
-}
+} 

@@ -1,15 +1,26 @@
 'use client';
 
+import useProjectStore from '@/store/useProjectStore';
+import { useEffect } from 'react';
+import { CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Trash2, X } from 'lucide-react';
-import useProjectStore from '@/store/useProjectStore';
 
 export default function ProjectCard({ project, onClick }) {
-  const { deleteProject } = useProjectStore();
+  // const totalLevels = 12; 
+  // const completedLevels = project.levels.filter((l) => l.completed).length;
+  // const progress = Math.min(100, Math.floor((completedLevels / totalLevels) * 100));
+  // const isCompleted = completedLevels === totalLevels;
+  const id = project._id;
+  const { getLevels, levels, deleteProject} = useProjectStore();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const totalLevels = 12;
-  const completedLevels = project.levels.filter((l) => l.completed).length;
+  useEffect(() => {
+    getLevels(id);
+  }, [id]);
+
+  const totalLevels = levels.length;
+  const completedLevels = levels.filter((l) => l.completed).length;
   const progress = Math.min(100, Math.floor((completedLevels / totalLevels) * 100));
   const isCompleted = completedLevels === totalLevels;
 
@@ -19,7 +30,7 @@ export default function ProjectCard({ project, onClick }) {
   };
 
   const confirmDelete = () => {
-    deleteProject(project.id);
+    deleteProject(id);
     setIsDeleteModalOpen(false);
   };
 
@@ -49,18 +60,20 @@ export default function ProjectCard({ project, onClick }) {
         </button>
 
         <h3 className="font-bold text-[#5b5b5b] text-lg mb-2 truncate font-[Poppins]">
-          {project.name}
+          {project.title}
         </h3>
 
         <p className="text-[#7a7a7a] text-sm mb-3 font-[Poppins]">
-          Level: <span className="font-semibold">{completedLevels}/{totalLevels}</span>
+          Level: <span className="font-semibold">
+          {completedLevels}/{totalLevels}
+          </span> 
         </p>
 
         <div className="w-full bg-[#f0f0f0] rounded-full h-2 border border-[#e0e0e0] mb-2">
           <div
             className="bg-[#f02d9c] h-2 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
-          ></div>
+            style={{ width: `${progress}%` }}>
+          </div>
         </div>
 
         <div className="flex justify-between items-center">
