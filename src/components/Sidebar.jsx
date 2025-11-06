@@ -61,9 +61,13 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 mb-2 relative z-10">
           <div className="flex items-center gap-2">
-            <Sparkle size={24} className="text-[#f02d9c]" />
             {(effectiveOpen || isMobile) && (
+              <>
+              <Link href="/" className="flex items-center gap-2">
+                <img src="/managher_logo.png" alt="ManagHer Logo" className="w-8 h-8" />
+              </Link>
               <span className="text-lg font-bold text-[#f02d9c]">ManagHer</span>
+              </>
             )}
           </div>
 
@@ -119,18 +123,15 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
         </nav>
 
         <div className="px-2 pb-4">
-          <Link href={`/onboarding/${userId}`} className="flex items-center gap-3 px-3 py-2.5 text-sm text-[#f02d9c] rounded-lg hover:bg-[#fbe2a7] transition-colors">
-          Keluar
-          </Link>
           <button
-            onClick={() => confirm('Yakin ingin keluar?') && (window.location.href = '/login')}
-            title={showTooltip ? 'Logout' : undefined}
+            onClick={() => confirm('Yakin ingin keluar proyek?') && (window.location.href = `/onboarding/${userId}`)}
+            title={showTooltip ? 'Keluar proyek' : undefined}
             className={`flex items-center gap-3 px-3 py-2.5 text-sm text-[#f02d9c] rounded-lg hover:bg-[#fbe2a7] transition-colors ${
               !effectiveOpen && !isMobile ? 'justify-center px-2' : ''
             }`}
           >
             <LogOut size={18} className="text-[#f02d9c]" />
-            {(effectiveOpen || isMobile) && 'Logout'}
+            {(effectiveOpen || isMobile) && 'Keluar'}
           </button>
         </div>
       </div>

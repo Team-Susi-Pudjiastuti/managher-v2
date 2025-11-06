@@ -18,13 +18,14 @@ import useBusinessIdeaStore from '@/store/useBusinessIdeaStore';
 
 function mapIdeaToLeanCanvas(idea, projectId) {
   const product = idea.productsServices?.[0] || {};
+  console.log('product', product)
   return {
     project: projectId,
     problem: idea.problem || '',
-    solution: `${idea.solution || ''}\n\n${product.deskripsi || ''}`,
+    solution: `${product.title || ''}\n\n${product.deskripsi || ''}`,
     customerSegments: idea.customerSegments || '',
     uniqueValueProposition: `${idea.interest?.toUpperCase() || ''} — ${product.keunggulan_unik || ''}`,
-    unfairAdvantage: idea.gainCreators || '',
+    unfairAdvantage: idea.painRelievers || '',
     keyMetrics: product.angka_penting || '',
     channels: product.cara_jualan || '',
     costStructure: `${product.biaya_modal || ''}\n${product.biaya_bahan_baku || ''}`,
@@ -136,7 +137,6 @@ export default function Level4Page() {
     case 'problem':
     case 'solution':
     case 'customerSegments':
-    case 'uniqueValueProposition':
     case 'unfairAdvantage':
     case 'gainCreators':
       return businessIdea[key] || '';
@@ -149,6 +149,8 @@ export default function Level4Page() {
       return `${product.biaya_modal || ''}\n${product.biaya_bahan_baku || ''}`;
     case 'revenueStreams':
       return businessIdea.productsServices?.[0]?.harga || businessIdea.productsServices?.[0]?.harga_jual || '';
+    case 'uniqueValueProposition':
+      return `${businessIdea.interest?.toUpperCase() || ''} — ${businessIdea.productsServices?.[0]?.keunggulan_unik || ''}`;
     default:
       return '';
   }
@@ -514,14 +516,6 @@ export default function Level4Page() {
                       <ChevronLeft size={16} /> Prev
                     </button>
 
-                    {isEditing && (
-                      <button
-                        onClick={handleSave}
-                        className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1 text-sm"
-                      >
-                        <CheckCircle size={16} /> Simpan
-                      </button>
-                    )}
 
                     <button
                       onClick={() => setIsEditing(!isEditing)}
@@ -530,12 +524,20 @@ export default function Level4Page() {
                       <Eye size={16} /> {isEditing ? 'Lihat Preview' : 'Edit'}
                     </button>
                     {isEditing && (
+                     <>
                       <button
-                        onClick={() => router.push(`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}`)}
+                        onClick={handleSave}
+                        className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1 text-sm"
+                      >
+                        <CheckCircle size={16} /> Simpan
+                      </button>
+                      <button
+                      onClick={() => router.push(`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}`)}
                         className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1 text-sm"
                       >
                         Next <ChevronRight size={16} />
                       </button>
+                      </> 
                     )}
                   </div>
                 </div>

@@ -28,6 +28,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en"> 
+      <link
+        rel="icon"
+        href="/managher_logo.png"
+        sizes="any"
+      />
       <body className={`${poppins.variable} ${lora.variable} ${firaCode.variable}`}>{children}</body>
     </html>
   );
