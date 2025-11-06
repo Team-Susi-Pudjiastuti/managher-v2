@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 import useRWWTestingStore from '@/store/useRWWTesting';
-import useBusinessIdeaStore from '@/store/useBusinessIdea';
+import useBusinessIdeaStore from '@/store/useBusinessIdeaStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
@@ -134,12 +134,15 @@ export default function RWW() {
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
   const { rwwTesting, getRWWTesting, updateRWWTesting, addRWWTesting } = useRWWTestingStore();
-  const { getBusinessIdeas, businessIdeas} = useBusinessIdeaStore();
+  const { getBusinessIdea, businessIdea} = useBusinessIdeaStore();
   const { planLevels, updateLevelStatus } = useProjectStore();
+  const nextPrevLevel = (num) => {
+    const level = planLevels?.find(
+      (l) => l?.project?._id === projectId && l?.order === num
+    );
+    return level?.entities?.[0]?.entity_ref || null;
+  };
 
-  console.log(planLevels)
-
-  
   // --- Tambahkan state untuk confetti ---
   const [showConfetti, setShowConfetti] = useState(false);
   
@@ -183,17 +186,15 @@ export default function RWW() {
       }
     };
   }, []);
-
-useEffect(() => {
-  const businessIdeaId = planLevels?.[0]?.entities?.[0]?.entity_ref;
-
-  if (businessIdeaId) {
-    getBusinessIdeas(businessIdeaId);
-  }
-}, [planLevels]);
-
-
   
+  const businessIdeaId = planLevels?.[0]?.entities?.[0]?.entity_ref;
+  useEffect(() => {
+
+    if (businessIdeaId) {
+      getBusinessIdea(businessIdeaId);
+    }
+  }, [planLevels]);
+
   // Load RWW Testing data from database
   useEffect(() => {
     if (projectId) {
@@ -225,8 +226,8 @@ useEffect(() => {
   // --- PROGRESS BAR LOGIC ---
   const totalLevels = planLevels.length;
   const completedLevels = planLevels?.filter((l) => l.completed).length || 0;
-  const currentXp = planLevels[0]?.xp + planLevels[1]?.xp;
-  const totalXp = totalLevels * planLevels[1]?.xp;
+  const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
+  const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
   const firstIncompleteLevel = planLevels?.find(l => !l.completed) || { id: 3 };
   
@@ -434,6 +435,8 @@ useEffect(() => {
   const genderSummary = getGenderSummary();
   const ageGroupSummary = getAgeGroupSummary();
 
+  console.log(businessIdea)
+
   return (
     <div className="min-h-screen bg-white font-[Poppins]">
       {/* Tampilkan Confetti jika kondisi terpenuhi */}
@@ -554,15 +557,15 @@ useEffect(() => {
                                     )}
                                   </div>
                                 )} */}
-                                {businessIdeas?.uniqueValueProposition && (
+                                {businessIdea?.productsServices[0].keunggulan_unik && (
                                   <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
                                     <p className="font-medium text-[#0a5f61] text-sm">Apa yang bikin kamu beda?</p>
                                     <p className="text-[15px] text-[#5b5b5b] mt-1">
-                                      {businessIdeas?.uniqueValueProposition.replace('Keunggulan Unik: ', '')}
+                                      {businessIdea?.productsServices[0].keunggulan_unik.replace('Keunggulan Unik: ', '')}
                                     </p>
                                   </div>
                                 )}
-                                {businessIdeas?.keyMetrics && (
+                                {/* {businessIdea?.keyMetrics && (
                                   <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
                                     <p className="font-medium text-[#0a5f61] text-sm">Apa yang mau kamu ukur?</p>
                                     <div className="mt-1 flex flex-wrap gap-1.5">
@@ -580,7 +583,7 @@ useEffect(() => {
                                     </div>
                                   </div>
                                 )}
-                                {businessIdeas?.channel && (
+                                {businessIdea?.channel && (
                                   <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
                                     <p className="font-medium text-[#0a5f61] text-sm">Di mana kamu jualan?</p>
                                     <div className="mt-1 flex flex-wrap gap-1.5">
@@ -597,7 +600,7 @@ useEffect(() => {
                                         ))}
                                     </div>
                                   </div>
-                                )}
+                                )} */}
                               </>
                             );
                           })()}
@@ -818,7 +821,7 @@ useEffect(() => {
                             </div>
                             <div className="flex flex-wrap gap-2 justify-center">
                               <Link
-                                href={`/dashboard/${projectId}/plan/level_1_idea/${planLevels?.[0]?._id}`}
+                                href={`/dashboard/${projectId}/plan/level_1_idea/${nextPrevLevel(1)}`}
                                 className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
                               >
                                 <ChevronLeft size={16} />
@@ -839,7 +842,7 @@ useEffect(() => {
                                 Simpan
                               </button>
                               <Link
-                                href={`/dashboard/${projectId}/plan/level_3_product_brand`}
+                                href={`/dashboard/${projectId}/plan/level_3_product_brand/${nextPrevLevel(3)}`}
                                 className="px-4 py-2 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black flex items-center gap-1"
                               >
                                 Next

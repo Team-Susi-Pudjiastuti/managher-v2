@@ -5,10 +5,10 @@ import { apiRequest } from '../lib/api';
 const useBusinessIdeaStore = create(
   persist(
     (set, get) => ({
-      businessIdeas: null,
+      businessIdea: {},
       loading: false,
       error: null,
-      getBusinessIdeas: async (id) => {
+      getBusinessIdea: async (id) => {
         try {
           console.log("📡 Fetching business idea by ID:", id);
           const res = await apiRequest(`business-idea/${id}`, 'GET');
@@ -21,18 +21,14 @@ const useBusinessIdeaStore = create(
         }
       },
 
-
-      updateBusinessIdeas: async (id, updateData) => {
+    updateBusinessIdea: async (id, updateData) => {
         const res = await apiRequest(`business-idea/${id}`, 'PUT', updateData);
         const updates = res.data || {};
         set((state) => ({
-          businessIdeas: Array.isArray(state.businessIdeas) 
-            ? state.businessIdeas.map((p) => p._id === id ? { ...p, ...updates } : p)
-            : []
+          businessIdea: { ...state.businessIdea, ...updates },
         }));
         return updates;
       },
-
 
     }),
   )

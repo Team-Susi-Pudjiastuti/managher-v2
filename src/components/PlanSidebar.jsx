@@ -54,16 +54,15 @@ export default function PlanSidebar({
 
   const sidebarItems = [
     { id: 'overview', title: 'Overview', icon: LayoutDashboard, href: `/dashboard/${projectId}` },
-    { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level_1_idea/${planLevels?.[0]?._id}` },
-    { id: 2, title: 'RWW Analysis', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww/${planLevels?.[1]?._id}` },
-    { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level_3_product_brand/${planLevels?.[2]?._id}` },
-    { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas/${planLevels?.[3]?._id}` },
-    { id: 5, title: 'MVP', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP/${planLevels?.[4]?._id}` },
-    { id: 6, title: 'Beta Testing', icon: Users, href: `/dashboard/${projectId}/plan/level_6_beta_testing/${planLevels?.[5]?._id}` },
-    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch/${planLevels?.[6]?._id}` }
+    { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level_1_idea/${planLevels?.[0]?.entities[0]?.entity_ref}` },
+    { id: 2, title: 'RWW Analysis', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww/${planLevels?.[1]?.entities[0]?.entity_ref}` },
+    { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level_3_product_brand/${planLevels?.[2]?.entities[0]?.entity_ref}` },
+    { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas/${planLevels?.[3]?.entities[0]?.entity_ref}` },
+    { id: 5, title: 'Prototype', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP/${planLevels?.[4]?.entities[0]?.entity_ref}` },
+    { id: 6, title: 'Beta Testing', icon: Users, href: `/dashboard/${projectId}/plan/level_6_beta_testing/${planLevels?.[5]?.entities[0]?.entity_ref}` },
+    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch/${planLevels?.[6]?.entities[0]?.entity_ref}` }
   ];
 
-  const order = planLevels.order
   const isLevelCompleted = (order) => {
     if (order === 'overview') return true;
     return planLevels?.[order - 1]?.completed || false;
@@ -106,19 +105,20 @@ export default function PlanSidebar({
               !showText
                 ? 'w-10 h-10 justify-center'
                 : 'p-3 justify-between'
-            }`}
+            }
+            ${ isMobile ? '' : isCollapsed ? 'ml-4' : '' }`}
             style={{
               boxShadow: '1px 1px 0 0 #fbe2a7',
             }}
           >
             {!showText ? (
-              <button
-                onClick={isMobile ? closeMobileSidebar : handleToggle}
-                className="text-[#5b5b5b] hover:text-[#f02d9c] transition-colors flex items-center justify-center"
-                aria-label="Toggle sidebar"
-              >
-                <MenuIcon size={16} />
-              </button>
+                <button
+                  onClick={isMobile ? closeMobileSidebar : handleToggle}
+                  className={`text-[#5b5b5b] hover:text-[#f02d9c] transition-colors flex items-center justify-center`}
+                  aria-label="Toggle sidebar"
+                >
+                  <MenuIcon size={16} />
+                </button>
             ) : (
               <>
                 <div className="flex items-center space-x-2 min-w-0">

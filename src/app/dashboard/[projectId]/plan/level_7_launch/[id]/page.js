@@ -134,7 +134,7 @@ export default function Level7Page() {
   const { projectId } = useParams();
   const router = useRouter();
 
-  const { planLevels, getLevels } = useProjectStore();
+  const { planLevels, getLevels, updateLevelStatus } = useProjectStore();
   const { checklist, fetchChecklist, toggleItem } = useLaunchChecklistStore();
 
   const [isMounted, setIsMounted] = useState(false);
@@ -185,9 +185,9 @@ export default function Level7Page() {
   };
 
   // Progress XP
-  const totalLevels = 7;
-  const currentXp = planLevels.filter((l) => l.completed).length * 10;
-  const totalXp = totalLevels * 10;
+  const totalLevels = planLevels.length;
+  const currentXp = planLevels.filter((l) => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
+  const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
   const currentLevel = planLevels.find((l) => l.order === 7);
   const xpGained = currentLevel?.xp || 10;
@@ -202,6 +202,7 @@ export default function Level7Page() {
   const handleSelesaiClick = () => {
     const allDone = Object.values(checklist).every((v) => v);
     if (allDone) {
+      updateLevelStatus(currentLevel._id, { completed: true });
       setShowConfetti(true);
       setShowNotification(true);
       setTimeout(() => setShowConfetti(false), 5000);

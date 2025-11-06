@@ -76,15 +76,18 @@ const getContrastTextColor = (hex) => {
 };
 
 export default function Level3Page() {
-  const { id } = useParams();
+  const { id, projectId } = useParams();
   const brandIdentityId = id;
   const router = useRouter();
-console.log(brandIdentityId)
   const { planLevels, updateLevelStatus } = useProjectStore()
-  const projectId = planLevels[0].project._id;
   const { brandIdentity, getBrandIdentity, updateBrandIdentity, uploadBrandIdentityImage } = useBrandIdentityStore();
+  const nextPrevLevel = (num) => {
+  const level = planLevels?.find(
+    (l) => l?.project?._id === projectId && l?.order === num
+  );
+  return level?.entities?.[0]?.entity_ref || null;
+};
 
-  console.log(projectId)
   useEffect(() => {
     if (projectId) {
       getBrandIdentity(projectId);
@@ -150,8 +153,8 @@ console.log(brandIdentityId)
   // Progress data
   const totalLevels = 7;
   const completedLevels = planLevels.filter((l) => l.completed).length || 0;
-  const currentXp = planLevels[2]?.xp + planLevels[1]?.xp + planLevels[0]?.xp || 0;
-  const totalXp = totalLevels * planLevels[2]?.xp || 0;
+  const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
+  const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
   const firstIncompleteLevel = planLevels.find((l) => !l.completed) || { id: 3 };
 
   // Palette
@@ -479,14 +482,14 @@ console.log(brandIdentityId)
                           {isEditing ? 'Lihat Preview' : 'Edit'}
                         </button>
                         <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_2_rww`)}
+                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_2_rww/${nextPrevLevel(2)}`)}
                           className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
                         >
                           <ChevronLeft size={16} />
                           Prev
                         </button>
                         <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas`)}
+                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextPrevLevel(4)}`)}
                           className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
                         >
                           Next <ChevronRight size={16} />

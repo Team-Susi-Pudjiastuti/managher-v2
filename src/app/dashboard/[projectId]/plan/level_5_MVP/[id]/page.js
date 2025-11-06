@@ -28,53 +28,7 @@ import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 import { usePrototypeStore } from '@/store/usePrototypeStore';
 import useProjectStore from '@/store/useProjectStore';
-
-// === CONFETTI ===
-const Confetti = () => {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const confettiCount = 120;
-    const gravity = 0.4;
-    const colors = ['#f02d9c', '#8acfd1', '#fbe2a7', '#ff6b9d', '#4ecdc4'];
-    const confettiPieces = Array.from({ length: confettiCount }, () => ({
-      x: Math.random() * canvas.width,
-      y: -10,
-      size: Math.random() * 8 + 4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      speedX: (Math.random() - 0.5) * 6,
-      speedY: Math.random() * 8 + 4,
-      rotation: Math.random() * 360,
-      rotationSpeed: (Math.random() - 0.5) * 8,
-    }));
-    let animationId;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      let stillFalling = false;
-      confettiPieces.forEach((piece) => {
-        piece.y += piece.speedY;
-        piece.x += piece.speedX;
-        piece.speedY += gravity;
-        piece.rotation += piece.rotationSpeed;
-        if (piece.y < canvas.height) stillFalling = true;
-        ctx.save();
-        ctx.translate(piece.x, piece.y);
-        ctx.rotate((piece.rotation * Math.PI) / 180);
-        ctx.fillStyle = piece.color;
-        ctx.fillRect(-piece.size / 2, -piece.size / 2, piece.size, piece.size);
-        ctx.restore();
-      });
-      if (stillFalling) animationId = requestAnimationFrame(animate);
-    };
-    animate();
-    return () => cancelAnimationFrame(animationId);
-  }, []);
-  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-9999" />;
-};
+import Confetti from '@/components/Confetti';
 
 // === PROGRESS BAR ===
 const PhaseProgressBar = ({ currentXp, totalXp }) => {
@@ -123,6 +77,7 @@ export default function Level5Page() {
   const [showNotification, setShowNotification] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [localProducts, setLocalProducts] = useState([]);
+  const nextPrevLevel = (num) => planLevels.find(l => l.project._id === projectId && l.order === num).entities[0].entity_ref
 
   const fileInputRefs = useRef({});
 
@@ -164,9 +119,9 @@ export default function Level5Page() {
   }, [products]);
 
   // === Progress & Level Data ===
-  const totalLevels = 7;
-  const currentXp = planLevels.filter((l) => l.completed).length * 10;
-  const totalXp = totalLevels * 10;
+  const totalLevels = planLevels.length;
+  const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
+  const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
   const currentLevel = planLevels.find((l) => l.order === 5);
   const xpGained = currentLevel?.xp || 10;
@@ -466,14 +421,14 @@ export default function Level5Page() {
                           {isEditing ? 'Lihat Preview' : 'Edit'}
                         </button>
                         <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas`)}
+                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextPrevLevel(4)}`)}
                           className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
                         >
                           <ChevronLeft size={16} />
                           Prev
                         </button>
                         <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_6_beta_testing`)}
+                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/${nextPrevLevel(6)}`)}
                           className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
                         >
                           Next <ChevronRight size={16} />

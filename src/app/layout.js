@@ -28,7 +28,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en"> 
-      <body>{children}</body>
+      <body className={`${poppins.variable} ${lora.variable} ${firaCode.variable}`}>{children}</body>
     </html>
   );
 }
