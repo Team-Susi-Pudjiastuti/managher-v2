@@ -407,11 +407,11 @@ export default function Level5Page() {
                       )}
                       <div className="flex flex-wrap gap-2 mt-4">
                         <button
-                          onClick={handleSave}
-                          className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
+                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextPrevLevel(4)}`)}
+                          className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
                         >
-                          <CheckCircle size={16} />
-                          Simpan
+                          <ChevronLeft size={16} />
+                          Prev
                         </button>
                         <button
                           onClick={() => setIsEditing(!isEditing)}
@@ -421,11 +421,11 @@ export default function Level5Page() {
                           {isEditing ? 'Lihat Preview' : 'Edit'}
                         </button>
                         <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextPrevLevel(4)}`)}
-                          className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
+                          onClick={handleSave}
+                          className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
                         >
-                          <ChevronLeft size={16} />
-                          Prev
+                          <CheckCircle size={16} />
+                          Simpan
                         </button>
                         <button
                           onClick={() => router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/${nextPrevLevel(6)}`)}

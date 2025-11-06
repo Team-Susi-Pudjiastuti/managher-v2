@@ -850,16 +850,16 @@ export default function Level1Page() {
                             <ChevronLeft size={16} /> Prev
                           </button>
                           <button
-                            onClick={handleSave}
-                            className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg hover:bg-[#f02d9c] active:bg-[#e02890] flex items-center gap-1"
-                          >
-                            <CheckCircle size={16} /> Simpan
-                          </button>
-                          <button
                             onClick={() => setIsEditing(!isEditing)}
                             className="px-4 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1"
                           >
                             <Edit3 size={16} /> {isEditing ? 'Selesai Edit' : 'Edit'}
+                          </button>
+                          <button
+                            onClick={handleSave}
+                            className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg hover:bg-[#f02d9c] active:bg-[#e02890] flex items-center gap-1"
+                          >
+                            <CheckCircle size={16} /> Simpan
                           </button>
                           <Link
                             href={`/dashboard/${projectId}/plan/level_2_rww/${nextPrevLevel(2)}`}
