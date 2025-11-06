@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+const API_URL = "https://managher-v2-back-end-production.up.railway.app/api"
 
 console.log('haloAPI_URL', API_URL)
 
