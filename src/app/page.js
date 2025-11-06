@@ -32,13 +32,13 @@ export default function LandingPage() {
       subtitle: 'New Product Development Process',
       color: '#8acfd1',
       levels: [
-        { id: 1, name: 'AI Idea & VPC Generator', desc: 'Dapatkan ide bisnis dan Value Proposition Canvas (VPC) secara instan dengan bantuan AI.', xp: 10, badge: 'AI Innovator', icon: Lightbulb },
-        { id: 2, name: 'RWW Analysis', desc: 'Validasi ide bisnismu: Real? Win? Worth It?', xp: 10, badge: 'Validator Pro', icon: CheckCircle },
-        { id: 3, name: 'Brand Identity', desc: 'Bangun identitas brand yang konsisten dan mudah dikenali.', xp: 10, badge: 'Brand Builder', icon: Palette },
-        { id: 4, name: 'Lean Canvas', desc: 'Rancang model bisnismu dalam satu halaman yang ringkas.', xp: 10, badge: 'Canvas Master', icon: FileText },
-        { id: 5, name: 'MVP', desc: 'Buat versi minimal produkmu untuk diuji ke pasar.', xp: 10, badge: 'MVP Maker', icon: Box },
-        { id: 6, name: 'Beta Testing', desc: 'Uji produkmu ke calon pelanggan nyata dan kumpulkan masukan.', xp: 10, badge: 'Tester Hero', icon: Users },
-        { id: 7, name: 'Persiapan Launching', desc: 'Siapkan checklist dan aset penting sebelum rilis resmi.', xp: 10, badge: 'Launch Ready', icon: ClipboardCheck }
+        { id: 1, name: 'AI Idea & VPC Generator', desc: 'Dapatkan ide bisnis dan Value Proposition Canvas (VPC) secara instan dengan bantuan AI.', xp: 20, badge: 'Percikan Kreatif', icon: Lightbulb },
+        { id: 2, name: 'RWW Analysis', desc: 'Validasi ide bisnismu: Real? Win? Worth It?', xp: 20, badge: 'Pengambil Keputusan', icon: CheckCircle },
+        { id: 3, name: 'Brand Identity', desc: 'Bangun identitas brand yang konsisten dan mudah dikenali.', xp: 20, badge: 'Pencipta Gaya', icon: Palette },
+        { id: 4, name: 'Lean Canvas', desc: 'Rancang model bisnismu dalam satu halaman yang ringkas.', xp: 30, badge: 'Pemikir Strategis', icon: FileText },
+        { id: 5, name: 'MVP', desc: 'Buat versi minimal produkmu untuk diuji ke pasar.', xp: 20, badge: 'Ratu Prototipe', icon: Box },
+        { id: 6, name: 'Beta Testing', desc: 'Uji produkmu ke calon pelanggan nyata dan kumpulkan masukan.', xp: 30, badge: 'Penguji Kualitas', icon: Users },
+        { id: 7, name: 'Persiapan Launching', desc: 'Siapkan checklist dan aset penting sebelum rilis resmi.', xp: 30, badge: 'Si Pemberani ', icon: ClipboardCheck }
       ]
     }
   ];
@@ -75,7 +75,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white text-black font-sans antialiased">
+    <div className="min-h-screen bg-white text-[#5b5b5b] font-[Poppins] antialiased">
       {/* NAVBAR */}
       <header
         className={`fixed top-0 w-full z-40 transition-all duration-300 ${scrolled ? 'backdrop-blur-md bg-white/80 shadow-sm' : 'bg-white/95'}`}
@@ -87,7 +87,7 @@ export default function LandingPage() {
               <span className="font-extrabold text-lg text-black">
                 Manag<span className="text-[#f02d9c]">Her</span>
               </span>
-              <span className="text-[11px] text-slate-500">From Zero to CEO</span>
+              <span className="text-[11px] text-[#5b5b5b]">From Zero to CEO</span>
             </div>
           </div>
 
@@ -95,13 +95,14 @@ export default function LandingPage() {
             <Link href="#how-it-works" className="text-sm font-medium hover:text-black">Cara Kerja</Link>
             <Link href="#usp" className="text-sm font-medium hover:text-black">Keunggulan</Link>
             <Link href="#features" className="text-sm font-medium hover:text-black">Fitur</Link>
-            <Link href="/auth/register" className="inline-flex items-center gap-2 px-4 py-2 bg-[#f02d9c] text-white font-semibold rounded-full hover:brightness-95 transition">
+            <Link href="/auth/register" className="inline-flex items-center gap-2 px-4 py-2 bg-[#f02d9c] text-white font-semibold rounded-lg border-t border-l border-black hover:bg-[#fbe2a7] hover:text-[#333333] transition"
+                  style={{ boxShadow: '3px 3px 0 0 #8acfd1' }}>
               <Gamepad2 size={16} /> Mulai
             </Link>
           </nav>
 
           <button
-            className="md:hidden p-2 rounded-md border border-slate-200 bg-white/70"
+            className="md:hidden p-2 rounded-md border border-[#5b5b5b] bg-white/70"
             onClick={() => setOpen(!open)}
             aria-label="Toggle menu"
           >
@@ -113,12 +114,13 @@ export default function LandingPage() {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="md:hidden bg-white border-t border-slate-100 px-6 py-4 flex flex-col gap-3"
+            className="md:hidden bg-white border-t border-[#5b5b5b] px-6 py-4 flex flex-col gap-3"
           >
-            <Link href="#how-it-works" onClick={() => setOpen(false)}>Cara Kerja</Link>
-            <Link href="#usp" onClick={() => setOpen(false)}>Keunggulan</Link>
-            <Link href="#features" onClick={() => setOpen(false)}>Fitur</Link>
-            <Link href="/auth/register" onClick={() => setOpen(false)} className="inline-flex items-center gap-2 px-4 py-2 bg-[#f02d9c] text-white font-semibold rounded-full">Mulai</Link>
+            <Link href="#how-it-works" onClick={() => setOpen(false)} className="text-[#5b5b5b]">Cara Kerja</Link>
+            <Link href="#usp" onClick={() => setOpen(false)} className="text-[#5b5b5b]">Keunggulan</Link>
+            <Link href="#features" onClick={() => setOpen(false)} className="text-[#5b5b5b]">Fitur</Link>
+            <Link href="/auth/register" onClick={() => setOpen(false)} className="inline-flex items-center gap-2 px-4 py-2 bg-[#f02d9c] text-white font-semibold rounded-lg border-t border-l border-black"
+                  style={{ boxShadow: '3px 3px 0 0 #8acfd1' }}>Mulai</Link>
           </motion.div>
         )}
       </header>
@@ -141,16 +143,16 @@ export default function LandingPage() {
                 Bangun Bisnismu <span className="text-[#f02d9c]">seperti Bermain Game</span>
               </h1>
 
-              <p className="text-base text-slate-700 mb-5">
+              <p className="text-base text-[#5b5b5b] mb-5">
                 Platform panduan step-by-step roadmap bisnis untuk solopreneur perempuan. Dengan mengintegrasikan framework bisnis teruji ke dalam 7 level gamifikasi, kamu bisa merancang bisnis impianmu secara sistematis dan menyenangkan.
               </p>
 
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-semibold text-black">From Zero</span>
-                  <span className="text-xs font-semibold text-black">to CEO</span>
+                  <span className="text-xs font-bold text-[#5b5b5b]">From Zero</span>
+                  <span className="text-xs font-bold text-[#5b5b5b]">to CEO</span>
                 </div>
-                <div className="relative w-full h-2 bg-black/10 rounded-full overflow-hidden">
+                <div className="relative w-full h-2 bg-[#f0f0f0] rounded-full overflow-hidden border-t border-l border-black" style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${progressPercent}%` }}
@@ -160,22 +162,24 @@ export default function LandingPage() {
                 </div>
                 <div className="flex justify-between mt-1.5 text-[11px]">
                   <span className="text-[#f02d9c] font-medium">{progressPercent}% Selesai</span>
-                  <span className="text-slate-600">{currentXP} / {totalXP} XP</span>
+                  <span className="text-[#5b5b5b]">{currentXP} / {totalXP} XP</span>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-3">
                 <Link
                   href="/auth/register"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f02d9c] text-white rounded-full font-semibold shadow-[0_4px_12px_rgba(240,45,156,0.15)] hover:scale-[1.02] transition-transform text-sm"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f02d9c] text-white font-semibold rounded-lg border-t border-l border-black hover:bg-[#fbe2a7] hover:text-[#333333] transition"
+                  style={{ boxShadow: '3px 3px 0 0 #8acfd1' }}
                 >
                   <Gamepad2 size={16} /> Mulai Sekarang
                 </Link>
                 <Link
-                  href="#features"
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border-2 border-black text-black font-semibold hover:bg-black/5 transition text-sm"
+                  href="/auth/register"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#8acfd1] text-white font-semibold rounded-lg border-t border-l border-black hover:bg-[#fbe2a7] hover:text-[#333333] transition"
+                  style={{ boxShadow: '3px 3px 0 0 #f02d9c'}}
                 >
-                  Lihat Fitur
+                  <Gamepad2 size={16} /> Lihat Fitur
                 </Link>
               </div>
             </motion.div>
@@ -220,11 +224,11 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-2xl font-bold text-black mb-3"
+              className="text-2xl font-bold text-[#f02d9c] mb-3"
             >
               Cara Kerja
             </motion.h2>
-            <p className="text-slate-600 mb-8 max-w-xl mx-auto text-sm">
+            <p className="text-[#5b5b5b] mb-8 max-w-xl mx-auto text-sm">
               Ikuti 7 langkah terstruktur untuk merancang bisnismu dari nol hingga siap diluncurkan.
             </p>
 
@@ -242,13 +246,13 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
-                    className="bg-white rounded-xl p-5 border border-[#f02d9c]/20 shadow-[0_4px_12px_rgba(240,45,156,0.15)] hover:shadow-md transition"
+                    className="bg-white rounded-xl p-5 border-t border-l border-black shadow-[2px_2px_0_0_#f02d9c] hover:shadow-[3px_3px_0_0_#8acfd1] transition-all duration-300 hover:-translate-y-1"
                   >
-                    <div className="w-10 h-10 rounded-full bg-[#fdf6f0] flex items-center justify-center mx-auto mb-3 border-2 border-[#f02d9c]">
+                    <div className="w-10 h-10 rounded-full bg-[#fdf6f0] flex items-center justify-center mx-auto mb-3 border-t border-l border-black" style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
                       <Icon size={20} className="text-[#f02d9c]" />
                     </div>
-                    <h3 className="font-bold text-lg text-black mb-1.5">{item.step}. {item.title}</h3>
-                    <p className="text-xs text-slate-700">{item.desc}</p>
+                    <h3 className="font-bold text-lg text-[#5b5b5b] mb-1.5">{item.step}. {item.title}</h3>
+                    <p className="text-xs text-[#5b5b5b]">{item.desc}</p>
                   </motion.div>
                 );
               })}
@@ -263,11 +267,11 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-2xl font-bold text-black mb-3"
+              className="text-2xl font-bold text-[#f02d9c] mb-3"
             >
               Keunggulan Utama ManagHer
             </motion.h2>
-            <p className="text-slate-600 mb-8 max-w-2xl mx-auto text-sm">
+            <p className="text-[#5b5b5b] mb-8 max-w-2xl mx-auto text-sm">
               Dibangun khusus untuk solopreneur perempuan yang ingin merancang bisnis secara terstruktur.
             </p>
 
@@ -281,13 +285,13 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
-                    className="bg-white rounded-xl p-6 border border-[#f02d9c]/20 shadow-[0_4px_12px_rgba(240,45,156,0.15)] hover:shadow-md transition"
+                    className="bg-white rounded-xl p-6 border-t border-l border-black shadow-[2px_2px_0_0_#f02d9c] hover:shadow-[3px_3px_0_0_#8acfd1] transition-all duration-300 hover:-translate-y-1"
                   >
-                    <div className="w-12 h-12 rounded-full bg-[#fdf6f0] flex items-center justify-center mx-auto mb-4 border-2 border-[#f02d9c]">
+                    <div className="w-12 h-12 rounded-full bg-[#fdf6f0] flex items-center justify-center mx-auto mb-4 border-t border-l border-black" style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
                       <Icon size={24} className="text-[#f02d9c]" />
                     </div>
-                    <h3 className="font-bold text-lg text-black mb-2">{usp.title}</h3>
-                    <p className="text-sm text-slate-700">{usp.desc}</p>
+                    <h3 className="font-bold text-lg text-[#5b5b5b] mb-2">{usp.title}</h3>
+                    <p className="text-sm text-[#5b5b5b]">{usp.desc}</p>
                   </motion.div>
                 );
               })}
@@ -303,11 +307,11 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="text-2xl font-bold text-black mb-3"
+                className="text-2xl font-bold text-[#f02d9c] mb-3"
               >
                 Fitur Utama: 7 Level Perencanaan
               </motion.h2>
-              <p className="text-slate-600 max-w-xl mx-auto text-sm">
+              <p className="text-[#5b5b5b] max-w-xl mx-auto text-sm">
                 Setiap level adalah quest yang memberimu XP dan badge.
               </p>
             </div>
@@ -320,15 +324,15 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="bg-white rounded-xl p-5 border border-[#f02d9c]/20 shadow-[0_4px_12px_rgba(240,45,156,0.15)]"
+                  className="bg-white rounded-xl p-5 border-t border-l border-black shadow-[2px_2px_0_0_#f02d9c] hover:shadow-[3px_3px_0_0_#8acfd1] transition-all duration-300 hover:-translate-y-1"
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between mb-5">
                     <div>
                       <h3 className="text-xl font-bold" style={{ color: phase.color }}>{phase.title}</h3>
-                      <p className="text-slate-600 mt-1 text-sm">{phase.subtitle}</p>
+                      <p className="text-[#5b5b5b] mt-1 text-sm">{phase.subtitle}</p>
                     </div>
                     <div className="mt-2 md:mt-0">
-                      <span className="inline-block px-3 py-1.5 bg-[#fdf6f0] border border-[#f02d9c] rounded-full text-xs font-bold text-black">
+                      <span className="inline-block px-3 py-1.5 bg-[#fdf6f0] border-t border-l border-black rounded-full text-xs font-bold text-[#5b5b5b]" style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
                         {phase.levels.length} Level • {phase.levels.reduce((s, l) => s + l.xp, 0)} XP
                       </span>
                     </div>
@@ -341,20 +345,20 @@ export default function LandingPage() {
                         <motion.div
                           key={lvl.id}
                           whileHover={{ y: -3 }}
-                          className="bg-[#fdf6f0] rounded-lg border border-[#f02d9c]/30 p-3 shadow-[0_2px_8px_rgba(240,45,156,0.1)] hover:shadow-sm transition"
+                          className="bg-[#fdf6f0] rounded-lg border-t border-l border-black p-3 shadow-[2px_2px_0_0_#f02d9c] hover:shadow-[3px_3px_0_0_#8acfd1] transition"
                         >
                           <div className="flex items-start gap-2.5">
-                            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center border-2 border-[#f02d9c]">
+                            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center border-t border-l border-black" style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
                               <Icon size={14} className="text-[#f02d9c]" />
                             </div>
                             <div>
-                              <h4 className="font-bold text-xs text-black">Level {lvl.id}</h4>
-                              <p className="font-medium text-[10px] text-slate-800 mt-0.5">{lvl.name}</p>
+                              <h4 className="font-bold text-xs text-[#5b5b5b]">Level {lvl.id}</h4>
+                              <p className="font-medium text-[10px] text-[#5b5b5b] mt-0.5">{lvl.name}</p>
                               <div className="flex gap-1 mt-1.5 flex-wrap">
-                                <span className="px-1.5 py-0.5 bg-[#fbe2a7] text-black text-[9px] font-bold rounded">
+                                <span className="px-1.5 py-0.5 bg-[#fbe2a7] text-[#5b5b5b] text-[9px] font-bold rounded border-t border-l border-black" style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
                                   +{lvl.xp} XP
                                 </span>
-                                <span className="px-1.5 py-0.5 bg-[#8acfd1] text-white text-[9px] font-bold rounded">
+                                <span className="px-1.5 py-0.5 bg-[#8acfd1] text-white text-[9px] font-bold rounded border-t border-l border-black" style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
                                   {lvl.badge}
                                 </span>
                               </div>
@@ -379,15 +383,16 @@ export default function LandingPage() {
               viewport={{ once: true }}
             >
               <Trophy size={40} className="mx-auto mb-4 text-[#f02d9c]" />
-              <h2 className="text-2xl font-bold text-black mb-4">
+              <h2 className="text-2xl font-bold text-[#f02d9c] mb-4">
                 Siap Merancang Bisnismu?
               </h2>
-              <p className="text-slate-700 mb-6 max-w-lg mx-auto text-sm">
+              <p className="text-[#5b5b5b] mb-6 max-w-lg mx-auto text-sm">
                 Gabung bersama ribuan solopreneur perempuan yang membangun bisnis dari nol — dengan panduan, komunitas, dan semangat.
               </p>
               <Link
                 href="/auth/register"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#f02d9c] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(240,45,156,0.25)] hover:scale-[1.02] transition-transform text-sm"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#f02d9c] text-white font-bold rounded-lg border-t border-l border-black hover:bg-[#fbe2a7] hover:text-[#333333] transition"
+                style={{ boxShadow: '3px 3px 0 0 #8acfd1' }}
               >
                 Daftar Sekarang
               </Link>
@@ -395,10 +400,117 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* SUBSCRIPTION PLANS */}
+        <section id="subscription" className="py-20 bg-white">
+          <div className="max-w-6xl mx-auto px-4 text-center">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-2xl font-bold text-[#f02d9c] mb-3"
+            >
+              Business Model & Sustainability
+            </motion.h2>
+            <p className="text-[#5b5b5b] mb-8 max-w-xl mx-auto text-sm">
+              Model pendapatan SaaS subscription untuk mendukung pengembangan platform secara berkelanjutan.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {/* TRIAL CARD */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="bg-white rounded-2xl p-6 border-t border-l border-black shadow-[2px_2px_0_0_#f02d9c] hover:shadow-[3px_3px_0_0_#8acfd1] transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className="text-center mb-4">
+                  <h3 className="font-bold text-lg text-[#5b5b5b]">Trial Gratis 1 Bulan</h3>
+                  <p className="text-xs text-[#5b5b5b] mt-1">Coba semua fitur tanpa risiko</p>
+                </div>
+                <div className="flex justify-center items-center mb-4">
+                  <span className="text-2xl font-extrabold text-[#f02d9c]">Gratis</span>
+                </div>
+                <div className="space-y-3 text-sm text-[#5b5b5b]">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <span>Fase PLAN (mini business plan)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <span>Fase SELL (mini ERP)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <span>Fase SCALE UP</span>
+                  </div>
+                </div>
+                <Link
+                  href="/auth/register"
+                  className="mt-6 block w-full py-2.5 bg-[#fdf6f0] text-[#5b5b5b] font-semibold rounded-lg border-t border-l border-black hover:bg-[#fbe2a7] hover:text-[#333333] transition"
+                  style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
+                >
+                  Mulai Trial Sekarang →
+                </Link>
+              </motion.div>
+
+              {/* SUBSCRIPTION CARD */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="bg-white rounded-2xl p-6 border-2 border-[#f02d9c] shadow-[2px_2px_0_0_#f02d9c] hover:shadow-[3px_3px_0_0_#8acfd1] transition-all duration-300 hover:-translate-y-1 relative overflow-hidden"
+              >
+                {/* Badge "Popular" */}
+                <div className="absolute top-0 right-0 -mr-2 -mt-2 w-12 h-8 bg-[#f02d9c] rounded-bl-full flex items-center justify-center">
+                  <Sparkle size={14} className="text-white mr-0.5" />
+                </div>
+
+                <div className="text-center mb-4 pt-2">
+                  <h3 className="font-bold text-lg text-[#5b5b5b]">Subscription</h3>
+                  <p className="text-xs text-[#5b5b5b] mt-1">Akses penuh selamanya</p>
+                </div>
+                <div className="flex justify-center items-center mb-4">
+                  <span className="text-2xl font-extrabold text-[#f02d9c]">Rp 25.000<span className="text-sm font-normal">/bulan</span></span>
+                </div>
+                <div className="space-y-3 text-sm text-[#5b5b5b]">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <span>Fase PLAN (mini business plan)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <span>Fase SELL (mini ERP)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <span>Fase SCALE UP</span>
+                  </div>
+                </div>
+                <Link
+                  href="/auth/register"
+                  className="mt-6 block w-full py-2.5 bg-[#f02d9c] text-white font-semibold rounded-lg border-t border-l border-black hover:bg-[#fbe2a7] hover:text-[#333333] transition"
+                  style={{ boxShadow: '3px 3px 0 0 #8acfd1' }}
+                >
+                  Berlangganan Sekarang →
+                </Link>
+              </motion.div>
+            </div>
+
+            <p className="mt-8 text-xs text-[#5b5b5b]">
+              Harga dapat berubah sesuai kebijakan platform. Pembayaran dilakukan melalui sistem berlangganan otomatis.
+            </p>
+          </div>
+        </section>
+
         {/* FOOTER */}
-        <footer className="py-6 bg-white text-center text-slate-500 text-xs">
+        <footer className="py-6 bg-white text-center text-[#5b5b5b] text-xs border-t border-gray-200">
           <p>© {new Date().getFullYear()} ManagHer. Dibuat dengan ❤️ untuk perempuan Indonesia.</p>
           <p className="mt-0.5">Proyek Akhir • Perempuan Inovasi Scholarship</p>
+          <p className="mt-2 text-[10px]">
+            <Link href="#subscription" className="hover:text-[#f02d9c] underline">Lihat Paket Berlangganan</Link>
+          </p>
         </footer>
       </main>
     </div>
