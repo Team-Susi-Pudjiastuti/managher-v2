@@ -378,8 +378,8 @@ export default function RWW() {
     };
     
     // Save to database using RWW Testing store
-    if (rwwTesting && rwwTesting.length > 0) {
-      updateRWWTesting(rwwTesting[0]._id, {
+    if (rwwTesting.length == 1) {
+      updateRWWTesting(id, {
         responses,
         averages,
         isValid: parseFloat(averages.total) >= 3.5
@@ -434,8 +434,7 @@ export default function RWW() {
 
   const genderSummary = getGenderSummary();
   const ageGroupSummary = getAgeGroupSummary();
-
-  console.log(businessIdea)
+  const ps = businessIdea.productsServices[0] || {};
 
   return (
     <div className="min-h-screen bg-white font-[Poppins]">
@@ -505,102 +504,31 @@ export default function RWW() {
                           {(() => {
                             return (
                               <>
-                                {/* <ul className="text-[15px] text-[#5b5b5b] space-y-1.5">
-                                  <li><span className="font-medium">Apa yang kamu jual?</span> {level1 || '-'}</li>
+                                {businessIdea.problem && (
+                                  <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
+                                    <p className="font-medium text-[#0a5f61] text-sm">Apakah ini masalahmu?</p>
+                                    <p className="text-[15px] text-[#5b5b5b] mt-1">
+                                      {businessIdea.problem}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                <ul className="text-[15px] text-[#5b5b5b] space-y-1.5">
+                                  {businessIdea.solution && (
+                                    <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
+                                    <p className="font-medium text-[#0a5f61] text-sm">Bagaimana dengan solusi ini?</p>
+                                    {ps.title && <p className="font-bold mt-2">{ps.title}</p>}
+                                    <p className="text-[15px] text-[#5b5b5b] mt-1">
+                                      {businessIdea.solution}
+                                    </p>
+                                  </div>
+                                )}
                                   {ps.jenis && <li><span className="font-medium">Jenis:</span> {ps.jenis}</li>}
                                   {ps.deskripsi && <li><span className="font-medium">Deskripsi:</span> {ps.deskripsi}</li>}
                                   {ps.fitur && <li><span className="font-medium">Fitur utama:</span> {ps.fitur}</li>}
                                   {ps.manfaat && <li><span className="font-medium">Manfaat:</span> {ps.manfaat}</li>}
                                   {ps.harga && <li><span className="font-medium">Harga:</span> {ps.harga}</li>}
                                 </ul>
-                                {(ps.biayaModal || ps.biayaBahanBaku || ps.hargaJual || ps.margin) && (
-                                  <div className="mt-3">
-                                    <button
-                                      onClick={() => setIsFinanceOpen(!isFinanceOpen)}
-                                      className="flex items-center gap-1 text-sm font-medium text-[#f02d9c]"
-                                    >
-                                      {isFinanceOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                      Lihat rincian keuangan
-                                    </button>
-                                    {isFinanceOpen && (
-                                      <div className="mt-2 p-3 bg-white border border-dashed border-[#c2e9e8] rounded text-[15px] text-[#5b5b5b]">
-                                        <h5 className="font-bold text-[#0a5f61] mb-2">Rincian Keuangan</h5>
-                                        {ps.biayaModal && (
-                                          <div className="mb-2">
-                                            <p className="font-medium">Modal Awal:</p>
-                                            <p>{ps.biayaModal.replace('Biaya Modal: ', '')}</p>
-                                            <ul className="list-disc pl-4 mt-1 text-[14px]">
-                                              {parseModalDetails(ps.biayaModal).map((item, i) => (
-                                                <li key={i}>{item}</li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                        {ps.biayaBahanBaku && (
-                                          <div className="mb-2">
-                                            <p className="font-medium">Biaya Bahan Baku:</p>
-                                            <p>{ps.biayaBahanBaku.replace('Biaya Bahan Baku: ', '')}</p>
-                                            <ul className="list-disc pl-4 mt-1 text-[14px]">
-                                              {parseBahanBakuDetails(ps.biayaBahanBaku).map((item, i) => (
-                                                <li key={i}>{item}</li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                        {ps.hargaJual && (
-                                          <p className="font-medium">Harga Jual: {ps.hargaJual.replace('Harga Jual: ', '')}</p>
-                                        )}
-                                        {ps.margin && (
-                                          <p className="font-medium">Margin: {ps.margin.replace('Margin: ', '')}</p>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                )} */}
-                                {businessIdea?.productsServices[0].keunggulan_unik && (
-                                  <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
-                                    <p className="font-medium text-[#0a5f61] text-sm">Apa yang bikin kamu beda?</p>
-                                    <p className="text-[15px] text-[#5b5b5b] mt-1">
-                                      {businessIdea?.productsServices[0].keunggulan_unik.replace('Keunggulan Unik: ', '')}
-                                    </p>
-                                  </div>
-                                )}
-                                {/* {businessIdea?.keyMetrics && (
-                                  <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
-                                    <p className="font-medium text-[#0a5f61] text-sm">Apa yang mau kamu ukur?</p>
-                                    <div className="mt-1 flex flex-wrap gap-1.5">
-                                      {ps.keyMetrics
-                                        .replace('Angka Penting: ', '')
-                                        .split(',')
-                                        .map((item, i) => (
-                                          <span
-                                            key={i}
-                                            className="px-2.5 py-1 bg-white border border-[#c2e9e8] text-[14px] text-[#5b5b5b] rounded-full"
-                                          >
-                                            {item.trim()}
-                                          </span>
-                                        ))}
-                                    </div>
-                                  </div>
-                                )}
-                                {businessIdea?.channel && (
-                                  <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
-                                    <p className="font-medium text-[#0a5f61] text-sm">Di mana kamu jualan?</p>
-                                    <div className="mt-1 flex flex-wrap gap-1.5">
-                                      {ps.channel
-                                        .replace('Cara Jualan: ', '')
-                                        .split(',')
-                                        .map((item, i) => (
-                                          <span
-                                            key={i}
-                                            className="px-2.5 py-1 bg-white border border-[#c2e9e8] text-[14px] text-[#5b5b5b] rounded-full"
-                                          >
-                                            {item.trim()}
-                                          </span>
-                                        ))}
-                                    </div>
-                                  </div>
-                                )} */}
                               </>
                             );
                           })()}
