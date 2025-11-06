@@ -16,18 +16,25 @@ export const useLeanCanvasStore = create((set, get) => ({
   loading: false,
   error: null,
 
+  setCanvas: (data) => set({ canvas: data }),
+
+  // src/store/useProjectStore.js
   fetchLeanCanvas: async (projectId) => {
     set({ loading: true, error: null });
     try {
       const data = await apiRequest(`lean-canvas/project/${projectId}`, 'GET');
       let source = {};
+
       if (data.leanCanvas) {
+        // dari DB langsung
         source = data.leanCanvas;
       } else if (data.initialData && data.isFromBusinessIdea) {
+        // dari hasil map Business Idea
         source = data.initialData;
       } else {
         source = data;
       }
+
       set({
         canvas: {
           problem: source.problem || '',
@@ -52,11 +59,25 @@ export const useLeanCanvasStore = create((set, get) => ({
     set((state) => ({ canvas: { ...state.canvas, [field]: value } }));
   },
 
-  saveLeanCanvas: async (projectId) => {
+  updateLeanCanvas: async (id, updateData) => {
+  set({ loading: true, error: null });
+  try {
+    const data = await apiRequest(`lean-canvas/${id}`, 'PUT', updateData);
+    set({
+      canvas: data.leanCanvas,
+      loading: false,
+    });
+  } catch (err) {
+    console.error('Gagal mengupdate Lean Canvas:', err);
+    set({ error: err.message || 'Gagal mengupdate data', loading: false });
+  }
+},
+
+  saveLeanCanvas: async (id) => {
     const { canvas } = get();
     set({ loading: true, error: null });
     try {
-      await apiRequest(`lean-canvas/project/${projectId}`, 'PUT', {
+      await apiRequest(`lean-canvas/project/${id}`, 'PUT', {
         problem: canvas.problem,
         solution: canvas.solution,
         keyMetrics: canvas.keyMetrics,

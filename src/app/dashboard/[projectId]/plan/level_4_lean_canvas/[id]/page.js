@@ -13,53 +13,24 @@ import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 import { useLeanCanvasStore } from '@/store/useLeanCanvasStore';
 import useProjectStore from '@/store/useProjectStore';
+import Confetti from '@/components/Confetti';
+import useBusinessIdeaStore from '@/store/useBusinessIdeaStore';
 
-// === CONFETTI ===
-const Confetti = () => {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const confettiCount = 120;
-    const gravity = 0.4;
-    const colors = ['#f02d9c', '#8acfd1', '#fbe2a7', '#ff6b9d', '#4ecdc4'];
-    const confettiPieces = Array.from({ length: confettiCount }, () => ({
-      x: Math.random() * canvas.width,
-      y: -10,
-      size: Math.random() * 8 + 4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      speedX: (Math.random() - 0.5) * 6,
-      speedY: Math.random() * 8 + 4,
-      rotation: Math.random() * 360,
-      rotationSpeed: (Math.random() - 0.5) * 8,
-    }));
-    let animationId;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      let stillFalling = false;
-      confettiPieces.forEach((piece) => {
-        piece.y += piece.speedY;
-        piece.x += piece.speedX;
-        piece.speedY += gravity;
-        piece.rotation += piece.rotationSpeed;
-        if (piece.y < canvas.height) stillFalling = true;
-        ctx.save();
-        ctx.translate(piece.x, piece.y);
-        ctx.rotate((piece.rotation * Math.PI) / 180);
-        ctx.fillStyle = piece.color;
-        ctx.fillRect(-piece.size / 2, -piece.size / 2, piece.size, piece.size);
-        ctx.restore();
-      });
-      if (stillFalling) animationId = requestAnimationFrame(animate);
-    };
-    animate();
-    return () => cancelAnimationFrame(animationId);
-  }, []);
-  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-9999" />;
-};
+function mapIdeaToLeanCanvas(idea, projectId) {
+  const product = idea.productsServices?.[0] || {};
+  return {
+    project: projectId,
+    problem: idea.problem || '',
+    solution: `${idea.solution || ''}\n\n${product.deskripsi || ''}`,
+    customerSegments: idea.customerSegments || '',
+    uniqueValueProposition: `${idea.interest?.toUpperCase() || ''} — ${product.keunggulan_unik || ''}`,
+    unfairAdvantage: idea.gainCreators || '',
+    keyMetrics: product.angka_penting || '',
+    channels: product.cara_jualan || '',
+    costStructure: `${product.biaya_modal || ''}\n${product.biaya_bahan_baku || ''}`,
+    revenueStreams: product.harga_jual || product.harga || '',
+  };
+}
 
 // === PROGRESS BAR ===
 const PhaseProgressBar = ({ currentXp, totalXp }) => {
@@ -91,7 +62,7 @@ const PhaseProgressBar = ({ currentXp, totalXp }) => {
 };
 
 export default function Level4Page() {
-  const { projectId } = useParams();
+  const { id, projectId } = useParams();
   const router = useRouter();
 
   const { planLevels, getLevels } = useProjectStore();
@@ -101,7 +72,10 @@ export default function Level4Page() {
     fetchLeanCanvas,
     updateField,
     saveLeanCanvas,
+    setCanvas,
   } = useLeanCanvasStore();
+  const { businessIdea } = useBusinessIdeaStore()
+  console.log(canvas)
 
   const [isEditing, setIsEditing] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
@@ -109,6 +83,8 @@ export default function Level4Page() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const nextPrevLevel = (num) => planLevels.find(l => l.project._id === projectId && l.order === num).entities[0].entity_ref
+
 
   // === Fungsi pembantu: map field ke label ===
   const getLabel = (key) => {
@@ -153,9 +129,34 @@ export default function Level4Page() {
     { key: 'revenueStreams', icon: TrendingUp, color: 'bg-emerald-50' },
   ];
 
-  const totalLevels = 7;
-  const currentXp = planLevels.filter(l => l.completed).length * 10;
-  const totalXp = totalLevels * 10;
+  const getFieldValue = (key) => {
+  if (!businessIdea) return '';
+
+  switch (key) {
+    case 'problem':
+    case 'solution':
+    case 'customerSegments':
+    case 'uniqueValueProposition':
+    case 'unfairAdvantage':
+    case 'gainCreators':
+      return businessIdea[key] || '';
+    case 'keyMetrics':
+      return businessIdea.productsServices?.[0]?.angka_penting || '';
+    case 'channels':
+      return businessIdea.productsServices?.[0]?.cara_jualan || '';
+    case 'costStructure':
+      const product = businessIdea.productsServices?.[0] || {};
+      return `${product.biaya_modal || ''}\n${product.biaya_bahan_baku || ''}`;
+    case 'revenueStreams':
+      return businessIdea.productsServices?.[0]?.harga || businessIdea.productsServices?.[0]?.harga_jual || '';
+    default:
+      return '';
+  }
+};
+
+  const totalLevels = planLevels.length;
+  const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
+  const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
   useEffect(() => setIsMounted(true), []);
 
@@ -172,6 +173,18 @@ export default function Level4Page() {
       fetchLeanCanvas(projectId);
     }
   }, [projectId, isMounted]);
+
+  
+  useEffect(() => {
+    // hanya jalan kalau sudah ada business idea dan belum ada canvas
+    if (businessIdea && !canvas.problem) {
+      const mappedCanvas = mapIdeaToLeanCanvas(businessIdea, projectId);
+      setCanvas(mappedCanvas);
+    }
+  }, [planLevels, projectId]);
+  
+  console.log('business', businessIdea)
+
 
   const currentLevel = planLevels.find(l => l.order === 4);
   const xpGained = currentLevel?.xp || 10;
@@ -208,6 +221,9 @@ export default function Level4Page() {
       </div>
     );
   }
+
+  console.log("🧠 canvas state:", canvas);
+
 
   return (
     <div className="min-h-screen bg-white font-[Poppins] text-[#333]">
@@ -349,7 +365,7 @@ export default function Level4Page() {
                                 <Icon size={14} /> {getLabel(field.key)}
                               </h3>
                               <textarea
-                                value={canvas[field.key]}
+                                value={getFieldValue(field.key)}
                                 onChange={(e) => updateField(field.key, e.target.value)}
                                 placeholder={getPlaceholder(field.key)}
                                 className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
@@ -372,7 +388,7 @@ export default function Level4Page() {
                                   <Icon size={14} /> {getLabel(field.key)}
                                 </h3>
                                 <textarea
-                                  value={canvas[field.key]}
+                                  value={getFieldValue(field.key)}
                                   onChange={(e) => updateField(field.key, e.target.value)}
                                   placeholder={getPlaceholder(field.key)}
                                   className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
@@ -397,7 +413,7 @@ export default function Level4Page() {
                                 <Icon size={14} /> {getLabel(field.key)}
                               </h3>
                               <textarea
-                                value={canvas[field.key]}
+                                value={getFieldValue(field.key)}
                                 onChange={(e) => updateField(field.key, e.target.value)}
                                 placeholder={getPlaceholder(field.key)}
                                 className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
@@ -424,7 +440,7 @@ export default function Level4Page() {
                                 <Icon size={14} /> {getLabel(field.key)}
                               </h3>
                               <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
-                                {canvas[field.key] || <span className="text-gray-400 italic">Belum diisi</span>}
+                                {getFieldValue(field.key) || <span className="text-gray-400 italic">Belum diisi</span>}
                               </p>
                             </div>
                           );
@@ -443,7 +459,7 @@ export default function Level4Page() {
                                   <Icon size={14} /> {getLabel(field.key)}
                                 </h3>
                                 <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
-                                  {canvas[field.key] || <span className="text-gray-400 italic">Belum diisi</span>}
+                                  {getFieldValue(field.key) || <span className="text-gray-400 italic">Belum diisi</span>}
                                 </p>
                               </div>
                             );
@@ -464,7 +480,7 @@ export default function Level4Page() {
                                 <Icon size={14} /> {getLabel(field.key)}
                               </h3>
                               <p className="text-sm text-gray-700 whitespace-pre-line">
-                                {canvas[field.key] || <span className="text-gray-400 italic">Belum diisi</span>}
+                                {getFieldValue(field.key) || <span className="text-gray-400 italic">Belum diisi</span>}
                               </p>
                             </div>
                           );
@@ -492,7 +508,7 @@ export default function Level4Page() {
 
                   <div className="mt-6 flex flex-wrap gap-2 justify-center">
                     <button
-                      onClick={() => router.push(`/dashboard/${projectId}/plan/level_3_product_brand`)}
+                      onClick={() => router.push(`/dashboard/${projectId}/plan/level_3_product_brand/${nextPrevLevel(3)}`)}
                       className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1 text-sm"
                     >
                       <ChevronLeft size={16} /> Prev
@@ -513,10 +529,9 @@ export default function Level4Page() {
                     >
                       <Eye size={16} /> {isEditing ? 'Lihat Preview' : 'Edit'}
                     </button>
-
                     {isEditing && (
                       <button
-                        onClick={() => router.push(`/dashboard/${projectId}/plan/level_5_MVP`)}
+                        onClick={() => router.push(`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}`)}
                         className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1 text-sm"
                       >
                         Next <ChevronRight size={16} />

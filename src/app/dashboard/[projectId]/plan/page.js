@@ -37,7 +37,7 @@ export default function PlanLevelsPage() {
   }
 
   const enrichedLevels = planLevels.map(level => {
-    const existing = levels?.find(l => l.id === level._id);
+    const existing = levels?.find(l => l.order === level.order);
     return {
       ...level,
       completed: existing?.completed || false,
@@ -45,11 +45,15 @@ export default function PlanLevelsPage() {
   });
 
   const completedLevels = enrichedLevels.filter(l => l.completed);
-  const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
-  const totalXp = planLevels.reduce((sum, l) => sum + l.xp, 0);
-  const phaseProgress = Math.min(100, Math.floor((currentXp / totalXp) * 100));
-
+  const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
+  const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);;
   const firstIncompleteLevel = enrichedLevels.find(l => !l.completed);
+  const [phaseProgress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const calculatedProgress = totalXp > 0 ? Math.min(100, Math.floor((currentXp / totalXp) * 100)) : 0;
+    setProgress(calculatedProgress);
+  }, [currentXp, totalXp]);
 
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },
@@ -58,7 +62,7 @@ export default function PlanLevelsPage() {
 
   const renderLevelBadge = (level) => {
     const isCompleted = level.completed;
-    const isActive = level._id === firstIncompleteLevel?._id;
+    const isActive = level.order === firstIncompleteLevel?.order;
 
     let bgColor, textColor, borderColor, badgeBg;
 
@@ -141,7 +145,7 @@ export default function PlanLevelsPage() {
           </div>
           <p className="text-xs sm:text-sm text-[#7a7a7a] mt-2">
             {phaseProgress < 100
-              ? `Lanjutkan ke Level ${firstIncompleteLevel?.id || ''} untuk menyelesaikan fase ini`
+              ? `Lanjutkan ke Level ${firstIncompleteLevel?.order || ''} untuk menyelesaikan fase ini`
               : 'Fase Plan telah selesai!'}
           </p>
         </div>
@@ -150,8 +154,8 @@ export default function PlanLevelsPage() {
         <div className="space-y-4 sm:space-y-6">
           {enrichedLevels.map((level) => {
             const isCompleted = level.completed;
-            const isUnlocked = level._id <= (firstIncompleteLevel?._id || Infinity);
-            const isActive = level._id === firstIncompleteLevel?._id;
+            const isUnlocked = level.order <= (firstIncompleteLevel?.order || Infinity);
+            const isActive = level.order === firstIncompleteLevel?.order;
 
             if (!isUnlocked) {
               // TERKUNCI
@@ -178,7 +182,7 @@ export default function PlanLevelsPage() {
                 </div>
               );
             }
-            console.log(level)
+
             // SELURUH CARD
             return (
               <Link
@@ -206,7 +210,7 @@ export default function PlanLevelsPage() {
                               <Check size={14} className="text-green-600 mt-0.5 shrink-0" />
                               <span>Sudah selesai</span>
                             </>
-                          ) : level._id === firstIncompleteLevel?.id ? (
+                          ) : level.order === firstIncompleteLevel?.order ? (
                             <>
                               <Sparkle size={14} className="text-[#f02d9c] mt-0.5 shrink-0" />
                               <span>Klik card ini untuk mulai mengerjakan</span>

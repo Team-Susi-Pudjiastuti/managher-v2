@@ -24,56 +24,12 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
+import useRWWTestingStore from '@/store/useRWWTesting';
+import useBusinessIdeaStore from '@/store/useBusinessIdeaStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
-
-// === CONFETTI ANIMATION (SAMA DENGAN LEVEL 1) ===
-const Confetti = () => {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const confettiCount = 120;
-    const gravity = 0.4;
-    const colors = ['#f02d9c', '#8acfd1', '#fbe2a7', '#ff6b9d', '#4ecdc4'];
-    const confettiPieces = Array.from({ length: confettiCount }, () => ({
-      x: Math.random() * canvas.width,
-      y: -10,
-      size: Math.random() * 8 + 4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      speedX: (Math.random() - 0.5) * 6,
-      speedY: Math.random() * 8 + 4,
-      rotation: Math.random() * 360,
-      rotationSpeed: (Math.random() - 0.5) * 8,
-    }));
-    let animationId;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      let stillFalling = false;
-      confettiPieces.forEach((piece) => {
-        piece.y += piece.speedY;
-        piece.x += piece.speedX;
-        piece.speedY += gravity;
-        piece.rotation += piece.rotationSpeed;
-        if (piece.y < canvas.height) stillFalling = true;
-        ctx.save();
-        ctx.translate(piece.x, piece.y);
-        ctx.rotate((piece.rotation * Math.PI) / 180);
-        ctx.fillStyle = piece.color;
-        ctx.fillRect(-piece.size / 2, -piece.size / 2, piece.size, piece.size);
-        ctx.restore();
-      });
-      if (stillFalling) animationId = requestAnimationFrame(animate);
-    };
-    animate();
-    return () => cancelAnimationFrame(animationId);
-  }, []);
-  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-[9999]" />;
-};
+import Confetti from '@/components/Confetti';
 
 
 // === PROGRESS BAR  ===
@@ -173,24 +129,29 @@ const scaleLabels = ['Tidak Pernah', 'Pernah', 'Kadang', 'Sering', 'Sangat Serin
 const range5 = [1, 2, 3, 4, 5];
 
 export default function RWW() {
-  const { projectId } = useParams();
+  const { id, projectId } = useParams();
   const router = useRouter();
   const projects = useProjectStore((state) => state.projects);
   const updateProject = useProjectStore((state) => state.updateProject);
+  const { rwwTesting, getRWWTesting, updateRWWTesting, addRWWTesting } = useRWWTestingStore();
+  const { getBusinessIdea, businessIdea} = useBusinessIdeaStore();
+  const { planLevels, updateLevelStatus } = useProjectStore();
+  const nextPrevLevel = (num) => {
+    const level = planLevels?.find(
+      (l) => l?.project?._id === projectId && l?.order === num
+    );
+    return level?.entities?.[0]?.entity_ref || null;
+  };
 
   // --- Tambahkan state untuk confetti ---
   const [showConfetti, setShowConfetti] = useState(false);
-
+  
   // Top-level states
   const [showNotification, setShowNotification] = useState(false);
   const [notificationData, setNotificationData] = useState({
     xpGained: 0,
     badgeName: '',
   });
-  const [respondenName, setRespondenName] = useState('');
-  const [jenisKelamin, setJenisKelamin] = useState('');
-  const [usia, setUsia] = useState('');
-  const [aktivitas, setAktivitas] = useState('');
   const [q1, setQ1] = useState(null);
   const [q2, setQ2] = useState(null);
   const [q3, setQ3] = useState(null);
@@ -205,8 +166,13 @@ export default function RWW() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [project, setProject] = useState(null);
   const [responses, setResponses] = useState([]);
-  const [vpcDataFromLevel1, setVpcDataFromLevel1] = useState(null);
   const [isFinanceOpen, setIsFinanceOpen] = useState(false);
+  const [respondenName, setRespondenName] = useState('');
+  const [jenisKelamin, setJenisKelamin] = useState('');
+  const [usia, setUsia] = useState('');
+  const [aktivitas, setAktivitas] = useState('');
+
+  // const businessIdeaId = planLevels?.[0].entities[0].entity_ref || null;
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
@@ -220,61 +186,80 @@ export default function RWW() {
       }
     };
   }, []);
-
+  
+  const businessIdeaId = planLevels?.[0]?.entities?.[0]?.entity_ref;
   useEffect(() => {
-    if (!projectId) return;
-    const found = (projects || []).find((p) => p.id === projectId);
-    setProject(found);
-    const level1Data = found?.levels?.[0]?.data;
-    if (level1Data) {
-      setVpcDataFromLevel1({
-        customerJobs: level1Data.customerJobs || '',
-        pains: level1Data.pains || '',
-        gains: level1Data.gains || '',
-        productsServices: level1Data.productsServices || '',
-        painRelievers: level1Data.painRelievers || '',
-        gainCreators: level1Data.gainCreators || '',
+
+    if (businessIdeaId) {
+      getBusinessIdea(businessIdeaId);
+    }
+  }, [planLevels]);
+
+  // Load RWW Testing data from database
+  useEffect(() => {
+    if (projectId) {
+      getRWWTesting(projectId).then(data => {
+        if (data && data.length > 0) {
+          const parsed = data.map(r => {
+            const realAvg = r.real.reduce((a, b) => a + b, 0) / 3;
+            const winAvg = r.win.reduce((a, b) => a + b, 0) / 3;
+            const worthAvg = r.worth.reduce((a, b) => a + b, 0) / 3;
+            const total = ((realAvg + winAvg + worthAvg) / 3).toFixed(1);
+            return {
+              id: r._id,
+              name: r.name,
+              gender: r.gender,
+              age: r.age,
+              activity: r.activity,
+              real: parseFloat(realAvg.toFixed(1)),
+              win: parseFloat(winAvg.toFixed(1)),
+              worth: parseFloat(worthAvg.toFixed(1)),
+              total,
+            };
+          });
+          setResponses(parsed);
+        }
       });
     }
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`rww_data_${projectId}`);
-      if (saved) {
-        try {
-          const { responses: savedResponses } = JSON.parse(saved);
-          setResponses(Array.isArray(savedResponses) ? savedResponses : []);
-        } catch (e) {
-          console.error('Gagal memuat data RWW dari localStorage:', e);
-          setResponses([]);
-        }
-      }
-    }
-  }, [projectId, projects]);
+  }, [projectId, getRWWTesting]);
 
   // --- PROGRESS BAR LOGIC ---
-  const totalLevels = 7;
-  const completedLevels = project?.levels?.filter((l) => l.completed).length || 0;
-  const currentXp = completedLevels * 10;
-  const totalXp = totalLevels * 10;
-  const firstIncompleteLevel = project?.levels?.find(l => !l.completed) || { id: 3 };
+  const totalLevels = planLevels.length;
+  const completedLevels = planLevels?.filter((l) => l.completed).length || 0;
+  const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
+  const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
-  const handleAddResponden = () => {
+  const firstIncompleteLevel = planLevels?.find(l => !l.completed) || { id: 3 };
+  
+  <Confetti />
+
+  const handleAddResponden = async () => {
     const allAnswered = [q1, q2, q3, q4, q5, q6, q7, q8, q9].every((val) => val !== null);
     if (!allAnswered) {
       alert('Mohon lengkapi semua penilaian (1–5) terlebih dahulu.');
       return;
     }
-    const newResponse = {
-      id: Date.now(),
+
+    const real = [q1, q2, q3];
+    const win = [q4, q5, q6];
+    const worth = [q7, q8, q9];
+
+    const newRespondenData = {
+      project: projectId,
       name: respondenName || '—',
       gender: jenisKelamin || '—',
       age: usia ? parseInt(usia, 10) : null,
       activity: aktivitas || '—',
-      real: (q1 + q2 + q3) / 3,
-      win: (q4 + q5 + q6) / 3,
-      worth: (q7 + q8 + q9) / 3,
-      total: ((q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8 + q9) / 9).toFixed(1),
+      real,
+      win,
+      worth,
     };
-    setResponses((prev) => [...prev, newResponse]);
+
+
+    // Kirim ke backend
+    await addRWWTesting(newRespondenData);
+
+    // Reset form
     setRespondenName('');
     setJenisKelamin('');
     setUsia('');
@@ -288,6 +273,26 @@ export default function RWW() {
     setQ7(null);
     setQ8(null);
     setQ9(null);
+
+    // Refresh data dari backend
+    const freshData = await getRWWTesting(projectId);
+    setResponses(freshData.map(r => {
+      const realAvg = r.real.reduce((a, b) => a + b, 0) / 3;
+      const winAvg = r.win.reduce((a, b) => a + b, 0) / 3;
+      const worthAvg = r.worth.reduce((a, b) => a + b, 0) / 3;
+      const total = ((realAvg + winAvg + worthAvg) / 3).toFixed(1);
+      return {
+        id: r._id,
+        name: r.name,
+        gender: r.gender,
+        age: r.age,
+        activity: r.activity,
+        real: parseFloat(realAvg.toFixed(1)),
+        win: parseFloat(winAvg.toFixed(1)),
+        worth: parseFloat(worthAvg.toFixed(1)),
+        total,
+      };
+    }));
   };
 
   const calculateAverages = () => {
@@ -365,16 +370,35 @@ export default function RWW() {
     </div>
   );
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const dataToSave = {
       responses,
       averages,
       updatedAt: new Date().toISOString(),
     };
+    
+    // Save to database using RWW Testing store
+    if (rwwTesting && rwwTesting.length > 0) {
+      updateRWWTesting(rwwTesting[0]._id, {
+        responses,
+        averages,
+        isValid: parseFloat(averages.total) >= 3.5
+      });
+    } else {
+      addRWWTesting({
+        projectId,
+        responses,
+        isValid: parseFloat(averages.total) >= 3.5
+      });
+    }
+    await updateLevelStatus(planLevels[1]._id, { completed: true });
+    
+    // Also save to localStorage as backup
     if (typeof window !== 'undefined') {
       localStorage.setItem(`rww_data_${projectId}`, JSON.stringify(dataToSave));
     }
-    const updatedLevels = Array.isArray(project?.levels) ? [...project.levels] : [];
+    
+    const updatedLevels = Array.isArray(planLevels) ? [...planLevels] : [];
     if (!updatedLevels[1]) updatedLevels[1] = { id: 2, completed: false, data: {} };
     const isValid = parseFloat(averages.total) >= 3.5;
     updatedLevels[1] = {
@@ -396,8 +420,8 @@ export default function RWW() {
     }
 
     setNotificationData({
-      xpGained: 10,
-      badgeName: 'Validator Pro',
+      xpGained: planLevels[1].xp,
+      badgeName: planLevels[1].badge || 'Validator Pro',
     });
     setShowNotification(true);
   };
@@ -410,6 +434,8 @@ export default function RWW() {
 
   const genderSummary = getGenderSummary();
   const ageGroupSummary = getAgeGroupSummary();
+
+  console.log(businessIdea)
 
   return (
     <div className="min-h-screen bg-white font-[Poppins]">
@@ -461,11 +487,11 @@ export default function RWW() {
                     {/* Kolom Kiri: Preview Ide + Form */}
                     <div>
                       {/* ... (sama seperti file asli) */}
-                      {!vpcDataFromLevel1 ? (
+                      {!planLevels?.[0]?.completed ? (
                         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
                           <p className="text-sm text-yellow-800">
                             ❗ Belum ada data dari Level 1. Silakan lengkapi{' '}
-                            <Link href={`/dashboard/${projectId}/plan/level_1_idea`} className="text-[#f02d9c] underline">
+                            <Link href={`/dashboard/${projectId}/plan/level_1_idea/${planLevels[0]?.project._id}`} className="text-[#f02d9c] underline">
                               Level 1
                             </Link>{' '}
                             terlebih dahulu.
@@ -477,11 +503,10 @@ export default function RWW() {
                             <Eye size={16} /> 💡 Ide yang Akan Divalidasi
                           </h3>
                           {(() => {
-                            const ps = parseProductsServices(vpcDataFromLevel1.productsServices);
                             return (
                               <>
-                                <ul className="text-[15px] text-[#5b5b5b] space-y-1.5">
-                                  <li><span className="font-medium">Apa yang kamu jual?</span> {ps.ide || '-'}</li>
+                                {/* <ul className="text-[15px] text-[#5b5b5b] space-y-1.5">
+                                  <li><span className="font-medium">Apa yang kamu jual?</span> {level1 || '-'}</li>
                                   {ps.jenis && <li><span className="font-medium">Jenis:</span> {ps.jenis}</li>}
                                   {ps.deskripsi && <li><span className="font-medium">Deskripsi:</span> {ps.deskripsi}</li>}
                                   {ps.fitur && <li><span className="font-medium">Fitur utama:</span> {ps.fitur}</li>}
@@ -531,16 +556,16 @@ export default function RWW() {
                                       </div>
                                     )}
                                   </div>
-                                )}
-                                {ps.uniqueAdvantage && (
+                                )} */}
+                                {businessIdea?.productsServices[0].keunggulan_unik && (
                                   <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
                                     <p className="font-medium text-[#0a5f61] text-sm">Apa yang bikin kamu beda?</p>
                                     <p className="text-[15px] text-[#5b5b5b] mt-1">
-                                      {ps.uniqueAdvantage.replace('Keunggulan Unik: ', '')}
+                                      {businessIdea?.productsServices[0].keunggulan_unik.replace('Keunggulan Unik: ', '')}
                                     </p>
                                   </div>
                                 )}
-                                {ps.keyMetrics && (
+                                {/* {businessIdea?.keyMetrics && (
                                   <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
                                     <p className="font-medium text-[#0a5f61] text-sm">Apa yang mau kamu ukur?</p>
                                     <div className="mt-1 flex flex-wrap gap-1.5">
@@ -558,7 +583,7 @@ export default function RWW() {
                                     </div>
                                   </div>
                                 )}
-                                {ps.channel && (
+                                {businessIdea?.channel && (
                                   <div className="mt-3 pt-2 border-t border-[#e0f0f0]">
                                     <p className="font-medium text-[#0a5f61] text-sm">Di mana kamu jualan?</p>
                                     <div className="mt-1 flex flex-wrap gap-1.5">
@@ -575,7 +600,7 @@ export default function RWW() {
                                         ))}
                                     </div>
                                   </div>
-                                )}
+                                )} */}
                               </>
                             );
                           })()}
@@ -607,7 +632,7 @@ export default function RWW() {
                               onChange={(e) => setJenisKelamin(e.target.value)}
                               className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            >
+                            > 
                               <option value="">Pilih Jenis Kelamin</option>
                               <option value="Laki-laki">Laki-laki</option>
                               <option value="Perempuan">Perempuan</option>
@@ -627,14 +652,20 @@ export default function RWW() {
                           </div>
                           <div>
                             <label className="block text-sm font-medium mb-2">Aktivitas</label>
-                            <input
-                              type="text"
+                            <select
                               value={aktivitas}
                               onChange={(e) => setAktivitas(e.target.value)}
                               placeholder="Contoh: Mahasiswa"
                               className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
-                            />
+                            >
+                            <option value="">Pilih Aktivitas</option>
+                            <option value="Mahasiswa">Mahasiswa</option>
+                            <option value="Ibu rumah tangga">IRT</option>
+                            <option value="Pekerja">Pekerja</option>
+                            <option value="Lainnya">Lainnya</option>
+                            <option value="Tidak mau memberi tau">Tidak mau memberi tau</option>
+                            </select>
                           </div>
                         </div>
 
@@ -790,7 +821,7 @@ export default function RWW() {
                             </div>
                             <div className="flex flex-wrap gap-2 justify-center">
                               <Link
-                                href={`/dashboard/${projectId}/plan/level_1_idea`}
+                                href={`/dashboard/${projectId}/plan/level_1_idea/${nextPrevLevel(1)}`}
                                 className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
                               >
                                 <ChevronLeft size={16} />
@@ -811,7 +842,7 @@ export default function RWW() {
                                 Simpan
                               </button>
                               <Link
-                                href={`/dashboard/${projectId}/plan/level_3_product_brand`}
+                                href={`/dashboard/${projectId}/plan/level_3_product_brand/${nextPrevLevel(3)}`}
                                 className="px-4 py-2 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black flex items-center gap-1"
                               >
                                 Next
@@ -846,10 +877,10 @@ export default function RWW() {
                         </div>
                         <div className="flex flex-wrap gap-3">
                           <div className="flex items-center gap-1.5 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Lightbulb size={12} /> +10 XP
+                            <Lightbulb size={12} /> {planLevels[1]?.xp} XP
                           </div>
                           <div className="flex items-center gap-1.5 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Award size={12} /> Validator Pro
+                            <Award size={12} /> {planLevels[1]?.badge}
                           </div>
                         </div>
                         <p className="mt-3 text-xs text-[#5b5b5b]">

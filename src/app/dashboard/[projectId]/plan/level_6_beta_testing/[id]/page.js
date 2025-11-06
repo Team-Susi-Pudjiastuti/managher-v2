@@ -13,58 +13,12 @@ import { useBetaTestingStore } from '@/store/useBetaTestingStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
+import Confetti from '@/components/Confetti';
 
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell 
 } from 'recharts';
-
-// === CONFETTI ===
-const Confetti = () => {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const confettiCount = 120;
-    const gravity = 0.4;
-    const colors = ['#f02d9c', '#8acfd1', '#fbe2a7', '#ff6b9d', '#4ecdc4'];
-    const confettiPieces = Array.from({ length: confettiCount }, () => ({
-      x: Math.random() * canvas.width,
-      y: -10,
-      size: Math.random() * 8 + 4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      speedX: (Math.random() - 0.5) * 6,
-      speedY: Math.random() * 8 + 4,
-      rotation: Math.random() * 360,
-      rotationSpeed: (Math.random() - 0.5) * 8,
-    }));
-    let animationId;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      let stillFalling = false;
-      confettiPieces.forEach((piece) => {
-        piece.y += piece.speedY;
-        piece.x += piece.speedX;
-        piece.speedY += gravity;
-        piece.rotation += piece.rotationSpeed;
-        if (piece.y < canvas.height) stillFalling = true;
-        ctx.save();
-        ctx.translate(piece.x, piece.y);
-        ctx.rotate((piece.rotation * Math.PI) / 180);
-        ctx.fillStyle = piece.color;
-        ctx.fillRect(-piece.size / 2, -piece.size / 2, piece.size, piece.size);
-        ctx.restore();
-      });
-      if (stillFalling) animationId = requestAnimationFrame(animate);
-    };
-    animate();
-    return () => cancelAnimationFrame(animationId);
-  }, []);
-  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-9999" />;
-};
 
 // === PROGRESS BAR ===
 const PhaseProgressBar = ({ currentXp, totalXp }) => {
@@ -101,6 +55,7 @@ const range5 = [1, 2, 3, 4, 5];
 export default function Level6Page() {
   const { projectId } = useParams();
   const router = useRouter();
+  const nextPrevLevel = (num) => planLevels.find(l => l.project._id === projectId && l.order === num).entities[0].entity_ref
 
   const { planLevels, getLevels } = useProjectStore();
   const { responses: storedResponses, loading: storeLoading, fetchResponses, saveResponses } = useBetaTestingStore();
@@ -166,7 +121,7 @@ export default function Level6Page() {
       const currentLevel = planLevels.find(l => l.order === 6);
       if (currentLevel?._id) {
         const { updateLevelStatus } = useProjectStore.getState();
-        await updateLevelStatus(currentLevel._id, { completed: canLaunch });
+        await updateLevelStatus(currentLevel._id, { completed: true });
       }
 
       setShowNotification(true);
@@ -265,9 +220,9 @@ export default function Level6Page() {
   const currentLevel = planLevels.find(l => l.order === 6);
   const xpGained = currentLevel?.xp || 10;
   const badgeName = currentLevel?.badge || 'Beta Master';
-  const totalLevels = 7;
-  const currentXp = planLevels.filter(l => l.completed).length * 10;
-  const totalXp = totalLevels * 10;
+  const totalLevels = planLevels.length;
+  const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
+  const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },
@@ -509,7 +464,7 @@ export default function Level6Page() {
 
                             <div className="flex flex-wrap gap-2 justify-center">
                               <Link
-                                href={`/dashboard/${projectId}/plan/level_5_MVP`}
+                                href={`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}`}
                                 className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
                               >
                                 <ChevronLeft size={16} />
@@ -530,7 +485,7 @@ export default function Level6Page() {
                                 Simpan
                               </button>
                               <Link
-                                href={`/dashboard/${projectId}/plan/level_7_launch`}
+                                href={`/dashboard/${projectId}/plan/level_7_launch/${nextPrevLevel(7)}`}
                                 className="px-4 py-2 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black flex items-center gap-1"
                               >
                                 Next

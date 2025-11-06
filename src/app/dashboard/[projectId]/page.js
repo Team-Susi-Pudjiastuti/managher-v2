@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import useProjectStore from '@/store/useProjectStore';
-import { Lock, HelpCircle, Sparkles } from "lucide-react"
+import { Lock, HelpCircle, Sparkle } from "lucide-react"
 import * as Icons from 'lucide-react';
 
 // const LEVELS = [
@@ -26,7 +26,7 @@ import * as Icons from 'lucide-react';
 
 export default function DashboardPage() {
   const { getLevels, levels, projects, planLevels, sellLevels, scaleUpLevels } = useProjectStore((state) => state);
-  const { projectId } = useParams();
+  const projectId = levels?.[0]?.project?._id;
 
   useEffect(() => {
     if (projectId) {
@@ -43,7 +43,7 @@ export default function DashboardPage() {
   }
 
   const enrichedLevels = levels.map(level => {
-    const existing = levels?.find(l => l.id === level._id);
+    const existing = levels?.find(l => l.order === level.order);
     return {
       ...level,
       completed: existing?.completed || false,
@@ -55,13 +55,13 @@ export default function DashboardPage() {
   const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
   const globalProgress = Math.min(100, Math.floor((currentXp / TOTAL_XP) * 100));
   const currentLevel = enrichedLevels.find(l => l.phase.name === 'plan' && !l.completed);
-
-
+  
+  
   const renderLevelBadge = (level) => {
     // Fase Sell & Scale Up selalu dianggap "belum selesai"
     const isLockedPhase = level.phase.name !== 'plan';
     const isCompleted = !isLockedPhase && level.completed;
-    const isActive = !isLockedPhase && level._id === currentLevel._id && !isCompleted;
+    const isActive = !isLockedPhase && level.order === planLevels.find(l => l.phase.name === 'plan').order && !isCompleted;
 
     let bgColor, textColor, borderColor, badgeBg;
 
@@ -105,7 +105,7 @@ export default function DashboardPage() {
       BarChart3: Icons.BarChart3,
       TrendingUp: Icons.TrendingUp,
     };
-
+    
     const Icon = iconMap[level.icon] || Icons.HelpCircle;
 
     return (
@@ -156,7 +156,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-white p-3 sm:p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#5b5b5b] mb-4 sm:mb-6">Dashboard: {levels.project?.title}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[#5b5b5b] mb-4 sm:mb-6">Dashboard: {planLevels[0].project.title}</h1>
 
         {/* Global XP & Progress */}
         <div className="mb-6 sm:mb-8 p-4 sm:p-5 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-200">
@@ -187,7 +187,7 @@ export default function DashboardPage() {
 
           <p className="text-xs sm:text-sm text-[#7a7a7a] mt-3">
             {currentXp < TOTAL_XP
-              ? `Kumpulkan ${levels.find(l => l.id === currentLevel._id)?.xp || 10} XP lagi untuk naik level`
+              ? `Kumpulkan poin XP untuk naik level`
               : (
                 <span className="flex items-center gap-1">
                   <Sparkle size={14} className="text-[#f02d9c]" />

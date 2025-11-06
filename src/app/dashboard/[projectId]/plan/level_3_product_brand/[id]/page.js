@@ -23,53 +23,8 @@ import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import useProjectStore from '@/store/useProjectStore';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
-
-// === CONFETTI ANIMATION (SAMA DENGAN LEVEL 1) ===
-const Confetti = () => {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const confettiCount = 120;
-    const gravity = 0.4;
-    const colors = ['#f02d9c', '#8acfd1', '#fbe2a7', '#ff6b9d', '#4ecdc4'];
-    const confettiPieces = Array.from({ length: confettiCount }, () => ({
-      x: Math.random() * canvas.width,
-      y: -10,
-      size: Math.random() * 8 + 4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      speedX: (Math.random() - 0.5) * 6,
-      speedY: Math.random() * 8 + 4,
-      rotation: Math.random() * 360,
-      rotationSpeed: (Math.random() - 0.5) * 8,
-    }));
-    let animationId;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      let stillFalling = false;
-      confettiPieces.forEach((piece) => {
-        piece.y += piece.speedY;
-        piece.x += piece.speedX;
-        piece.speedY += gravity;
-        piece.rotation += piece.rotationSpeed;
-        if (piece.y < canvas.height) stillFalling = true;
-        ctx.save();
-        ctx.translate(piece.x, piece.y);
-        ctx.rotate((piece.rotation * Math.PI) / 180);
-        ctx.fillStyle = piece.color;
-        ctx.fillRect(-piece.size / 2, -piece.size / 2, piece.size, piece.size);
-        ctx.restore();
-      });
-      if (stillFalling) animationId = requestAnimationFrame(animate);
-    };
-    animate();
-    return () => cancelAnimationFrame(animationId);
-  }, []);
-  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-[9999]" />;
-};
+import Confetti from '@/components/Confetti';
+import useBrandIdentityStore from '@/store/useBrandIdentity';
 
 const PhaseProgressBar = ({ currentXp, totalXp }) => {
   const [progress, setProgress] = useState(0);
@@ -121,11 +76,23 @@ const getContrastTextColor = (hex) => {
 };
 
 export default function Level3Page() {
-  const { projectId } = useParams();
+  const { id, projectId } = useParams();
+  const brandIdentityId = id;
   const router = useRouter();
+  const { planLevels, updateLevelStatus } = useProjectStore()
+  const { brandIdentity, getBrandIdentity, updateBrandIdentity, uploadBrandIdentityImage } = useBrandIdentityStore();
+  const nextPrevLevel = (num) => {
+  const level = planLevels?.find(
+    (l) => l?.project?._id === projectId && l?.order === num
+  );
+  return level?.entities?.[0]?.entity_ref || null;
+};
 
-  const projects = useProjectStore((state) => state.projects);
-  const updateProject = useProjectStore((state) => state.updateProject);
+  useEffect(() => {
+    if (projectId) {
+      getBrandIdentity(projectId);
+    }
+  }, [projectId]);
 
   const [showNotification, setShowNotification] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false); // <-- Tambahkan state ini
@@ -163,32 +130,32 @@ export default function Level3Page() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load saved data
-  useEffect(() => {
-    if (projectId) {
-      const found = projects.find((p) => p.id === projectId);
-      setProject(found);
-      const saved = localStorage.getItem(`concept-${projectId}`);
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          setBrandName(data.brandName || '');
-          setTagline(data.tagline || '');
-          setPalette(data.palette || ['#F6E8D6']);
-          setLogoPreview(data.logoPreview || '');
-        } catch (e) {
-          console.warn('Failed to parse concept data', e);
-        }
-      }
-    }
-  }, [projectId, projects]);
+  // // Load saved data
+  // useEffect(() => {
+  //   if (projectId) {
+  //     const found = projects.find((p) => p.id === projectId);
+  //     setProject(found);
+  //     const saved = localStorage.getItem(`concept-${projectId}`);
+  //     if (saved) {
+  //       try {
+  //         const data = JSON.parse(saved);
+  //         setBrandName(data.brandName || '');
+  //         setTagline(data.tagline || '');
+  //         setPalette(data.palette || ['#F6E8D6']);
+  //         setLogoPreview(data.logoPreview || '');
+  //       } catch (e) {
+  //         console.warn('Failed to parse concept data', e);
+  //       }
+  //     }
+  //   }
+  // }, [projectId, projects]);
 
   // Progress data
   const totalLevels = 7;
-  const completedLevels = project?.levels?.filter((l) => l.completed).length || 0;
-  const currentXp = completedLevels * 10;
-  const totalXp = totalLevels * 10;
-  const firstIncompleteLevel = project?.levels?.find((l) => !l.completed) || { id: 3 };
+  const completedLevels = planLevels.filter((l) => l.completed).length || 0;
+  const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
+  const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
+  const firstIncompleteLevel = planLevels.find((l) => !l.completed) || { id: 3 };
 
   // Palette
   const updateColor = (idx, hex) => {
@@ -207,10 +174,10 @@ export default function Level3Page() {
     setActivePickerIndex(Math.max(0, activePickerIndex - 1));
   };
 
-  // Logo upload
-  const handleLogoUpload = (e) => {
+  const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
     if (!validTypes.includes(file.type)) {
       alert('Format gambar tidak didukung. Gunakan JPG, PNG, atau GIF.');
@@ -220,15 +187,32 @@ export default function Level3Page() {
       alert('Ukuran gambar terlalu besar. Maksimal 5MB.');
       return;
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setLogoPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
+
+    // simpan preview di UI
+    setLogoPreview(URL.createObjectURL(file));
+
+    // upload ke backend
+    const formData = new FormData();
+    formData.append('file', file); // kirim file asli
+
+    try {
+      const res = await fetch(`http://localhost:3000/api/brand-identity/${brandIdentityId}/logoPreview`, {
+        method: 'PUT',
+        body: formData,
+      });
+      const data = await res.json();
+      console.log('Upload success:', data);
+
+      // misal respon Cloudinary ada url-nya
+      setLogoPreview(data.secure_url);
+    } catch (err) {
+      console.error('Error uploading logo:', err);
+    }
   };
 
+
   // Save
-  const handleSave = () => {
+  const handleSave = async () => {
     const data = {
       brandName,
       tagline,
@@ -237,7 +221,10 @@ export default function Level3Page() {
       updatedAt: new Date().toISOString(),
     };
     localStorage.setItem(`concept-${projectId}`, JSON.stringify(data));
-
+    if (brandIdentity) {
+      updateBrandIdentity(brandIdentityId, data);
+    }
+    await updateLevelStatus(planLevels[2]._id, { completed: true });
     if (project) {
       const updatedLevels = [...(project.levels || [])];
       while (updatedLevels.length <= 2) {
@@ -246,7 +233,7 @@ export default function Level3Page() {
       updatedLevels[2] = {
         id: 3,
         completed: !!brandName,
-        data: { concept: data },
+        data: { concept : data },
       };
       updateProject(projectId, { levels: updatedLevels });
     }
@@ -257,8 +244,8 @@ export default function Level3Page() {
 
     setNotificationData({
       message: 'Konsep brand berhasil disimpan!',
-      xpGained: 10,
-      badgeName: 'Brand Builder',
+      xpGained: planLevels[2]?.xp || 0,
+      badgeName: planLevels[2]?.badge || '',
     });
     setShowNotification(true);
   };
@@ -495,14 +482,14 @@ export default function Level3Page() {
                           {isEditing ? 'Lihat Preview' : 'Edit'}
                         </button>
                         <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_2_rww`)}
+                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_2_rww/${nextPrevLevel(2)}`)}
                           className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
                         >
                           <ChevronLeft size={16} />
                           Prev
                         </button>
                         <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas`)}
+                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextPrevLevel(4)}`)}
                           className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
                         >
                           Next <ChevronRight size={16} />
@@ -533,10 +520,10 @@ export default function Level3Page() {
                         </div>
                         <div className="flex flex-wrap gap-3">
                           <div className="flex items-center gap-1.5 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Lightbulb size={12} /> +10 XP
+                            <Lightbulb size={12} /> +{planLevels[2].xp} XP
                           </div>
                           <div className="flex items-center gap-1.5 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Award size={12} /> Brand Builder
+                            <Award size={12} /> {planLevels[2].badge}
                           </div>
                         </div>
                         <p className="mt-3 text-xs text-[#5b5b5b]">

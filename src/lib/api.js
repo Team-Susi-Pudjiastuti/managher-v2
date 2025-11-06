@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3001/api"
+const API_URL = 'http://localhost:3000/api'
 
 export async function apiRequest (endpoint, method = 'GET', body) {
     const options = {
@@ -10,7 +10,6 @@ export async function apiRequest (endpoint, method = 'GET', body) {
     if (body) options.body = JSON.stringify(body);
 
     const res = await fetch(`${API_URL}/${endpoint}`, options);
-    console.log(res);
     const data = await res.json();
 
     if (!res.ok) {

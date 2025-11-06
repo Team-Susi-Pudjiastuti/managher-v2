@@ -27,6 +27,7 @@ import useAuthStore from './useAuthStore';
 
 const useProjectStore = create(
   persist((set, get) => ({
+    project: {},
     projects: [],
     phases: [],
     levels:[],
@@ -41,6 +42,11 @@ const useProjectStore = create(
         console.error('Error fetching projects:', error);
         set({ projects: [] });
       }
+    },
+    getProject: async (id) => {
+      const res = await apiRequest(`project/detail/${id}`, 'GET');
+      set({ project: res.data || {} });
+      return res.data || {};
     },
     addProject: async (user, title) => {
       const res = await apiRequest('project', 'POST', {
@@ -74,16 +80,16 @@ const useProjectStore = create(
       const res = await apiRequest(`level/${projectId}`, 'GET');
       const levels = res.data || [];
       set({ levels: levels });
-      set({ planLevels: levels.filter(l => l.phase.name === 'plan') });  
-      set({ sellLevels: levels.filter(l => l.phase.name === 'sell') });
-      set({ scaleUpLevels: levels.filter(l => l.phase.name === 'scale_up') });  
+      set({ planLevels: levels.filter(l => l.phase.name === 'plan') || [] });  
+      set({ sellLevels: levels.filter(l => l.phase.name === 'sell') || [] });
+      set({ scaleUpLevels: levels.filter(l => l.phase.name === 'scale_up') || [] });  
       return levels;
     },
     updateLevelStatus: async (id, updates) => {
       const res = await apiRequest(`level/${id}`, 'PUT', updates);
       const updatedLevel = res.data || {};
       set((state) => ({
-        levels: state.levels.map((l) =>
+        planLevels: state.planLevels.map((l) =>
           l._id === id ? { ...l, ...updatedLevel } : l
         ),
       }));

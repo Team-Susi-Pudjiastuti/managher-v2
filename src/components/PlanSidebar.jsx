@@ -18,21 +18,14 @@ import {
 } from 'lucide-react';
 
 export default function PlanSidebar({
-  projectId,
   currentLevelId = 'overview',
   isMobile = false,
   mobileSidebarOpen = false,
   setMobileSidebarOpen = () => {},
 }) {
+  const { planLevels } = useProjectStore();
   const pathname = usePathname();
-  const { planLevels, getLevels } = useProjectStore();
-
-  // Fetch levels jika belum ada
-  useEffect(() => {
-    if (projectId && planLevels.length === 0) {
-      getLevels(projectId);
-    }
-  }, [projectId, planLevels.length]);
+  const projectId = planLevels?.[0]?.project._id;
 
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -61,26 +54,24 @@ export default function PlanSidebar({
 
   const sidebarItems = [
     { id: 'overview', title: 'Overview', icon: LayoutDashboard, href: `/dashboard/${projectId}` },
-    { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level_1_idea` },
-    { id: 2, title: 'RWW Analysis', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww` },
-    { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level_3_product_brand` },
-    { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas` },
-    { id: 5, title: 'MVP', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP` },
-    { id: 6, title: 'Beta Testing', icon: Users, href: `/dashboard/${projectId}/plan/level_6_beta_testing` },
-    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch` },
+    { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level_1_idea/${planLevels?.[0]?.entities[0]?.entity_ref}` },
+    { id: 2, title: 'RWW Analysis', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww/${planLevels?.[1]?.entities[0]?.entity_ref}` },
+    { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level_3_product_brand/${planLevels?.[2]?.entities[0]?.entity_ref}` },
+    { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas/${planLevels?.[3]?.entities[0]?.entity_ref}` },
+    { id: 5, title: 'Prototype', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP/${planLevels?.[4]?.entities[0]?.entity_ref}` },
+    { id: 6, title: 'Beta Testing', icon: Users, href: `/dashboard/${projectId}/plan/level_6_beta_testing/${planLevels?.[5]?.entities[0]?.entity_ref}` },
+    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch/${planLevels?.[6]?.entities[0]?.entity_ref}` }
   ];
 
-  // Cek Status
-  const isLevelCompleted = (id) => {
-    if (id === 'overview') return true;
-    const level = planLevels.find((l) => l.order === id);
-    return level ? level.completed : false;
+  const isLevelCompleted = (order) => {
+    if (order === 'overview') return true;
+    return planLevels?.[order - 1]?.completed || false;
   };
 
-  const isActive = (id) => {
-    if (id === 'overview') return pathname === `/dashboard/${projectId}`;
-    const item = sidebarItems.find((item) => item.id === id);
-    return item && pathname.startsWith(item.href);
+  const isActive = (order) => {
+    if (order === 'overview') return pathname === `/dashboard/${projectId}`;
+    const levelPath = sidebarItems.find(item => item.id === order)?.href;
+    return levelPath && pathname.startsWith(levelPath);
   };
 
   const showText = isMobile ? mobileSidebarOpen : !isCollapsed;
@@ -114,19 +105,20 @@ export default function PlanSidebar({
               !showText
                 ? 'w-10 h-10 justify-center'
                 : 'p-3 justify-between'
-            }`}
+            }
+            ${ isMobile ? '' : isCollapsed ? 'ml-4' : '' }`}
             style={{
               boxShadow: '1px 1px 0 0 #fbe2a7',
             }}
           >
             {!showText ? (
-              <button
-                onClick={isMobile ? closeMobileSidebar : handleToggle}
-                className="text-[#5b5b5b] hover:text-[#f02d9c] transition-colors flex items-center justify-center"
-                aria-label="Toggle sidebar"
-              >
-                <MenuIcon size={16} />
-              </button>
+                <button
+                  onClick={isMobile ? closeMobileSidebar : handleToggle}
+                  className={`text-[#5b5b5b] hover:text-[#f02d9c] transition-colors flex items-center justify-center`}
+                  aria-label="Toggle sidebar"
+                >
+                  <MenuIcon size={16} />
+                </button>
             ) : (
               <>
                 <div className="flex items-center space-x-2 min-w-0">

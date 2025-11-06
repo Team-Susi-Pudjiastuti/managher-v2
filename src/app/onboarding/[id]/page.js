@@ -44,8 +44,6 @@ export default function OnboardingPage() {
 
   };
 
-
-
   return (
     <div className="min-h-screen bg-white font-[Poppins] p-3 sm:p-4 md:p-6 flex flex-col">
       <div className="max-w-4xl mx-auto w-full flex flex-col items-center">
