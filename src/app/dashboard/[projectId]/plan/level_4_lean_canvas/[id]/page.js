@@ -121,9 +121,9 @@ export default function Level4Page() {
   const fieldConfig = [
     { key: 'problem', icon: AlertTriangle, color: 'bg-red-50' },
     { key: 'solution', icon: Wrench, color: 'bg-blue-50' },
-    { key: 'customerSegments', icon: Users, color: 'bg-indigo-50' },
     { key: 'uniqueValueProposition', icon: Target, color: 'bg-purple-50' },
     { key: 'unfairAdvantage', icon: ShieldCheck, color: 'bg-amber-50' },
+    { key: 'customerSegments', icon: Users, color: 'bg-indigo-50' },
     { key: 'keyMetrics', icon: BarChart3, color: 'bg-green-50' },
     { key: 'channels', icon: Send, color: 'bg-cyan-50' },
     { key: 'costStructure', icon: Coins, color: 'bg-orange-50' },
