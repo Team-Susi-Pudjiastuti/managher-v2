@@ -197,7 +197,7 @@ export default function LandingPage() {
                   </div>
                   <div className="absolute inset-0 pt-8 bg-white">
                     <Image
-                      src="/managher.jpeg"
+                      src="/idegenerator.jpeg"
                       alt="ManagHer Dashboard"
                       fill
                       className="object-fill"
