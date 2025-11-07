@@ -108,82 +108,81 @@ const formatProductsServices = ({
 // === GENERATOR IDE (DIPERBAIKI) ===
 const generateThreeIdeasFromInterest = (interest) => {
   const baseIdeas = [
-    // {
-    //   interest: 'kuliner',
-    //   customerSegments: 'Ibu bekerja usia 28–45 tahun ingin menyediakan makanan sehat untuk keluarga setiap hari',
-    //   problem: 'Waktu terbatas, tidak sempat belanja & masak, takut anak kurang gizi, stres mengatur menu',
-    //   solution: 'Anak sehat dan tumbuh optimal, hemat waktu, tidak perlu mikir masak, tenang secara mental',
-    //   productsServices:
-    //     'Meal Prep Box untuk Ibu Bekerja\n' +
-    //     'Jenis: Layanan Langganan Makanan Sehat\n' +
-    //     'Deskripsi: Kotak makanan siap saji mingguan dengan resep bergizi dari ahli nutrisi, bahan organik lokal\n' +
-    //     'Fitur utama: Dikirim setiap Senin, siap saji dalam 5 menit, bisa atur alergi\n' +
-    //     'Manfaat: Hemat 10 jam/minggu, anak lebih sehat, tidak perlu mikir menu\n' +
-    //     'Harga: Rp299.000/minggu (5 menu)\n' +
-    //     'Biaya Modal: Rp5.000.000 (kompor portable, wadah food-grade 100 pcs, branding awal)\n' +
-    //     'Biaya Bahan Baku: Beras organik (Rp50.000), Ayam kampung (Rp80.000), Sayur lokal (Rp30.000), Bumbu & minyak (Rp20.000) → Total: Rp180.000/minggu\n' +
-    //     'Harga Jual: Rp299.000/minggu\n' +
-    //     'Margin: ±40%\n' +
-    //     'Keunggulan Unik: Kita satu-satunya yang pakai bahan organik lokal DAN bisa atur alergi lewat WhatsApp\n' +
-    //     'Angka Penting: Jumlah langganan aktif per minggu, Rating kepuasan pelanggan (1–5), Jumlah jam yang dihemat pelanggan\n' +
-    //     'Cara Jualan: Instagram & TikTok (konten harian ibu sibuk), WhatsApp Business (untuk pesan & konsultasi), Rekomendasi dari komunitas ibu di Facebook',
-    //   painRelievers:
-    //     'Dikirim setiap Senin pagi → tidak perlu belanja\nSiap saji dalam 5 menit → tidak perlu masak\nBisa atur alergi/makanan pantangan → aman untuk anak',
-    //   gainCreators:
-    //     'Hemat 10 jam/minggu\nAnak-anak lebih sehat\nTidak perlu mikir menu\nHarga: Rp299.000/minggu (5 menu)',
-    // },
     {
-      interest: 'edukasi anak',
-      customerSegments: 'Orang tua ingin anak usia 7–12 tahun belajar coding secara menyenangkan dan mandiri',
-      problem: 'Tidak punya waktu dampingi, kursus offline mahal, anak cepat bosan dengan metode kaku',
-      solution: 'Anak paham logika pemrograman, bisa bikin game sederhana, lebih percaya diri di sekolah',
-      productsServices:
-        [{
-          title:'Kelas Coding untuk Anak SD via WhatsApp\n',
-          jenis: 'Layanan Edukasi Digital\n',
-          deskripsi: 'Program belajar coding 12 minggu dengan video pendek, tantangan seru, dan hadiah digital\n',
-          fitur_utama: 'Cukup 10 menit/hari, grup WhatsApp eksklusif, bisa pakai HP\n',
-          manfaat: 'Anak belajar mandiri, biaya terjangkau, dapat sertifikat digital\n',
-          harga: 'Rp99.000/program\n',
-          biaya_modal: 'Rp500.000 (pembuatan konten video, desain worksheet, sistem otomatisasi WhatsApp)\n',
-          biaya_bahan_baku: 'Rp0 (digital, tidak ada bahan fisik)\n',
-          harga_jual: 'Rp99.000/program\n',
-          margin: '±95%\n',
-          keunggulan_unik: 'Cukup pakai WhatsApp — tidak perlu aplikasi baru\n',
-          angka_penting: 'Jumlah siswa aktif, Persentase penyelesaian modul, Rating kepuasan orang tua\n',
-          cara_jualan: 'Grup WhatsApp komunitas, Instagram edukasi, Rekomendasi guru SD',
-        }],
-      painRelievers:
-        'Cukup 10 menit/hari → tidak mengganggu jadwal\nGrup WhatsApp eksklusif dengan mentor → responsif\nTidak perlu laptop → bisa pakai HP orang tua',
-      gainCreators:
-        'Anak belajar mandiri tanpa perlu dampingan\nBiaya terjangkau\nDapat sertifikat digital\nHarga: Rp99.000/program',
-    },
-    {
-      interest: 'jasa keuangan',
-      customerSegments: 'Pemilik warung kopi/makanan usia 30–50 tahun ingin catat keuangan harian dengan mudah',
-      problem: 'Tidak paham Excel, takut ribet, sering lupa catat, stok sering kehabisan tanpa sadar',
-      solution: 'Tahu untung/rugi harian, siap laporan pajak, stok terpantau, tidur lebih tenang',
-      productsServices: [{
-        title:'Aplikasi Catatan Keuangan UMKM Warung\n',
-        jenis: 'Aplikasi Mobile\n',
-        deskripsi: 'Aplikasi pencatatan keuangan berbasis suara dengan antarmuka super sederhana, hanya butuh HP Android\n',
-        fitur_utama: 'Cukup ucapkan transaksi, backup otomatis, notifikasi stok habis\n',
-        manfaat: 'Tidak perlu bisa baca/tulis lancar, laporan otomatis, siap laporan pajak\n',
-        harga: 'Rp49.000/bulan\n',
-        biaya_modal: 'Rp15.000.000 (pengembangan MVP, hosting awal, uji coba lapangan)\n',
-        biaya_bahan_baku: 'Rp50.000/bulan (server cloud, biaya API suara, maintenance)\n',
-        harga_jual: 'Rp49.000/bulan\n',
-        margin: '±80% setelah 500 pengguna aktif\n',
-        keunggulan_unik: 'Cukup bicara — tidak perlu ngetik\n',
-        angka_penting: 'Jumlah pengguna aktif, Rata-rata transaksi/hari, Retensi bulanan\n',
-        cara_jualan: 'WhatsApp UMKM, Grup Facebook pedagang, Demo langsung di pasar\n',
-      }
+      "interest": "kuliner kekinian",
+      "customerSegments": "Anak muda dan pekerja kantoran yang suka camilan manis dan praktis",
+      "problem": "Sulit menemukan camilan enak, higienis, dan mudah dibawa untuk menemani aktivitas harian",
+      "solution": "Camilan premium siap santap dengan rasa unik dan kemasan menarik",
+      "productsServices": [
+        {
+          "title": "Brownies Lumer Premium",
+          "jenis": "Produk Makanan Siap Saji",
+          "deskripsi": "Brownies cokelat lembut dengan isian ganache lumer di tengah, dikemas praktis dalam cup",
+          "fitur_utama": "Tanpa pengawet, tahan 3 hari suhu ruang, tersedia 5 varian rasa",
+          "manfaat": "Nikmat seperti buatan rumahan, cocok untuk hadiah atau camilan harian",
+          "harga": "Rp25.000/cup",
+          "biaya_modal": "Rp8.000 (bahan premium dan kemasan food grade)",
+          "biaya_bahan_baku": "Rp8.000",
+          "harga_jual": "Rp25.000/cup",
+          "margin": "±68%",
+          "keunggulan_unik": "Tekstur lumer khas, dikemas dalam cup anti tumpah",
+          "angka_penting": "Jumlah penjualan harian, rating pelanggan, repeat order",
+          "cara_jualan": "Marketplace, Instagram, reseller kuliner lokal"
+        }
       ],
-      painRelievers:
-        'Cukup ucapkan: “Hari ini jual 50 kopi, modal 200rb” → otomatis jadi laporan\nBackup otomatis ke cloud\nNotifikasi saat stok hampir habis',
-      gainCreators:
-        'Tidak perlu bisa baca/tulis lancar\nLaporan harian & mingguan otomatis\nSiap untuk laporan pajak\nHarga: Rp49.000/bulan',
+      "painRelievers": "Produk tahan lama, bisa dikirim jarak jauh, tidak ribet dikonsumsi",
+      "gainCreators": "Rasa premium, kemasan menarik, cocok untuk semua usia, harga terjangkau"
     },
+    {
+      "interest": "kuliner sehat",
+      "customerSegments": "Ibu rumah tangga dan pekerja yang ingin makan praktis tapi tetap sehat",
+      "problem": "Susah menemukan makanan cepat saji yang bergizi dan tidak membosankan",
+      "solution": "Menu sehat siap makan dengan bahan segar dan kalori terukur",
+      "productsServices": [
+        {
+          "title": "Rice Bowl Sehat Harian",
+          "jenis": "Layanan Makanan Siap Antar",
+          "deskripsi": "Paket makan siang dengan pilihan protein rendah lemak dan sayuran segar",
+          "fitur_utama": "Menu ganti setiap hari, porsi pas, tanpa MSG",
+          "manfaat": "Praktis untuk makan siang, menjaga pola makan sehat",
+          "harga": "Rp35.000/porsi",
+          "biaya_modal": "Rp20.000 (bahan segar, kemasan eco-friendly)",
+          "biaya_bahan_baku": "Rp20.000",
+          "harga_jual": "Rp35.000/porsi",
+          "margin": "±43%",
+          "keunggulan_unik": "Resep dikembangkan oleh nutrisionis lokal",
+          "angka_penting": "Pelanggan langganan, tingkat retensi, ulasan harian",
+          "cara_jualan": "Langganan via WhatsApp, promosi ke kantor dan komunitas olahraga"
+        }
+      ],
+      "painRelievers": "Tidak perlu masak, menu variatif, bebas bahan kimia tambahan",
+      "gainCreators": "Tubuh lebih fit, waktu lebih efisien, makan tetap nikmat"
+    },
+    {
+      "interest": "minuman segar",
+      "customerSegments": "Remaja dan mahasiswa yang mencari minuman unik dan terjangkau",
+      "problem": "Minuman boba mahal dan terlalu manis, pilihan rasa terbatas",
+      "solution": "Minuman segar homemade dengan rasa lokal dan topping alami",
+      "productsServices": [
+        {
+          "title": "Es Leci Kelapa Fresh",
+          "jenis": "Minuman Kekinian",
+          "deskripsi": "Campuran leci asli, kelapa muda, dan madu alami dalam kemasan botol 350ml",
+          "fitur_utama": "Tanpa pemanis buatan, rasa segar alami, ready to go",
+          "manfaat": "Menyegarkan, menambah energi, cocok diminum kapan saja",
+          "harga": "Rp15.000/botol",
+          "biaya_modal": "Rp6.000 (bahan buah segar dan botol kemasan)",
+          "biaya_bahan_baku": "Rp6.000",
+          "harga_jual": "Rp15.000/botol",
+          "margin": "±60%",
+          "keunggulan_unik": "Rasa lokal modern, dibuat fresh setiap hari",
+          "angka_penting": "Penjualan harian, stok bahan segar, ulasan pelanggan",
+          "cara_jualan": "Stand kaki lima, online delivery, kerja sama dengan kafe kecil"
+        }
+      ],
+      "painRelievers": "Harga terjangkau, tidak terlalu manis, bahan alami",
+      "gainCreators": "Minuman sehat, rasa unik, cocok untuk semua cuaca"
+    }
   ];
 
   const normalized = interest.toLowerCase().trim();
