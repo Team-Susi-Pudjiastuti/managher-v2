@@ -77,7 +77,7 @@ export const useLeanCanvasStore = create((set, get) => ({
     const { canvas } = get();
     set({ loading: true, error: null });
     try {
-      await apiRequest(`lean-canvas/project/${id}`, 'PUT', {
+      await apiRequest(`lean-canvas/${id}`, 'PUT', {
         problem: canvas.problem,
         solution: canvas.solution,
         keyMetrics: canvas.keyMetrics,

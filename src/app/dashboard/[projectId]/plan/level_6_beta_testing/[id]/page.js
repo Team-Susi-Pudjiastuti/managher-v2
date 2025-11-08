@@ -103,7 +103,7 @@ export default function Level6Page() {
 
   // === Analisis ===
   const satisfactionValues = allResponses
-    .map(r => (typeof r.scale === 'number' ? r.scale : null)) // ✅ gunakan "scale"
+    .map(r => (typeof r.scale === 'number' ? r.scale : null))
     .filter(v => v !== null);
   const avgSatisfaction = satisfactionValues.length
     ? (satisfactionValues.reduce((sum, v) => sum + v, 0) / satisfactionValues.length).toFixed(1)
@@ -123,6 +123,7 @@ export default function Level6Page() {
         const { updateLevelStatus } = useProjectStore.getState();
         await updateLevelStatus(currentLevel._id, { completed: true });
       }
+      
 
       setShowNotification(true);
       if (canLaunch) {
