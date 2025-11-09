@@ -1,12 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiRequest } from '../lib/api';
+import {jwtDecode} from 'jwt-decode';
 
 const useAuthStore = create(
   persist(
     (set, get) => ({
       isAuthenticated: false,
       user: null,
+      token: null,
+      isHydrated: false, 
 
       // === REGISTER ===
       register: async (name, username, email, password) => {
@@ -48,32 +51,57 @@ const useAuthStore = create(
             password
           });
 
-          // { message, data: { username, email } }
-          const userData = res.data;
-          if (!userData) throw new Error('Invalid response from server');
+          const { token,  data } = res;
+
+          if (!token) throw new Error('No token received from server');
+
+          const decoded = jwtDecode(token);
+          if (!decoded) throw new Error('Invalid token');
 
           set({
             isAuthenticated: true,
+            token,
             user: {
-              id: userData._id,
-              name: userData.name,
-              username: userData.username,
-              email: userData.email,
+              id: data._id,
+              name: data.name,
+              email: data.email,
+              username: data.username,
             },
           });
 
-          return { success: true, message: res.message || 'Login successful', user: userData };
+          return { success: true, message: res.message, user: decoded };
         } catch (error) {
           console.error('Login failed:', error.message);
           return { success: false, message: error.message };
         }
       },
 
-      // === LOGOUT ===
-      logout: () => {
-        set({ isAuthenticated: false, user: null });
-      },
-    }),
+    // === LOAD TOKEN === (biar auto-login setelah reload)
+    loadToken: () => {
+      const savedToken = localStorage.getItem("token");
+      if (savedToken) {
+        try {
+          const decoded = jwtDecode(savedToken);
+          set({
+            isAuthenticated: true,
+            token: savedToken,
+            user: decoded
+          });
+        } catch (error) {
+          console.error('Token decoding failed:', error.message);
+          set({ isAuthenticated: false, user: null, token: null });
+        }
+      } else {
+        set({ isHydrated: true });
+      }
+    },
+
+  // === LOGOUT ===
+  logout: () => {
+    localStorage.removeItem("token");
+    set({ isAuthenticated: false, user: null, token: null });
+  },
+})
     // {
     //   name: 'auth-storage', // disimpan di localStorage
     //   partialize: (state) => ({

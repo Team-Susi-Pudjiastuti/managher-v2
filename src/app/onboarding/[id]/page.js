@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import useProjectStore from '@/store/useProjectStore';
 import useAuthStore from '@/store/useAuthStore';
 import ProjectCard from '@/components/ProjectCard';
+import { LogOut, UserCircle2 } from "lucide-react";
 
 export default function OnboardingPage() {
   const params = useParams();
@@ -17,12 +18,31 @@ export default function OnboardingPage() {
   const [isCreating, setIsCreating] = useState(false);
   const { projects, getAllprojects, addProject } = useProjectStore();
   const router = useRouter();
+  const { logout, isAuthenticated, isHydrated, loadToken } = useAuthStore();
+
+  useEffect(() => {
+    loadToken(); // panggil hanya sekali saat mount
+  }, [loadToken]);
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isHydrated, isAuthenticated, router]);
 
   useEffect(() => {
       if (id) {
         getAllprojects(id);
       }
   }, []);
+
+  if (!isHydrated) {
+    return <p>Loading...</p>; // ⏳ tunggu sampai store siap
+  }
+
+  if (!isAuthenticated) {
+    return null; // sedang redirect
+  }
 
   const openModal = () => {
     setProjectName('');
@@ -48,6 +68,38 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-white font-[Poppins] p-3 sm:p-4 md:p-6 flex flex-col">
       <div className="max-w-4xl mx-auto w-full flex flex-col items-center">
         {/* Header */}
+        <div className="relative w-full">
+        {/* === Bar atas: Logout kiri & Profil kanan === */}
+        <div className="flex justify-between items-center px-4 sm:px-6 mb-4">
+          {/* Icon Profil */}
+          <button
+            className="p-2 rounded-full hover:bg-gray-100 transition"
+            title="Profile"
+            onClick={() => {
+              logout();
+              console.log("Profile clicked");
+            }}
+          >
+            <UserCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-[#5b5b5b]" />
+          </button>
+
+          {/* Tombol Logout */}
+          <button
+            className="p-2 rounded-full hover:bg-gray-100 transition"
+            title="Logout"
+            onClick={() => {
+              logout();
+              if (confirm('Apakah Anda yakin ingin logout?')) {
+                router.push('/auth/login');
+              }
+            }}
+          >
+            <LogOut className="w-5 h-5 sm:w-6 sm:h-6 text-[#f02d9c]" />
+          </button>
+
+        </div>
+
+        {/* === Teks tengah === */}
         <div className="text-center mb-6 sm:mb-8 px-2">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#5b5b5b] mb-2">
             Selamat Datang di <span className="text-[#f02d9c]">ManagHer</span>
@@ -56,6 +108,7 @@ export default function OnboardingPage() {
             Rancang, kelola, dan wujudkan ide bisnismu bersama komunitas perempuan inovatif
           </p>
         </div>
+      </div>
 
         {/* Card "Buat Proyek Baru" */}
         <div className="relative mb-6 sm:mb-8 w-full max-w-xs">

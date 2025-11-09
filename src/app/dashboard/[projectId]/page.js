@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import useProjectStore from '@/store/useProjectStore';
+import useAuthStore from '@/store/useAuthStore';
 import { Lock, HelpCircle, Sparkle } from "lucide-react"
 import * as Icons from 'lucide-react';
 
@@ -25,8 +26,14 @@ import * as Icons from 'lucide-react';
 
 
 export default function DashboardPage() {
-  const { getLevels, levels, projects, planLevels, sellLevels, scaleUpLevels } = useProjectStore((state) => state);
+  const { getLevels, levels, projects, planLevels, sellLevels, scaleUpLevels } = useProjectStore();
+  const { token } = useAuthStore();
   const projectId = levels?.[0]?.project?._id;
+
+
+  if (!token) {
+    return null;
+  }
 
   useEffect(() => {
     if (projectId) {
