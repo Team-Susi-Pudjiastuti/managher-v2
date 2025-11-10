@@ -1,30 +1,21 @@
-import useAuthStore from "@/store/useAuthStore";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-const API_URL = "http://localhost:3000/api"
+export async function apiRequest(endpoint, method = "GET", body) {
+  const headers = { "Content-Type": "application/json" };
 
-export async function apiRequest (endpoint, method = 'GET', body) {
-    const token = useAuthStore.getState().token;
-    const headers = {
-            'Content-Type': 'application/json',
-        }
-    
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
+  const options = {
+    method,
+    headers,
+    credentials: "include",
+  };
 
-    const options = {
-        headers,
-        method,
-    }
+  if (body) options.body = JSON.stringify(body);
 
-    if (body) options.body = JSON.stringify(body);
+  const res = await fetch(`${API_URL}/${endpoint}`, options);
+  const data = await res.json();
 
-    const res = await fetch(`${API_URL}/${endpoint}`, options);
-    const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Request failed");
 
-    if (!res.ok) {
-        throw new Error(data.message || 'Request failed');
-    }
-    return data;
-   
+  return data;
 }
+

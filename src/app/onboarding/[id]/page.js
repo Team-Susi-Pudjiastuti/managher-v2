@@ -18,17 +18,17 @@ export default function OnboardingPage() {
   const [isCreating, setIsCreating] = useState(false);
   const { projects, getAllprojects, addProject } = useProjectStore();
   const router = useRouter();
-  const { logout, isAuthenticated, isHydrated, loadToken } = useAuthStore();
+  const { logout, isAuthenticated, loadSession, isHydrated } = useAuthStore();
 
   useEffect(() => {
-    loadToken(); // panggil hanya sekali saat mount
-  }, [loadToken]);
+    loadSession();
+  }, []);
 
   useEffect(() => {
     if (isHydrated && !isAuthenticated) {
       router.push('/auth/login');
     }
-  }, [isHydrated, isAuthenticated, router]);
+  }, [isHydrated, router]);
 
   useEffect(() => {
       if (id) {
@@ -37,7 +37,7 @@ export default function OnboardingPage() {
   }, []);
 
   if (!isHydrated) {
-    return <p>Loading...</p>; // ⏳ tunggu sampai store siap
+    return <p>Loading...</p>; 
   }
 
   if (!isAuthenticated) {

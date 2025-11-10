@@ -1,9 +1,9 @@
 // app/dashboard/[projectId]/page.jsx
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import useProjectStore from '@/store/useProjectStore';
 import useAuthStore from '@/store/useAuthStore';
 import { Lock, HelpCircle, Sparkle } from "lucide-react"
@@ -27,19 +27,33 @@ import * as Icons from 'lucide-react';
 
 export default function DashboardPage() {
   const { getLevels, levels, projects, planLevels, sellLevels, scaleUpLevels } = useProjectStore();
-  const { token } = useAuthStore();
+  const router = useRouter();
   const projectId = levels?.[0]?.project?._id;
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
 
+  useEffect(() => {
+    loadSession();
+  }, []);
 
-  if (!token) {
-    return null;
-  }
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isHydrated, router]);
 
   useEffect(() => {
     if (projectId) {
       getLevels(projectId);
     }
   }, [projectId]);
+
+  if (!isHydrated) {
+    return <p>Loading...</p>; 
+  }
+
+  if (!isAuthenticated) {
+    return null; // sedang redirect
+  }
 
   if (!projectId || !levels) {
     return (

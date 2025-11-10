@@ -8,7 +8,6 @@ const useAuthStore = create(
     (set, get) => ({
       isAuthenticated: false,
       user: null,
-      token: null,
       isHydrated: false, 
 
       // === REGISTER ===
@@ -43,64 +42,65 @@ const useAuthStore = create(
         }
       },
 
-      // === LOGIN ===
-      login: async (username, password) => {
-        try {
-          const res = await apiRequest('login', 'POST', {
-            username,
-            password
-          });
+    login: async (username, password) => {
+      try {
+        const res = await apiRequest("login", "POST", { username, password });
+        const { data } = res;
 
-          const { token,  data } = res;
+        // tidak perlu token, karena disimpan di cookie
+        set({
+          isAuthenticated: true,
+          user: {
+            id: data.id,
+            username: data.username,
+            email: data.email,
+          },
+        });
 
-          if (!token) throw new Error('No token received from server');
-
-          const decoded = jwtDecode(token);
-          if (!decoded) throw new Error('Invalid token');
-
-          set({
-            isAuthenticated: true,
-            token,
-            user: {
-              id: data._id,
-              name: data.name,
-              email: data.email,
-              username: data.username,
-            },
-          });
-
-          return { success: true, message: res.message, user: decoded };
-        } catch (error) {
-          console.error('Login failed:', error.message);
-          return { success: false, message: error.message };
-        }
-      },
-
-    // === LOAD TOKEN === (biar auto-login setelah reload)
-    loadToken: () => {
-      const savedToken = localStorage.getItem("token");
-      if (savedToken) {
-        try {
-          const decoded = jwtDecode(savedToken);
-          set({
-            isAuthenticated: true,
-            token: savedToken,
-            user: decoded
-          });
-        } catch (error) {
-          console.error('Token decoding failed:', error.message);
-          set({ isAuthenticated: false, user: null, token: null });
-        }
-      } else {
-        set({ isHydrated: true });
+        return { success: true, message: res.message, user: data };
+      } catch (error) {
+        console.error("Login failed:", error.message);
+        return { success: false, message: error.message };
       }
     },
 
+
+
+      // === CEK SESSION DARI BACKEND ===
+      loadSession: async () => {
+        try {
+          const res = await apiRequest("me", "GET"); // backend harus sediakan endpoint /me
+          if (res.user) {
+            set({
+              user: res.user,
+              isAuthenticated: true,
+              isHydrated: true,
+            });
+          } else {
+            set({
+              user: null,
+              isAuthenticated: false,
+              isHydrated: true,
+            });
+          }
+        } catch {
+          set({
+            user: null,
+            isAuthenticated: false,
+            isHydrated: true,
+          });
+        }
+      },
+
   // === LOGOUT ===
-  logout: () => {
-    localStorage.removeItem("token");
-    set({ isAuthenticated: false, user: null, token: null });
-  },
+    logout: async () => {
+      await apiRequest("logout", "POST"); // backend hapus cookie
+      set({
+        user: null,
+        isAuthenticated: false,
+        isHydrated: true,
+      });
+    },
 })
     // {
     //   name: 'auth-storage', // disimpan di localStorage
