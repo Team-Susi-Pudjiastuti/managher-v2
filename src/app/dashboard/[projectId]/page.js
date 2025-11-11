@@ -6,24 +6,8 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import useProjectStore from '@/store/useProjectStore';
 import useAuthStore from '@/store/useAuthStore';
-import { Lock, HelpCircle, Sparkle } from "lucide-react"
+import { Lock, HelpCircle, Sparkle, Loader2} from "lucide-react"
 import * as Icons from 'lucide-react';
-
-// const LEVELS = [
-//   { id: 1, title: "Ide Generator", phase: "plan", xp: 10, icon: Lightbulb, badge: "AI Innovator" },
-//   { id: 2, title: "RWW Analysis", phase: "plan", xp: 10, icon: CheckCircle, badge: "Validator Pro" },
-//   { id: 3, title: "Brand Identity", phase: "plan", xp: 10, icon: Palette, badge: "Brand Builder" },
-//   { id: 4, title: "Lean Canvas", phase: "plan", xp: 10, icon: FileText, badge: "Canvas Master" },
-//   { id: 5, title: "MVP", phase: "plan", xp: 10, icon: Box, badge: "MVP Maker" },
-//   { id: 6, title: "Beta Testing", phase: "plan", xp: 10, icon: Users, badge: "Tester Hero" },
-//   { id: 7, title: "Persiapan Launching", phase: "plan", xp: 10, icon: Rocket, badge: "Launch Ready" },
-//   { id: 8, title: "Product", phase: "sell", xp: 10, icon: Package, badge: "Product Manager" },
-//   { id: 9, title: "Customer", phase: "sell", xp: 10, icon: User, badge: "Customer Care" },
-//   { id: 10, title: "Order", phase: "sell", xp: 10, icon: ShoppingBag, badge: "Order Ninja" },
-//   { id: 11, title: "Laba Rugi", phase: "sell", xp: 10, icon: BarChart3, badge: "Finance Guru" },
-//   { id: 12, title: "Scale Up", phase: "scaleUp", xp: 10, icon: TrendingUp, badge: "CEO Mode" },
-// ];
-
 
 export default function DashboardPage() {
   const { getLevels, levels, projects, planLevels, sellLevels, scaleUpLevels } = useProjectStore();
@@ -48,7 +32,11 @@ export default function DashboardPage() {
   }, [projectId]);
 
   if (!isHydrated) {
-    return <p>Loading...</p>; 
+    return (
+    <div className="flex justify-center items-center py-10">
+      <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
+    </div>
+  );
   }
 
   if (!isAuthenticated) {
@@ -57,8 +45,8 @@ export default function DashboardPage() {
 
   if (!projectId || !levels) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white p-4">
-        Memuat proyek...
+      <div className="flex justify-center items-center py-10">
+        <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
       </div>
     );
   }

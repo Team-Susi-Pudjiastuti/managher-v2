@@ -19,11 +19,11 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
 
   const isInLevelPage = /\/plan\/level_[1-7]_[a-z]/.test(pathname);
 
-  // useEffect(() => {
-  //   if (projectId) {
-  //     getProject(projectId);
-  //   }
-  // }, [projectId]);
+  useEffect(() => {
+    if (projectId) {
+      getProject(projectId);
+    }
+  }, [projectId]);
 
   // Saat masuk halaman, set default collapsed jika di level
   useEffect(() => {
