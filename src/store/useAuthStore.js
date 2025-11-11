@@ -64,12 +64,10 @@ const useAuthStore = create(
       }
     },
 
-
-
       // === CEK SESSION DARI BACKEND ===
       loadSession: async () => {
         try {
-          const res = await apiRequest("me", "GET"); // backend harus sediakan endpoint /me
+          const res = await apiRequest("me", "GET"); 
           if (res.user) {
             set({
               user: res.user,

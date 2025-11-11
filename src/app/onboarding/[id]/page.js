@@ -25,24 +25,10 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (isHydrated && !isAuthenticated) {
-      router.push('/auth/login');
-    }
-  }, [isHydrated, router]);
-
-  useEffect(() => {
       if (id) {
         getAllprojects(id);
       }
   }, []);
-
-  if (!isHydrated) {
-    return <p>Loading...</p>; 
-  }
-
-  if (!isAuthenticated) {
-    return null; // sedang redirect
-  }
 
   const openModal = () => {
     setProjectName('');
@@ -76,8 +62,7 @@ export default function OnboardingPage() {
             className="p-2 rounded-full hover:bg-gray-100 transition"
             title="Profile"
             onClick={() => {
-              logout();
-              console.log("Profile clicked");
+              router.push('/profile');
             }}
           >
             <UserCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-[#5b5b5b]" />
