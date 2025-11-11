@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import useProjectStore from '@/store/useProjectStore';
 import useAuthStore from '@/store/useAuthStore';
 import ProjectCard from '@/components/ProjectCard';
-import { LogOut, UserCircle2 } from "lucide-react";
+import { LogOut, UserCircle2, Loader2 } from "lucide-react";
 
 export default function OnboardingPage() {
   const params = useParams();
@@ -25,10 +25,36 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-      if (id) {
-        getAllprojects(id);
+      if (isHydrated && !isAuthenticated) {
+        router.push('/auth/login');
       }
-  }, []);
+    }, [isHydrated, router]);
+  
+    useEffect(() => {
+        if (id) {
+          getAllprojects(id);
+        }
+    }, []);
+
+    if (!isHydrated) {
+      return (
+        <div className="flex justify-center items-center py-10">
+        <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
+      </div>
+    );
+  }
+  
+    if (!isAuthenticated) {
+      return null; // sedang redirect
+    }
+  
+    if (!id || !levels) {
+      return (
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
+        </div>
+      );
+    }
 
   const openModal = () => {
     setProjectName('');
