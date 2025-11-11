@@ -23,7 +23,7 @@ export default function DashboardPage() {
     if (isHydrated && !isAuthenticated) {
       router.push('/auth/login');
     }
-  }, [isHydrated, router]);
+  }, [isHydrated, isAuthenticated, router]);
 
   useEffect(() => {
     if (projectId) {
@@ -33,10 +33,10 @@ export default function DashboardPage() {
 
   if (!isHydrated) {
     return (
-    <div className="flex justify-center items-center py-10">
-      <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
-    </div>
-  );
+      <div className="flex justify-center items-center py-10">
+        <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
+      </div>
+    );
   }
 
   if (!isAuthenticated) {

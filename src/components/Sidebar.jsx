@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useParams } from 'next/navigation';
+import { usePathname, useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Home, FileText, Settings, LogOut, Sparkle } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
@@ -9,13 +9,13 @@ import useProjectStore from '@/store/useProjectStore';
 export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
   const pathname = usePathname();
   const params = useParams();
+  const router = useRouter();
   const projectId = params.projectId;
   const { getProject, project } = useProjectStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   // getProject(projectId);
   // console.log(project);
   const userId = project?.user;
-
 
   const isInLevelPage = /\/plan\/level_[1-7]_[a-z]/.test(pathname);
 
@@ -131,7 +131,11 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
 
         <div className="px-2 pb-4">
           <button
-            onClick={() => confirm('Yakin ingin keluar proyek?') && (window.location.href = `/onboarding/${userId}`)}
+            onClick={() => {
+              if (confirm('Yakin ingin keluar proyek?')) {
+                router.push(`/onboarding/${userId}`);
+              }
+            }}
             title={showTooltip ? 'Keluar proyek' : undefined}
             className={`flex items-center gap-3 px-3 py-2.5 text-sm text-[#f02d9c] rounded-lg hover:bg-[#fbe2a7] transition-colors ${
               !effectiveOpen && !isMobile ? 'justify-center px-2' : ''
