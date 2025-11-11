@@ -91,8 +91,8 @@ export default function OnboardingPage() {
             className="p-2 rounded-full hover:bg-gray-100 transition"
             title="Logout"
             onClick={() => {
-              logout();
               if (confirm('Apakah Anda yakin ingin logout?')) {
+                logout();
                 router.push('/auth/login');
               }
             }}
