@@ -198,6 +198,7 @@ export default function Level4Page() {
         const { updateLevelStatus } = useProjectStore.getState();
         await updateLevelStatus(currentLevel._id, { completed: true });
       }
+      setIsEditing(!isEditing)
 
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
@@ -254,7 +255,7 @@ export default function Level4Page() {
               <div className="relative">
                 <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-2xl"></div>
                 <div
-                  className="relative bg-white rounded-2xl border-t border-l border-black p-4 sm:p-5 md:p-6"
+                  className="relative bg-white rounded-2xl border-t border-l p-4 sm:p-5 md:p-6"
                   style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -357,7 +358,7 @@ export default function Level4Page() {
                           return (
                             <div
                               key={field.key}
-                              className={`col-span-1 ${isDoubleRow ? 'row-span-2' : ''} ${field.color} border-t border-l border-black rounded-2xl p-4 relative`}
+                              className={`col-span-1 ${isDoubleRow ? 'row-span-2' : ''} ${field.color} border-t border-l rounded-2xl p-4 relative`}
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                             >
                               <h3 className="font-semibold mb-2 text-[#f02d9c] flex items-center gap-1.5">
@@ -439,7 +440,7 @@ export default function Level4Page() {
                                 <Icon size={14} /> {getLabel(field.key)}
                               </h3>
                               <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
-                                {getFieldValue(field.key) || <span className="text-gray-400 italic">Belum diisi</span>}
+                                {canvas[field.key] || <span className="text-gray-400 italic">Belum diisi</span>}
                               </p>
                             </div>
                           );
@@ -458,7 +459,7 @@ export default function Level4Page() {
                                   <Icon size={14} /> {getLabel(field.key)}
                                 </h3>
                                 <p className="text-sm text-gray-700 whitespace-pre-line min-h-6">
-                                  {getFieldValue(field.key) || <span className="text-gray-400 italic">Belum diisi</span>}
+                                  {canvas[field.key] || <span className="text-gray-400 italic">Belum diisi</span>}
                                 </p>
                               </div>
                             );
@@ -479,7 +480,7 @@ export default function Level4Page() {
                                 <Icon size={14} /> {getLabel(field.key)}
                               </h3>
                               <p className="text-sm text-gray-700 whitespace-pre-line">
-                                {getFieldValue(field.key) || <span className="text-gray-400 italic">Belum diisi</span>}
+                                {canvas[field.key] || <span className="text-gray-400 italic">Belum diisi</span>}
                               </p>
                             </div>
                           );
@@ -492,13 +493,13 @@ export default function Level4Page() {
                     <div className="mt-6 flex justify-center gap-3">
                       <button
                         onClick={() => setIsEditing(true)}
-                        className="px-5 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
+                        className="px-5 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border hover:bg-pink-600 flex items-center gap-1"
                       >
                         <Edit3 size={16} /> Edit Canvas
                       </button>
                       <button
                         onClick={handlePrint}
-                        className="px-5 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
+                        className="px-5 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border hover:bg-pink-600 flex items-center gap-1"
                       >
                         <Printer size={16} /> Print Canvas
                       </button>
@@ -508,34 +509,34 @@ export default function Level4Page() {
                   <div className="mt-6 flex flex-wrap gap-2 justify-center">
                     <button
                       onClick={() => router.push(`/dashboard/${projectId}/plan/level_3_product_brand/${nextPrevLevel(3)}`)}
-                      className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1 text-sm"
+                      className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
                     >
                       <ChevronLeft size={16} /> Prev
                     </button>
 
 
-                    <button
-                      onClick={() => setIsEditing(!isEditing)}
-                      className="px-4 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1 text-sm"
-                    >
-                      <Eye size={16} /> {isEditing ? 'Lihat Preview' : 'Edit'}
-                    </button>
                     {isEditing && (
                      <>
+                    <button
+                      onClick={() => setIsEditing(!isEditing)}
+                      className="px-4 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1"
+                    >
+                      <Eye size={16} /> Lihat Preview
+                    </button>
                       <button
                         onClick={handleSave}
-                        className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1 text-sm"
+                        className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border hover:bg-pink-600 flex items-center gap-1"
                       >
                         <CheckCircle size={16} /> Simpan
                       </button>
-                      <button
-                      onClick={() => router.push(`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}`)}
-                        className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1 text-sm"
-                      >
-                        Next <ChevronRight size={16} />
-                      </button>
                       </> 
                     )}
+                    <button
+                      onClick={() => router.push(`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}`)}
+                        className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] flex items-center gap-1"
+                      >
+                        Next <ChevronRight size={16} />
+                    </button>
                   </div>
                 </div>
               </div>
