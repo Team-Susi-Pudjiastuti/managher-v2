@@ -387,7 +387,7 @@ export default function Level4Page() {
                                   <Icon size={14} /> {getLabel(field.key)}
                                 </h3>
                                 <textarea
-                                  value={getFieldValue(field.key)}
+                                  value={canvas[field.key] || ""}
                                   onChange={(e) => updateField(field.key, e.target.value)}
                                   placeholder={getPlaceholder(field.key)}
                                   className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
@@ -412,7 +412,7 @@ export default function Level4Page() {
                                 <Icon size={14} /> {getLabel(field.key)}
                               </h3>
                               <textarea
-                                value={getFieldValue(field.key)}
+                                value={canvas[field.key] || ""}
                                 onChange={(e) => updateField(field.key, e.target.value)}
                                 placeholder={getPlaceholder(field.key)}
                                 className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
