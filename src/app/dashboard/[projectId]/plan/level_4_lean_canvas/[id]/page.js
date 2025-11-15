@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import {
   Printer, Target, Lightbulb, BookOpen, ChevronLeft, ChevronRight,
   CheckCircle, AlertTriangle, Wrench, BarChart3, ShieldCheck, Users,
-  Send, Coins, TrendingUp, Eye, Edit3, Menu, Award, Zap,
+  Send, Coins, TrendingUp, Eye, Edit3, Menu, Award, Zap, Loader2
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
@@ -18,20 +18,20 @@ import useBusinessIdeaStore from '@/store/useBusinessIdeaStore';
 
 function mapIdeaToLeanCanvas(idea, projectId) {
   const product = idea.productsServices?.[0] || {};
-  console.log('product', product)
   return {
     project: projectId,
     problem: idea.problem || '',
     solution: `${product.title || ''}\n\n${product.deskripsi || ''}`,
     customerSegments: idea.customerSegments || '',
     uniqueValueProposition: `${idea.interest?.toUpperCase() || ''} — ${product.keunggulan_unik || ''}`,
-    unfairAdvantage: idea.painRelievers || '',
+    unfairAdvantage: idea.gainCreators || '',
     keyMetrics: product.angka_penting || '',
     channels: product.cara_jualan || '',
     costStructure: `${product.biaya_modal || ''}\n${product.biaya_bahan_baku || ''}`,
     revenueStreams: product.harga_jual || product.harga || '',
   };
 }
+
 
 // === PROGRESS BAR ===
 const PhaseProgressBar = ({ currentXp, totalXp }) => {
@@ -76,7 +76,6 @@ export default function Level4Page() {
     setCanvas,
   } = useLeanCanvasStore();
   const { businessIdea } = useBusinessIdeaStore()
-  console.log(canvas)
 
   const [isEditing, setIsEditing] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
@@ -179,22 +178,22 @@ export default function Level4Page() {
   
   useEffect(() => {
     // hanya jalan kalau sudah ada business idea dan belum ada canvas
-    if (businessIdea && !canvas.problem) {
+    if (businessIdea && (!canvas.problem || canvas.problem.length === 24)) {
       const mappedCanvas = mapIdeaToLeanCanvas(businessIdea, projectId);
       setCanvas(mappedCanvas);
     }
   }, [planLevels, projectId]);
-  
-  console.log('business', businessIdea)
-
 
   const currentLevel = planLevels.find(l => l.order === 4);
   const xpGained = currentLevel?.xp || 10;
   const badgeName = currentLevel?.badge || 'Lean Strategist';
 
+  
+  
   const handleSave = async () => {
     try {
       await saveLeanCanvas(projectId);
+
       if (currentLevel?._id) {
         const { updateLevelStatus } = useProjectStore.getState();
         await updateLevelStatus(currentLevel._id, { completed: true });
@@ -218,13 +217,11 @@ export default function Level4Page() {
 
   if (!isMounted || canvasLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-[#f02d9c] font-medium">Memuat data dari Level 1...</p>
+      <div className="flex justify-center items-center py-10">
+        <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
       </div>
     );
   }
-
-  console.log("🧠 canvas state:", canvas);
 
 
   return (
@@ -367,7 +364,7 @@ export default function Level4Page() {
                                 <Icon size={14} /> {getLabel(field.key)}
                               </h3>
                               <textarea
-                                value={getFieldValue(field.key)}
+                                value={canvas[field.key] || ""}
                                 onChange={(e) => updateField(field.key, e.target.value)}
                                 placeholder={getPlaceholder(field.key)}
                                 className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#f02d9c]"
