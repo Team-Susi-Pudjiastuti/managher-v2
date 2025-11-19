@@ -6,13 +6,13 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import useProjectStore from '@/store/useProjectStore';
 import useAuthStore from '@/store/useAuthStore';
-import { Lock, HelpCircle, Sparkle, Loader2} from "lucide-react"
+import { Lock, Sparkle, Loader2} from "lucide-react"
 import * as Icons from 'lucide-react';
 
 export default function DashboardPage() {
-  const { getLevels, levels, projects, planLevels, sellLevels, scaleUpLevels } = useProjectStore();
+ const { getLevels, levels, clearLevels, planLevels, sellLevels, scaleUpLevels } = useProjectStore();
   const router = useRouter();
-  const projectId = levels?.[0]?.project?._id;
+  const { projectId } = useParams();
   const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
 
   useEffect(() => {
@@ -26,27 +26,33 @@ export default function DashboardPage() {
   }, [isHydrated, isAuthenticated, router]);
 
   useEffect(() => {
-    if (projectId) {
-      getLevels(projectId);
-    }
-  }, [projectId]);
+    if (!projectId) return;
+    clearLevels(); 
+    getLevels(projectId);
+  }, [projectId, getLevels, clearLevels]);
 
   if (!isHydrated) {
     return (
       <div className="flex justify-center items-center py-10">
-        <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return null; // sedang redirect
-  }
+  if (!isAuthenticated) return null;
 
-  if (!projectId || !levels) {
+  if (!projectId) {
     return (
       <div className="flex justify-center items-center py-10">
-        <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
+      </div>
+    );
+  }
+
+  if (!levels || levels.length === 0) {
+    return (
+      <div className="flex justify-center items-center py-10">
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
       </div>
     );
   }
@@ -64,13 +70,24 @@ export default function DashboardPage() {
   const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
   const globalProgress = Math.min(100, Math.floor((currentXp / TOTAL_XP) * 100));
   const currentLevel = enrichedLevels.find(l => l.phase.name === 'plan' && !l.completed);
-  
+
   
   const renderLevelBadge = (level) => {
     // Fase Sell & Scale Up selalu dianggap "belum selesai"
     const isLockedPhase = level.phase.name !== 'plan';
     const isCompleted = !isLockedPhase && level.completed;
-    const isActive = !isLockedPhase && level.order === planLevels.find(l => l.phase.name === 'plan').order && !isCompleted;
+    const isActive = (() => {
+    const index = planLevels.findIndex(l => l.order === level.order);
+
+    if (level.completed) return false;
+
+    if (index === -1) return false;
+
+    if (index === 0) return true;
+    
+    const prev = planLevels[index - 1];
+    return prev.completed === true;
+  })();
 
     let bgColor, textColor, borderColor, badgeBg;
 
