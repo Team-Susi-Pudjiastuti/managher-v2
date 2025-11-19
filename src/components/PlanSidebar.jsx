@@ -69,9 +69,17 @@ export default function PlanSidebar({
   };
 
   const isActive = (order) => {
-    if (order === 'overview') return pathname === `/dashboard/${projectId}`;
-    const levelPath = sidebarItems.find(item => item.id === order)?.href;
-    return levelPath && pathname.startsWith(levelPath);
+      const index = sidebarItems.findIndex(item => item.id === order);
+
+      const completed = isLevelCompleted(order);
+
+      if (completed) return false;
+
+      if (index === 0) return true;
+
+      const prev = sidebarItems[index - 1];
+
+      return isLevelCompleted(prev.id);
   };
 
   const showText = isMobile ? mobileSidebarOpen : !isCollapsed;
@@ -153,7 +161,7 @@ export default function PlanSidebar({
             const completed = isLevelCompleted(item.id);
             const active = isActive(item.id);
 
-            let bgColor, textColor, borderColor;
+            let bgColor, textColor, borderColor, cursor;
 
             if (completed) {
               bgColor = 'bg-[#f02d9c]';
@@ -167,17 +175,24 @@ export default function PlanSidebar({
               bgColor = 'bg-gray-100';
               textColor = 'text-gray-500';
               borderColor = 'border-gray-300';
+              cursor = 'cursor-not-allowed'
             }
 
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                onClick={isMobile ? closeMobileSidebar : undefined}
+                onClick={(e) => {
+                  if (!isLevelCompleted(item.id)) {
+                     e.preventDefault();
+                     return
+                  }
+                  isMobile ? closeMobileSidebar : undefined
+                }}
                 title={!showText ? item.title : undefined}
                 className={`
-                  group block rounded-lg border ${borderColor} ${bgColor} ${textColor}
-                  transition-all duration-200 ease-in-out
+                  group block rounded-lg border ${borderColor} ${bgColor} ${textColor} ${cursor}
+                  transition-all duration-200 ease-in-out 
                   ${
                     !showText
                       ? 'w-10 h-10 flex items-center justify-center mx-auto hover:border-[#f02d9c] hover:bg-[#fbe2a7] hover:text-[#5b5b5b]'
