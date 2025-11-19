@@ -22,7 +22,7 @@ export const useLeanCanvasStore = create((set, get) => ({
   fetchLeanCanvas: async (projectId) => {
     set({ loading: true, error: null });
     try {
-      const data = await apiRequest(`lean-canvas/project/${projectId}`, 'GET');
+      const data = await apiRequest(`lean-canvas/${projectId}`, 'GET');
       let source = {};
 
       if (data.leanCanvas) {
@@ -59,10 +59,10 @@ export const useLeanCanvasStore = create((set, get) => ({
     set((state) => ({ canvas: { ...state.canvas, [field]: value } }));
   },
 
-  updateLeanCanvas: async (id, updateData) => {
+  updateLeanCanvas: async (projectId, updateData) => {
   set({ loading: true, error: null });
   try {
-    const data = await apiRequest(`lean-canvas/${id}`, 'PUT', updateData);
+    const data = await apiRequest(`lean-canvas/${projectId}`, 'PUT', updateData);
     set({
       canvas: data.leanCanvas,
       loading: false,
@@ -73,11 +73,11 @@ export const useLeanCanvasStore = create((set, get) => ({
   }
 },
 
-  saveLeanCanvas: async (id) => {
+  saveLeanCanvas: async (projectId) => {
     const { canvas } = get();
     set({ loading: true, error: null });
     try {
-      await apiRequest(`lean-canvas/project/${id}`, 'PUT', {
+      await apiRequest(`lean-canvas/${projectId}`, 'PUT', {
         problem: canvas.problem,
         solution: canvas.solution,
         keyMetrics: canvas.keyMetrics,

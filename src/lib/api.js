@@ -1,24 +1,21 @@
-const API_URL = "https://managher-v2-back-end-production.up.railway.app/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-console.log('haloAPI_URL', API_URL)
+export async function apiRequest(endpoint, method = "GET", body) {
+  const headers = { "Content-Type": "application/json" };
 
-export async function apiRequest (endpoint, method = 'GET', body) {
-    const options = {
-        method,
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    }
-    if (body) options.body = JSON.stringify(body);
+  const options = {
+    method,
+    headers,
+    credentials: "include",
+  };
 
-    const res = await fetch(`${API_URL}/${endpoint}`, options);
-    const data = await res.json();
+  if (body) options.body = JSON.stringify(body);
 
-    console.log(API_URL)
+  const res = await fetch(`${API_URL}/${endpoint}`, options);
+  const data = await res.json();
 
-    if (!res.ok) {
-        throw new Error(data.message || 'Request failed');
-    }
-    return data;
-   
+  if (!res.ok) throw new Error(data.message || "Request failed");
+
+  return data;
 }
+

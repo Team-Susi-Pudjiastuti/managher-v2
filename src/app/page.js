@@ -82,7 +82,9 @@ export default function LandingPage() {
       >
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Sparkle size={24} className="text-[#f02d9c]" />
+            <Link href="/auth/register" className="text-[#f02d9c] font-bold text-xs">
+              <img src="/managher_logo.png" alt="ManagHer Logo" className="w-8 h-8" />
+            </Link>
             <div className="hidden sm:flex flex-col leading-tight">
               <span className="font-extrabold text-lg text-black">
                 Manag<span className="text-[#f02d9c]">Her</span>
@@ -176,7 +178,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#8acfd1] text-white font-semibold rounded-lg border-t border-l border-black hover:bg-[#fbe2a7] hover:text-[#333333] transition"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#8acfd1] text-black font-semibold rounded-lg border-t border-l border-black hover:bg-[#fbe2a7] hover:text-[#333333] transition"
                   style={{ boxShadow: '3px 3px 0 0 #f02d9c'}}
                 >
                   <Gamepad2 size={16} /> Lihat Fitur
@@ -358,7 +360,7 @@ export default function LandingPage() {
                                 <span className="px-1.5 py-0.5 bg-[#fbe2a7] text-[#5b5b5b] text-[9px] font-bold rounded border-t border-l border-black" style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
                                   +{lvl.xp} XP
                                 </span>
-                                <span className="px-1.5 py-0.5 bg-[#8acfd1] text-white text-[9px] font-bold rounded border-t border-l border-black" style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
+                                <span className="px-1.5 py-0.5 bg-[#8acfd1] text-black text-[9px] font-bold rounded border-t border-l border-black" style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
                                   {lvl.badge}
                                 </span>
                               </div>

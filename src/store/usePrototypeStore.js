@@ -9,7 +9,7 @@ export const usePrototypeStore = create((set, get) => ({
   fetchProducts: async (projectId) => {
     set({ loading: true, error: null });
     try {
-      const data = await apiRequest(`prototype/project/${projectId}`, 'GET');
+      const data = await apiRequest(`prototype/${projectId}`, 'GET');
       set({
         products: Array.isArray(data.data) ? data.data : [],
         loading: false,
@@ -23,7 +23,7 @@ export const usePrototypeStore = create((set, get) => ({
   saveProducts: async (projectId, products) => {
     set({ loading: true, error: null });
     try {
-      await apiRequest(`prototype/project/${projectId}`, 'PUT', { products });
+      await apiRequest(`prototype/${projectId}`, 'PUT', { products });
       set({ loading: false });
     } catch (err) {
       console.error('Gagal simpan prototype:', err);

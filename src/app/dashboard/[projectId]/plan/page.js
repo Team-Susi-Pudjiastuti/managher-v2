@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import useProjectStore from '@/store/useProjectStore';
+import useAuthStore from '@/store/useAuthStore';
 import Breadcrumb from '@/components/Breadcrumb';
-import { Lock, Check, Sparkle } from 'lucide-react';
+import { Lock, Check, Sparkle, Loader2 } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
 // const PLAN_LEVELS = [
@@ -20,21 +21,26 @@ import * as Icons from 'lucide-react';
 
 export default function PlanLevelsPage() {
   const { projectId } = useParams();
+  const router = useRouter()
   const { getLevels, levels, planLevels } = useProjectStore();
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
+  const [phaseProgress, setProgress] = useState(0);
+
+  useEffect(() => {
+    loadSession();
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isHydrated, isAuthenticated, router]);
 
   useEffect(() => {
     if (projectId) {;
       getLevels(projectId);
     }
   }, [projectId]);
-
-  if (!levels) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white p-4">
-        Memuat...
-      </div>
-    );
-  }
 
   const enrichedLevels = planLevels.map(level => {
     const existing = levels?.find(l => l.order === level.order);
@@ -43,17 +49,37 @@ export default function PlanLevelsPage() {
       completed: existing?.completed || false,
     };
   });
-
+  
   const completedLevels = enrichedLevels.filter(l => l.completed);
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);;
   const firstIncompleteLevel = enrichedLevels.find(l => !l.completed);
-  const [phaseProgress, setProgress] = useState(0);
 
   useEffect(() => {
     const calculatedProgress = totalXp > 0 ? Math.min(100, Math.floor((currentXp / totalXp) * 100)) : 0;
     setProgress(calculatedProgress);
   }, [currentXp, totalXp]);
+
+   if (!isHydrated) {
+    return (
+      <div className="flex justify-center items-center py-10">
+        <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // sedang redirect
+  }
+
+  if (!levels) {
+    return (
+      <div className="flex justify-center items-center py-10">
+        <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
+      </div>
+    );
+  }
+
 
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },

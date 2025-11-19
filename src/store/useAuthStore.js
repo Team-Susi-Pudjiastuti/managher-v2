@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiRequest } from '../lib/api';
+import {jwtDecode} from 'jwt-decode';
 
 const useAuthStore = create(
   persist(
     (set, get) => ({
       isAuthenticated: false,
       user: null,
+      isHydrated: false, 
 
       // === REGISTER ===
       register: async (name, username, email, password) => {
@@ -40,40 +42,64 @@ const useAuthStore = create(
         }
       },
 
-      // === LOGIN ===
-      login: async (username, password) => {
+    login: async (username, password) => {
+      try {
+        const res = await apiRequest("login", "POST", { username, password });
+        const { data } = res;
+
+        // tidak perlu token, karena disimpan di cookie
+        set({
+          isAuthenticated: true,
+          user: {
+            id: data.id,
+            username: data.username,
+            email: data.email,
+          },
+        });
+
+        return { success: true, message: res.message, user: data };
+      } catch (error) {
+        console.error("Login failed:", error.message);
+        return { success: false, message: error.message };
+      }
+    },
+
+      // === CEK SESSION DARI BACKEND ===
+      loadSession: async () => {
         try {
-          const res = await apiRequest('login', 'POST', {
-            username,
-            password
-          });
-
-          // { message, data: { username, email } }
-          const userData = res.data;
-          if (!userData) throw new Error('Invalid response from server');
-
+          const res = await apiRequest("me", "GET"); 
+          if (res.user) {
+            set({
+              user: res.user,
+              isAuthenticated: true,
+              isHydrated: true,
+            });
+          } else {
+            set({
+              user: null,
+              isAuthenticated: false,
+              isHydrated: true,
+            });
+          }
+        } catch {
           set({
-            isAuthenticated: true,
-            user: {
-              id: userData._id,
-              name: userData.name,
-              username: userData.username,
-              email: userData.email,
-            },
+            user: null,
+            isAuthenticated: false,
+            isHydrated: true,
           });
-
-          return { success: true, message: res.message || 'Login successful', user: userData };
-        } catch (error) {
-          console.error('Login failed:', error.message);
-          return { success: false, message: error.message };
         }
       },
 
-      // === LOGOUT ===
-      logout: () => {
-        set({ isAuthenticated: false, user: null });
-      },
-    }),
+  // === LOGOUT ===
+    logout: async () => {
+      await apiRequest("logout", "POST"); // backend hapus cookie
+      set({
+        user: null,
+        isAuthenticated: false,
+        isHydrated: true,
+      });
+    },
+})
     // {
     //   name: 'auth-storage', // disimpan di localStorage
     //   partialize: (state) => ({
