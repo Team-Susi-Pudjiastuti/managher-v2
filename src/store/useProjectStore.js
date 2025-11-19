@@ -34,6 +34,7 @@ const useProjectStore = create(
     planLevels: [],
     sellLevels: [],
     scaleUpLevels: [],
+    
     getAllprojects: async (userId) => {
       try {
         const res = await apiRequest(`project/${userId}`, 'GET');
@@ -43,11 +44,13 @@ const useProjectStore = create(
         set({ projects: [] });
       }
     },
+
     getProject: async (id) => {
       const res = await apiRequest(`project/detail/${id}`, 'GET');
       set({ project: res.data || {} });
       return res.data || {};
     },
+
     addProject: async (user, title) => {
       const res = await apiRequest('project', 'POST', {
         user,
@@ -70,12 +73,14 @@ const useProjectStore = create(
     //   set 
     //   return res.data || {};
     // },
+
     getPhases: async (projectId) => {
       const res = await apiRequest(`phase/${projectId}`, 'GET');
       const phases = res.data || [];
       set({ phases: phases });
       return phases;
     },
+
     getLevels: async (projectId) => {
       const res = await apiRequest(`level/${projectId}`, 'GET');
       const levels = res.data || [];
@@ -85,6 +90,7 @@ const useProjectStore = create(
       set({ scaleUpLevels: levels.filter(l => l.phase.name === 'scale_up') || [] });  
       return levels;
     },
+
     updateLevelStatus: async (id, updates) => {
       const res = await apiRequest(`level/${id}`, 'PUT', updates);
       const updatedLevel = res.data || {};
@@ -95,12 +101,16 @@ const useProjectStore = create(
       }));
       return updatedLevel;
     },
+
     deleteProject: async (projectId) => {
       await apiRequest(`project/${projectId}`, 'DELETE');
       set((state) => ({
         projects: state.projects.filter((p) => p.id !== projectId),
       }));
     },
+
+    clearLevels: () => set({ levels: null })
+
   })
   )
 );
