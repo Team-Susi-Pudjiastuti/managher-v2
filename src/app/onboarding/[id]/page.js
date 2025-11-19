@@ -157,7 +157,6 @@ export default function OnboardingPage() {
                 <ProjectCard
                   key={project._id || `temp-${index}`}
                   project={project}
-                  onClick={() => router.push(`/dashboard/${project._id}`)}
                 />
               ))}
 
