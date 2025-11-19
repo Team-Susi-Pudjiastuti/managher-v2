@@ -183,7 +183,7 @@ export default function PlanSidebar({
                 key={item.id}
                 href={item.href}
                 onClick={(e) => {
-                  if (!isLevelCompleted(item.id)) {
+                  if (!isActive(item.id) && !isLevelCompleted(item.id)) {
                      e.preventDefault();
                      return
                   }

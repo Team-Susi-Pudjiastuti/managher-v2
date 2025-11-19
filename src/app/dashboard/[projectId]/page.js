@@ -70,12 +70,24 @@ export default function DashboardPage() {
   const currentXp = completedLevels.reduce((sum, l) => sum + l.xp, 0);
   const globalProgress = Math.min(100, Math.floor((currentXp / TOTAL_XP) * 100));
   const currentLevel = enrichedLevels.find(l => l.phase.name === 'plan' && !l.completed);
+
   
   const renderLevelBadge = (level) => {
     // Fase Sell & Scale Up selalu dianggap "belum selesai"
     const isLockedPhase = level.phase.name !== 'plan';
     const isCompleted = !isLockedPhase && level.completed;
-    const isActive = !isLockedPhase && level.order === planLevels.find(l => l.phase.name === 'plan').order && !isCompleted;
+    const isActive = (() => {
+    const index = planLevels.findIndex(l => l.order === level.order);
+
+    if (level.completed) return false;
+
+    if (index === -1) return false;
+
+    if (index === 0) return true;
+    
+    const prev = planLevels[index - 1];
+    return prev.completed === true;
+  })();
 
     let bgColor, textColor, borderColor, badgeBg;
 
