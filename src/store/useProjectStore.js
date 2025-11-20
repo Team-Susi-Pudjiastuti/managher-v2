@@ -1,123 +1,120 @@
-'use client';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiRequest } from '../lib/api';
+import useAuthStore from './useAuthStore';
+
+// const createEmptyLevels = () => [
+//   { id: 1, completed: false,  data: {} },
+//   { id: 2, completed: false,  data: {} },
+//   { id: 3, completed: false,  data: {} },
+//   { id: 4, completed: false,  data: {} },
+//   { id: 5, completed: false,  data: {} },
+//   { id: 6, completed: false,  data: {} },
+//   { id: 7, completed: false,  data: {
+//       checklist: {
+//         social: false,
+//         photos: false,
+//         payment: false,
+//         offer: false,
+//         delivery: false,
+//         price: false,
+//         feedback: false,
+//         schedule: false,
+//       }
+//     }
+//   }
+// ];
 
 const useProjectStore = create(
-  persist(
-    (set, get) => ({
-      project: {},
-      projects: [],
-      phases: [],
-      levels: [],
-      planLevels: [],
-      sellLevels: [],
-      scaleUpLevels: [],
+  persist((set, get) => ({
+    project: {},
+    projects: [],
+    phases: [],
+    levels:[],
+    planLevels: [],
+    sellLevels: [],
+    scaleUpLevels: [],
+    
+    getAllprojects: async (userId) => {
+      try {
+        const res = await apiRequest(`project/${userId}`, 'GET');
+        set({ projects: res.data || [] });
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        set({ projects: [] });
+      }
+    },
 
-      getAllprojects: async (userId) => {
-        try {
-          const res = await apiRequest(`project/${userId}`, 'GET');
-          set({ projects: res.data || [] });
-        } catch (error) {
-          console.error('Error fetching projects:', error);
-          set({ projects: [] });
-        }
-      },
+    getProject: async (id) => {
+      const res = await apiRequest(`project/detail/${id}`, 'GET');
+      set({ project: res.data || {} });
+      return res.data || {};
+    },
 
-      getProject: async (id) => {
-        try {
-          const res = await apiRequest(`project/detail/${id}`, 'GET');
-          const project = res.data || {};
-          set({ project });
-          return project;
-        } catch (error) {
-          console.error('Error fetching project:', error);
-          return {};
-        }
-      },
+    addProject: async (user, title) => {
+      const res = await apiRequest('project', 'POST', {
+        user,
+        title,
+      });
+      const newProject = res.data;
 
-      addProject: async (user, title) => {
-        try {
-          const res = await apiRequest('project', 'POST', { user, title });
-          const newProject = res.data;
-          set((state) => ({ projects: [...state.projects, newProject] }));
-          return newProject;
-        } catch (error) {
-          console.error('Error adding project:', error);
-          throw error;
-        }
-      },
+      set((state) => ({ projects: [...state.projects, newProject] }));
+     
+      return newProject;
+    },
+    // updateProject: (id, updates) =>
+    //   set((state) => ({
+    //     projects: state.projects.map((p) =>
+    //       p.id === id ? { ...p, ...updates } : p
+    //     ),
+    //   })),
+    // getProject: async (projectId) => {
+    //   const res = await apiRequest(`project/detail/${projectId}`, 'GET');
+    //   set 
+    //   return res.data || {};
+    // },
 
-      getPhases: async (projectId) => {
-        try {
-          const res = await apiRequest(`phase/${projectId}`, 'GET');
-          const phases = res.data || [];
-          set({ phases });
-          return phases;
-        } catch (error) {
-          console.error('Error fetching phases:', error);
-          return [];
-        }
-      },
+    getPhases: async (projectId) => {
+      const res = await apiRequest(`phase/${projectId}`, 'GET');
+      const phases = res.data || [];
+      set({ phases: phases });
+      return phases;
+    },
 
-      getLevels: async (projectId) => {
-        try {
-          const res = await apiRequest(`level/${projectId}`, 'GET');
-          const levels = res.data || [];
+    getLevels: async (projectId) => {
+      const res = await apiRequest(`level/${projectId}`, 'GET');
+      const levels = res.data || [];
+      set({ levels: levels });
+      set({ planLevels: levels.filter(l => l.phase.name === 'plan') || [] });  
+      set({ sellLevels: levels.filter(l => l.phase.name === 'sell') || [] });
+      set({ scaleUpLevels: levels.filter(l => l.phase.name === 'scale_up') || [] });  
+      return levels;
+    },
 
-          const planLevels = levels.filter(l => l.phase?.name === 'plan') || [];
-          const sellLevels = levels.filter(l => l.phase?.name === 'sell') || [];
-          const scaleUpLevels = levels.filter(l => l.phase?.name === 'scale_up') || [];
+    updateLevelStatus: async (id, updates) => {
+      const res = await apiRequest(`level/${id}`, 'PUT', updates);
+      const updatedLevel = res.data || {};
+      set((state) => ({
+        planLevels: state.planLevels.map((l) =>
+          l._id === id ? { ...l, ...updatedLevel } : l
+        ),
+      }));
+      return updatedLevel;
+    },
 
-          set({ levels, planLevels, sellLevels, scaleUpLevels });
-          return levels;
-        } catch (error) {
-          console.error('Error fetching levels:', error);
-          set({ levels: [], planLevels: [], sellLevels: [], scaleUpLevels: [] });
-          return [];
-        }
-      },
+    deleteProject: async (projectId) => {
+      await apiRequest(`project/${projectId}`, 'DELETE');
+      set((state) => ({
+        projects: state.projects.filter((p) => p.id !== projectId),
+      }));
+    },
 
-      updateLevelStatus: async (id, updates) => {
-        try {
-          const res = await apiRequest(`level/${id}`, 'PUT', updates);
-          const updatedLevel = res.data;
+    clearLevels: () => set({ levels: null })
 
-          set((state) => {
-            const newLevels = state.levels.map((l) =>
-              l._id === id ? { ...l, ...updatedLevel } : l
-            );
-
-            const planLevels = newLevels.filter(l => l.phase?.name === 'plan') || [];
-            const sellLevels = newLevels.filter(l => l.phase?.name === 'sell') || [];
-            const scaleUpLevels = newLevels.filter(l => l.phase?.name === 'scale_up') || [];
-
-            return { levels: newLevels, planLevels, sellLevels, scaleUpLevels };
-          });
-
-          return updatedLevel;
-        } catch (error) {
-          console.error('Error updating level status:', error);
-          throw error;
-        }
-      },
-
-      deleteProject: async (projectId) => {
-        try {
-          await apiRequest(`project/${projectId}`, 'DELETE');
-          set((state) => ({
-            projects: state.projects.filter((p) => p._id !== projectId),
-          }));
-        } catch (error) {
-          console.error('Error deleting project:', error);
-          throw error;
-        }
-      },
-    }),
-    {
-      name: 'project-storage',
-    }
+  })
   )
 );
+
+
 
 export default useProjectStore;

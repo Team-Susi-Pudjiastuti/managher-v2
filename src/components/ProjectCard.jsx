@@ -2,23 +2,38 @@
 
 import useProjectStore from '@/store/useProjectStore';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircle } from 'lucide-react';
 import { useState } from 'react';
-import { Trash2, X } from 'lucide-react';
+import { Trash2, X, Loader2 } from 'lucide-react';
 
-export default function ProjectCard({ project, onClick }) {
-  // const totalLevels = 12; 
-  // const completedLevels = project.levels.filter((l) => l.completed).length;
-  // const progress = Math.min(100, Math.floor((completedLevels / totalLevels) * 100));
-  // const isCompleted = completedLevels === totalLevels;
+export default function ProjectCard({ project }) {
   const id = project._id;
-  const { getLevels, levels, deleteProject} = useProjectStore();
+  const router = useRouter();
+  // ambil data level project
+  const [levels, setLevels] = useState(project.levels ?? []);
+  const { getLevels, deleteProject} = useProjectStore();
+  const [isLoading, setIsLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  useEffect(() => {
-    getLevels(id);
-  }, [id]);
-  console.log(project)
 
+  useEffect(() => {
+    let mounted = true;
+    async function fetchLevels() {
+      if (!id) return;
+      try {
+        setIsLoading(true);
+        const lv = await getLevels(id); // harus mengembalikan array
+        if (mounted && lv) setLevels(lv);
+      } catch (err) {
+        console.error('getLevels error', err);
+      } finally {
+      if (mounted) setIsLoading(false);
+      }
+    }
+    fetchLevels();
+    return () => { mounted = false; };
+  }, [id, getLevels]);
+  
   const totalLevels = levels.map((l) => l.id).length;
   const completedLevels = levels.filter((l) => l.completed).length;
   const progress = Math.min(100, Math.floor((completedLevels / totalLevels) * 100));
@@ -38,11 +53,17 @@ export default function ProjectCard({ project, onClick }) {
     setIsDeleteModalOpen(false);
   };
 
+  const handleCardClick = () => {
+    router.push(`/dashboard/${id}`);
+  };
+
   return (
-    <div onClick={onClick} className="group relative cursor-pointer">
+  <>
+  <div onClick={handleCardClick} className="group relative cursor-pointer">
       <div className="absolute inset-0 translate-x-1.5 translate-y-1.5 bg-[#f02d9c] rounded-2xl"></div>
 
       {/* Card utama */}
+      { !isLoading ? (
       <div
         className="relative bg-white rounded-2xl border-t border-l border-black p-5
           transition-all duration-300 ease-out
@@ -88,6 +109,12 @@ export default function ProjectCard({ project, onClick }) {
           )}
         </div>
       </div>
+      ) : (
+        <div className="flex justify-center items-center py-6">
+          <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
+        </div>
+      )
+    }
 
       {/* Modal Konfirmasi Hapus */}
       {isDeleteModalOpen && (
@@ -132,6 +159,7 @@ export default function ProjectCard({ project, onClick }) {
           </div>
         </div>
       )}
-    </div>
+  </div>
+  </>
   );
 }

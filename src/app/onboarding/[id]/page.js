@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import useProjectStore from '@/store/useProjectStore';
 import useAuthStore from '@/store/useAuthStore';
 import ProjectCard from '@/components/ProjectCard';
-import { LogOut, UserCircle2, Loader2 } from 'lucide-react';
+import { LogOut, UserCircle2, Loader2 } from "lucide-react";
 
 export default function OnboardingPage() {
   const params = useParams();
-  const id = params?.id; // ✅ Optional chaining
+  const id = params.id;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectName, setProjectName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -28,12 +30,11 @@ export default function OnboardingPage() {
     }
   }, [isHydrated, isAuthenticated, router]);
 
-  // ✅ Perbaikan utama: tambahkan `id` ke dependensi
   useEffect(() => {
-    if (id && typeof id === 'string') {
-      getAllprojects(id);
-    }
-  }, [id]); // 🔑 dependensi: id
+      if (id) {
+        getAllprojects(id);
+      }
+  }, []);
 
   if (!isHydrated) {
     return (
@@ -44,7 +45,7 @@ export default function OnboardingPage() {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return null; // sedang redirect
   }
 
   const openModal = () => {
@@ -60,17 +61,11 @@ export default function OnboardingPage() {
     if (!projectName.trim()) return;
 
     setIsCreating(true);
-    try {
-      await addProject(id, projectName);
-      setIsModalOpen(false);
-      // Refresh daftar proyek
-      if (id) await getAllprojects(id);
-    } catch (error) {
-      console.error('Gagal membuat proyek:', error);
-      alert('Gagal membuat proyek. Silakan coba lagi.');
-    } finally {
-      setIsCreating(false);
-    }
+    await addProject(id, projectName);
+    setIsCreating(false);
+    setIsModalOpen(false);
+    await getAllprojects(id);
+
   };
 
   return (
@@ -78,48 +73,69 @@ export default function OnboardingPage() {
       <div className="max-w-4xl mx-auto w-full flex flex-col items-center">
         {/* Header */}
         <div className="relative w-full">
-          <div className="flex justify-between items-center px-4 sm:px-6 mb-4">
-            <button
-              className="p-2 rounded-full hover:bg-gray-100 transition"
-              onClick={() => router.push('/profile')}
-            >
-              <UserCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-[#5b5b5b]" />
-            </button>
-            <button
-              className="p-2 rounded-full hover:bg-gray-100 transition"
-              onClick={() => {
-                if (confirm('Apakah Anda yakin ingin logout?')) {
-                  logout();
-                  router.push('/auth/login');
-                }
-              }}
-            >
-              <LogOut className="w-5 h-5 sm:w-6 sm:h-6 text-[#f02d9c]" />
-            </button>
-          </div>
+        {/* === Bar atas: Logout kiri & Profil kanan === */}
+        <div className="flex justify-between items-center px-4 sm:px-6 mb-4">
+          {/* Icon Profil */}
+          <button
+            className="p-2 rounded-full hover:bg-gray-100 transition"
+            title="Profile"
+            onClick={() => {
+              router.push('/profile');
+            }}
+          >
+            <UserCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-[#5b5b5b]" />
+          </button>
 
-          <div className="text-center mb-6 sm:mb-8 px-2">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#5b5b5b] mb-2">
-              Selamat Datang di <span className="text-[#f02d9c]">ManagHer</span>
-            </h1>
-            <p className="text-[#7a7a7a] text-xs sm:text-sm md:text-base max-w-md mx-auto px-1">
-              Rancang, kelola, dan wujudkan ide bisnismu bersama komunitas perempuan inovatif
-            </p>
-          </div>
+          {/* Tombol Logout */}
+          <button
+            className="p-2 rounded-full hover:bg-gray-100 transition"
+            title="Logout"
+            onClick={() => {
+              if (confirm('Apakah Anda yakin ingin logout?')) {
+                logout();
+                router.push('/auth/login');
+              }
+            }}
+          >
+            <LogOut className="w-5 h-5 sm:w-6 sm:h-6 text-[#f02d9c]" />
+          </button>
+
         </div>
+
+        {/* === Teks tengah === */}
+        <div className="text-center mb-6 sm:mb-8 px-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#5b5b5b] mb-2">
+            Selamat Datang di <span className="text-[#f02d9c]">ManagHer</span>
+          </h1>
+          <p className="text-[#7a7a7a] text-xs sm:text-sm md:text-base max-w-md mx-auto px-1">
+            Rancang, kelola, dan wujudkan ide bisnismu bersama komunitas perempuan inovatif
+          </p>
+        </div>
+      </div>
 
         {/* Card "Buat Proyek Baru" */}
         <div className="relative mb-6 sm:mb-8 w-full max-w-xs">
           <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-2xl"></div>
           <div
-            className="relative bg-white rounded-2xl border-t border-l border-black p-5 sm:p-6 text-center cursor-pointer group hover:translate-x-1 hover:translate-y-1 transition-transform"
+            className="relative bg-white rounded-2xl border-t border-l border-black p-5 sm:p-6 text-center cursor-pointer group
+              hover:translate-x-1 hover:translate-y-1 transition-transform duration-200"
             style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
             onClick={openModal}
           >
             <div className="flex justify-center mb-2 sm:mb-3">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#fbe2a7] border-t border-l border-black flex items-center justify-center group-hover:bg-[#f02d9c] transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 sm:w-6 sm:h-6 text-[#333333] group-hover:text-white">
-                  <path fillRule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#fbe2a7] border-t border-l border-black flex items-center justify-center 
+                group-hover:bg-[#f02d9c] transition-colors duration-200">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-5 h-5 sm:w-6 sm:h-6 text-[#333333] group-hover:text-white transition-colors duration-200"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
             </div>
@@ -135,15 +151,15 @@ export default function OnboardingPage() {
               Proyekmu
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full max-w-2xl px-1">
-              {projects
-                .filter((p) => p && p._id)
-                .map((project) => (
-                  <ProjectCard
-                    key={project._id}
-                    project={project}
-                    onClick={() => router.push(`/dashboard/${project._id}`)}
-                  />
-                ))}
+            {projects
+              .filter((p) => p && p._id)
+              .map((project, index) => (
+                <ProjectCard
+                  key={project._id || `temp-${index}`}
+                  project={project}
+                />
+              ))}
+
             </div>
           </>
         )}
@@ -151,7 +167,13 @@ export default function OnboardingPage() {
         {projects.length === 0 && (
           <div className="text-center py-4 sm:py-6 px-2 mt-4">
             <div className="inline-block p-2.5 sm:p-3 rounded-full bg-[#f9f9f9] border border-dashed border-[#e0e0e0] mb-2 sm:mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-8 h-8 sm:w-10 sm:h-10 text-[#b0b0b0]">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                className="w-8 h-8 sm:w-10 sm:h-10 text-[#b0b0b0]"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
               </svg>
             </div>
@@ -192,7 +214,8 @@ export default function OnboardingPage() {
             <div className="flex gap-2">
               <button
                 onClick={closeModal}
-                className="flex-1 py-1.5 sm:py-2 font-medium rounded-lg border-t border-l border-black bg-[#f9f9f9] text-[#5b5b5b] hover:bg-[#e4e4e4] transition-colors shadow-[2px_2px_0_0_#000000] text-xs sm:text-sm"
+                className="flex-1 py-1.5 sm:py-2 font-medium rounded-lg border-t border-l border-black bg-[#f9f9f9] text-[#5b5b5b] 
+                  hover:bg-[#e4e4e4] transition-colors shadow-[2px_2px_0_0_#000000] text-xs sm:text-sm"
               >
                 Batal
               </button>
