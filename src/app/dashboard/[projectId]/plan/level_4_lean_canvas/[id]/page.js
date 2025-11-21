@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
-  Printer, Target, Lightbulb, BookOpen, ChevronLeft, ChevronRight,
+  Printer, Target, Lightbulb, BookOpen, ChevronLeft, ChevronRight, Clipboard,
   CheckCircle, AlertTriangle, Wrench, BarChart3, ShieldCheck, Users,
   Send, Coins, TrendingUp, Eye, Edit3, Menu, Award, Zap, Loader2
 } from 'lucide-react';
@@ -327,22 +327,28 @@ export default function Level4Page() {
                       <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
                         <BookOpen size={14} /> Resources
                       </h3>
-                      <ul className="text-sm text-[#5b5b5b] space-y-1.5">
-                        <li>
-                          <a href="https://miro.com/templates/lean-canvas/" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline inline-flex items-center gap-1">
-                            Miro: Lean Canvas Template <ChevronRight size={12} />
-                          </a>
+                      <ul className="text-sm text-[#5b5b5b] space-y-2">
+                        <li className="flex items-start gap-2">
+                          <Clipboard size={14} className="text-[#f02d9c] mt-0.5 flex-shrink-0" />
+                          <span>
+                            <strong>Apa itu Lean Canvas?</strong> Model bisnis satu halaman untuk merancang ide bisnis secara cepat dan berbasis validasi nyata.
+                          </span>
                         </li>
-                        <li>
-                          <a href="https://www.strategyzer.com/canvas/lean-canvas" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline inline-flex items-center gap-1">
-                            Panduan Resmi Lean Canvas (Strategyzer) <ChevronRight size={12} />
-                          </a>
+                        <li className="flex items-start gap-2">
+                          <Lightbulb size={14} className="text-[#f02d9c] mt-0.5 flex-shrink-0" />
+                          <span><strong>9 Komponen Utama:</strong></span>
                         </li>
-                        <li>
-                          <a href="https://perempuaninovasi.id/workshop" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline inline-flex items-center gap-1">
-                            Workshop Perempuan Inovasi <ChevronRight size={12} />
-                          </a>
-                        </li>
+                        <ul className="list-disc pl-7 space-y-1 text-[#5b5b5b] text-sm">
+                          <li><strong>Problem</strong> — Masalah utama yang dialami pelanggan.</li>
+                          <li><strong>Solution</strong> — Solusi yang kamu berikan untuk masalah tersebut.</li>
+                          <li><strong>Customer Segments</strong> — Kelompok orang yang benar-benar kamu layani.</li>
+                          <li><strong>UVP</strong> — Alasan utama pelanggan memilihmu.</li>
+                          <li><strong>Unfair Advantage</strong> — Keunggulan yang sulit ditiru pesaing.</li>
+                          <li><strong>Channels</strong> — Saluran untuk menjangkau dan melayani pelanggan.</li>
+                          <li><strong>Cost Structure</strong> — Biaya utama dalam menjalankan bisnis.</li>
+                          <li><strong>Revenue Streams</strong> — Sumber utama pendapatan bisnismu.</li>
+                          <li><strong>Key Metrics</strong> — Indikator utama keberhasilan bisnismu.</li>
+                        </ul>
                       </ul>
                     </div>
                   </div>
