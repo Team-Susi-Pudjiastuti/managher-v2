@@ -480,14 +480,14 @@ export default function Level6Page() {
                               </button>
                               <button
                                 onClick={handleSave}
-                                className="px-4 py-2 bg-[#f02d9c] text-white font-medium rounded-lg border border-black flex items-center gap-1"
+                                className="px-4 py-2 bg-[#f02d9c] text-white font-medium rounded-lg border flex items-center gap-1"
                               >
                                 <CheckCircle size={16} />
                                 Simpan
                               </button>
                               <Link
                                 href={`/dashboard/${projectId}/plan/level_7_launch/${nextPrevLevel(7)}`}
-                                className="px-4 py-2 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black flex items-center gap-1"
+                                className="px-4 py-2 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border flex items-center gap-1"
                               >
                                 Next
                                 <ChevronRight size={16} />
