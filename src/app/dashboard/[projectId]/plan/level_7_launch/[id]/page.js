@@ -32,6 +32,7 @@ import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 import useProjectStore from '@/store/useProjectStore';
 import { useLaunchChecklistStore } from '@/store/useLaunchChecklistStore';
+import useAuthStore from '@/store/useAuthStore'; 
 
 // === CONFETTI ===
 const Confetti = () => {
@@ -135,7 +136,7 @@ export default function Level7Page() {
   const router = useRouter();
 
   const { planLevels, getLevels, updateLevelStatus } = useProjectStore();
-  const { checklist, fetchChecklist, toggleItem } = useLaunchChecklistStore();
+  const { checklist, toggleItem } = useLaunchChecklistStore(); // fetchChecklist dihapus
 
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -143,19 +144,23 @@ export default function Level7Page() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
 
-  useEffect(() => setIsMounted(true), []);
+  // === AUTH & SESSION ===
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore(); 
 
   useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 1024);
-    handler();
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
+    loadSession(); 
+  }, []); 
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push('/auth/login'); 
+    }
+  }, [isHydrated, isAuthenticated, router]); 
 
   useEffect(() => {
     if (projectId && projectId !== 'undefined') {
       getLevels(projectId);
-      fetchChecklist(projectId);
+      // Tidak perlu fetchChecklist — data dari localStorage via persist
     }
   }, [projectId]);
 
@@ -215,13 +220,13 @@ export default function Level7Page() {
   const completedItems = Object.values(checklist).filter(Boolean).length;
   const progressPercentage = Math.round((completedItems / totalItems) * 100);
 
-  if (!isMounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-[#f02d9c] font-medium">Memuat data...</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+  setIsMounted(true);
+}, []);
+
+if (!isMounted) {
+  return null;
+}
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -355,7 +360,7 @@ export default function Level7Page() {
 
                     <div className="flex gap-2">
                       <button
-                        onClick={() =>router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/id`)}
+                        onClick={() => router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/id`)}
                         className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
                       >
                         <ChevronLeft size={16} />
