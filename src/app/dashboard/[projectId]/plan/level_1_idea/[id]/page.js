@@ -965,6 +965,9 @@ export default function Level1Page() {
                           <button
                             onClick={() => {
                               if (generatedIdeas.length > 0) {
+                                const agree = confirm('Hasil generate akan hilang, yakin ingin keluar?');
+                                if (!agree) return;
+                                
                                 setGeneratedIdeas([]);
                               } else if (generatedIdeas.length == 0){
                                 router.push(`/dashboard/${projectId}/plan`);
