@@ -25,6 +25,7 @@ import ResourceCard from '@/components/ResourceCard';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 import Confetti from '@/components/Confetti';
 import useBusinessIdeaStore from '@/store/useBusinessIdeaStore';
+import useAuthStore from '@/store/useAuthStore';
 
 // === IDE GENERATOR ===
 const generateThreeIdeasFromInterest = (interest) => {
@@ -149,8 +150,9 @@ const PhaseProgressBar = ({ currentXp, totalXp }) => {
 
 // === MAIN COMPONENT ===
 export default function Level1Page() {
-  const { id, projectId } = useParams(); // ✅ Ambil projectId dari URL
+  const { id, projectId } = useParams();
   const router = useRouter();
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
   const { businessIdea, updateBusinessIdea, getBusinessIdea } = useBusinessIdeaStore();
   const { planLevels, updateLevelStatus } = useProjectStore();
 
@@ -178,21 +180,25 @@ export default function Level1Page() {
   });
 
   useEffect(() => {
+    loadSession();
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isHydrated, isAuthenticated, router]);
+
+  useEffect(() => {
     if (id) {
       getBusinessIdea(id);
     }
   }, [id]);
 
-  // Load & parse data dari store
   useEffect(() => {
     if (id && businessIdea?.data) {
       const data = businessIdea.data;
-
-      let productsServices = [];
-      if (Array.isArray(data.productsServices)) {
-        productsServices = data.productsServices;
-      }
-
+      let productsServices = Array.isArray(data.productsServices) ? data.productsServices : [];
       setVpcData({
         customerSegments: data.customerSegments || '',
         problem: data.problem || '',
@@ -201,14 +207,12 @@ export default function Level1Page() {
         painRelievers: data.painRelievers || '',
         gainCreators: data.gainCreators || '',
       });
-
       setInterest(data.interest || '');
       setSelectedIdea(data.interest || 'saved');
       setIsEditing(false);
     }
   }, [id, businessIdea]);
 
-  // Detect mobile
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -223,7 +227,6 @@ export default function Level1Page() {
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
-  // ✅ nextPrevLevel dengan fallback
   const nextPrevLevel = (num) => {
     if (!projectId) return 'new';
     const level = planLevels?.find(
@@ -294,7 +297,6 @@ export default function Level1Page() {
       alert('Pilih salah satu ide produk terlebih dahulu.');
       return;
     }
-
     const payload = {
       id: 1,
       completed: true,
@@ -302,14 +304,12 @@ export default function Level1Page() {
       customerSegments: vpcData.customerSegments,
       problem: vpcData.problem,
       solution: vpcData.solution,
-      productsServices: vpcData.productsServices, // ✅ array of object
+      productsServices: vpcData.productsServices,
       painRelievers: vpcData.painRelievers,
       gainCreators: vpcData.gainCreators,
     };
-
     await updateBusinessIdea(id, payload);
     await updateLevelStatus(planLevels[0]._id, { completed: true });
-
     setShowConfetti(true);
     setNotificationData({
       message: 'Ide berhasil disimpan!',
@@ -319,6 +319,10 @@ export default function Level1Page() {
     setShowNotification(true);
     setTimeout(() => setShowConfetti(false), 3000);
   };
+
+  // ✅ Cek apakah sudah ada data tersimpan & sudah complete → tampilkan VPC langsung
+  const hasSavedVpc = businessIdea?.data?.completed === true;
+  const shouldShowVpc = selectedIdea || hasSavedVpc;
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -357,49 +361,56 @@ export default function Level1Page() {
                 )}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
-                    <div className="mb-5">
-                      <label className="block mb-2 font-medium text-[#5b5b5b] text-sm sm:text-base">
-                        Minat/Bidang
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={interest}
-                          onChange={(e) => setInterest(e.target.value)}
-                          className="w-full p-2.5 sm:p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f02d9c] text-sm sm:text-base"
-                          placeholder="Contoh: kuliner, fashion, edukasi anak..."
-                        />
-                        <button
-                          type="button"
-                          onClick={handleGenerate}
-                          className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] whitespace-nowrap"
-                        >
-                          Generate
-                        </button>
-                      </div>
-                    </div>
-                    {generatedIdeas.length > 0 && !selectedIdea && (
-                      <div className="mb-5">
-                        <h3 className="font-bold text-[#5b5b5b] mb-3">Pilih Salah Satu Ide:</h3>
-                        <div className="grid grid-cols-1 gap-3">
-                          {generatedIdeas.map((idea, idx) => (
+                    {/* Tampilkan form hanya jika belum ada VPC yang disimpan */}
+                    {!shouldShowVpc && (
+                      <>
+                        <div className="mb-5">
+                          <label className="block mb-2 font-medium text-[#5b5b5b] text-sm sm:text-base">
+                            Minat/Bidang
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={interest}
+                              onChange={(e) => setInterest(e.target.value)}
+                              className="w-full p-2.5 sm:p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f02d9c] text-sm sm:text-base"
+                              placeholder="Contoh: kuliner, fashion, edukasi anak..."
+                            />
                             <button
-                              key={idx}
-                              onClick={() => handleSelectIdea(idea)}
-                              className="p-3 text-left border border-gray-300 rounded-lg hover:bg-[#fdf6f0] transition-colors"
+                              type="button"
+                              onClick={handleGenerate}
+                              className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] whitespace-nowrap"
                             >
-                              <div className="font-medium text-[#0a5f61]">
-                                {idea.productsServices?.[0]?.title || '-'}
-                              </div>
-                              <div className="text-xs text-[#5b5b5b] mt-1">
-                                {idea.productsServices?.[0]?.keunggulan_unik || '-'}
-                              </div>
+                              Generate
                             </button>
-                          ))}
+                          </div>
                         </div>
-                      </div>
+                        {generatedIdeas.length > 0 && (
+                          <div className="mb-5">
+                            <h3 className="font-bold text-[#5b5b5b] mb-3">Pilih Salah Satu Ide:</h3>
+                            <div className="grid grid-cols-1 gap-3">
+                              {generatedIdeas.map((idea, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => handleSelectIdea(idea)}
+                                  className="p-3 text-left border border-gray-300 rounded-lg hover:bg-[#fdf6f0] transition-colors"
+                                >
+                                  <div className="font-medium text-[#0a5f61]">
+                                    {idea.productsServices?.[0]?.title || '-'}
+                                  </div>
+                                  <div className="text-xs text-[#5b5b5b] mt-1">
+                                    {idea.productsServices?.[0]?.keunggulan_unik || '-'}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
-                    {selectedIdea && (
+
+                    {/* Tampilkan VPC jika sudah dipilih atau disimpan */}
+                    {shouldShowVpc && (
                       <>
                         {!isEditing ? (
                           <div className="mb-5 p-4 border border-gray-300 rounded-xl bg-white">
@@ -773,7 +784,8 @@ export default function Level1Page() {
                           >
                             <CheckCircle size={16} /> Simpan
                           </button>
-                          {projectId ? (
+                          {/* ✅ Tombol Next hanya aktif jika planLevels[0].completed === true */}
+                          {planLevels?.[0]?.completed ? (
                             <Link
                               href={`/dashboard/${projectId}/plan/level_2_rww/${nextPrevLevel(2)}`}
                               className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] flex items-center gap-1"
