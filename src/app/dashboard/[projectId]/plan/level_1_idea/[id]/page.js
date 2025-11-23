@@ -20,11 +20,13 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
+import useAuthStore from '@/store/useAuthStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 import Confetti from '@/components/Confetti';
 import useBusinessIdeaStore from '@/store/useBusinessIdeaStore';
+import generateBusinessIdea from '@/ai/flows/generateDetailBusinessIdea';
 
 // === HELPER: Parse & Format Products & Services ===
 const parseProductsServices = (text) => {
@@ -105,102 +107,14 @@ const formatProductsServices = ({
   return parts.join('\n');
 };
 
+let baseIdeas = []
+
 // === GENERATOR IDE (DIPERBAIKI) ===
-const generateThreeIdeasFromInterest = (interest) => {
-  const baseIdeas = [
-    {
-      "interest": "kuliner kekinian",
-      "customerSegments": "Anak muda dan pekerja kantoran yang suka camilan manis dan praktis",
-      "problem": "Sulit menemukan camilan enak, higienis, dan mudah dibawa untuk menemani aktivitas harian",
-      "solution": "Camilan premium siap santap dengan rasa unik dan kemasan menarik",
-      "productsServices": [
-        {
-          "title": "Brownies Lumer Premium",
-          "jenis": "Produk Makanan Siap Saji",
-          "deskripsi": "Brownies cokelat lembut dengan isian ganache lumer di tengah, dikemas praktis dalam cup",
-          "fitur_utama": "Tanpa pengawet, tahan 3 hari suhu ruang, tersedia 5 varian rasa",
-          "manfaat": "Nikmat seperti buatan rumahan, cocok untuk hadiah atau camilan harian",
-          "harga": "Rp25.000/cup",
-          "biaya_modal": "Rp8.000 (bahan premium dan kemasan food grade)",
-          "biaya_bahan_baku": "Rp8.000",
-          "harga_jual": "Rp25.000/cup",
-          "margin": "±68%",
-          "keunggulan_unik": "Tekstur lumer khas, dikemas dalam cup anti tumpah",
-          "angka_penting": "Jumlah penjualan harian, rating pelanggan, repeat order",
-          "cara_jualan": "Marketplace, Instagram, reseller kuliner lokal"
-        }
-      ],
-      "painRelievers": "Produk tahan lama, bisa dikirim jarak jauh, tidak ribet dikonsumsi",
-      "gainCreators": "Rasa premium, kemasan menarik, cocok untuk semua usia, harga terjangkau"
-    },
-    {
-      "interest": "kuliner sehat",
-      "customerSegments": "Ibu rumah tangga dan pekerja yang ingin makan praktis tapi tetap sehat",
-      "problem": "Susah menemukan makanan cepat saji yang bergizi dan tidak membosankan",
-      "solution": "Menu sehat siap makan dengan bahan segar dan kalori terukur",
-      "productsServices": [
-        {
-          "title": "Rice Bowl Sehat Harian",
-          "jenis": "Layanan Makanan Siap Antar",
-          "deskripsi": "Paket makan siang dengan pilihan protein rendah lemak dan sayuran segar",
-          "fitur_utama": "Menu ganti setiap hari, porsi pas, tanpa MSG",
-          "manfaat": "Praktis untuk makan siang, menjaga pola makan sehat",
-          "harga": "Rp35.000/porsi",
-          "biaya_modal": "Rp20.000 (bahan segar, kemasan eco-friendly)",
-          "biaya_bahan_baku": "Rp20.000",
-          "harga_jual": "Rp35.000/porsi",
-          "margin": "±43%",
-          "keunggulan_unik": "Resep dikembangkan oleh nutrisionis lokal",
-          "angka_penting": "Pelanggan langganan, tingkat retensi, ulasan harian",
-          "cara_jualan": "Langganan via WhatsApp, promosi ke kantor dan komunitas olahraga"
-        }
-      ],
-      "painRelievers": "Tidak perlu masak, menu variatif, bebas bahan kimia tambahan",
-      "gainCreators": "Tubuh lebih fit, waktu lebih efisien, makan tetap nikmat"
-    },
-    {
-      "interest": "minuman segar",
-      "customerSegments": "Remaja dan mahasiswa yang mencari minuman unik dan terjangkau",
-      "problem": "Minuman boba mahal dan terlalu manis, pilihan rasa terbatas",
-      "solution": "Minuman segar homemade dengan rasa lokal dan topping alami",
-      "productsServices": [
-        {
-          "title": "Es Leci Kelapa Fresh",
-          "jenis": "Minuman Kekinian",
-          "deskripsi": "Campuran leci asli, kelapa muda, dan madu alami dalam kemasan botol 350ml",
-          "fitur_utama": "Tanpa pemanis buatan, rasa segar alami, ready to go",
-          "manfaat": "Menyegarkan, menambah energi, cocok diminum kapan saja",
-          "harga": "Rp15.000/botol",
-          "biaya_modal": "Rp6.000 (bahan buah segar dan botol kemasan)",
-          "biaya_bahan_baku": "Rp6.000",
-          "harga_jual": "Rp15.000/botol",
-          "margin": "±60%",
-          "keunggulan_unik": "Rasa lokal modern, dibuat fresh setiap hari",
-          "angka_penting": "Penjualan harian, stok bahan segar, ulasan pelanggan",
-          "cara_jualan": "Stand kaki lima, online delivery, kerja sama dengan kafe kecil"
-        }
-      ],
-      "painRelievers": "Harga terjangkau, tidak terlalu manis, bahan alami",
-      "gainCreators": "Minuman sehat, rasa unik, cocok untuk semua cuaca"
-    }
-  ];
-
-  const normalized = interest.toLowerCase().trim();
-
-  const matched = baseIdeas.find((idea) =>
-    idea.interest.toLowerCase().includes(normalized) || normalized.includes(idea.interest.toLowerCase())
-  );
-
-  if (matched) {
-    const others = baseIdeas.filter((i) => i !== matched);
-    const shuffled = [...others].sort(() => 0.5 - Math.random());
-    return [matched, ...shuffled.slice(0, 2)];
-  } else {
-    // Jika tidak cocok, tampilkan 3 ide acak — tanpa merusak array asli
-    const shuffled = [...baseIdeas].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 3);
-  }
-};
+  const generateThreeIdeasFromInterest = async (interest) => {
+    const generated = await generateBusinessIdea({interest});
+    baseIdeas = generated;
+    return baseIdeas
+  };
 
 // === PROGRESS BAR ===
 const PhaseProgressBar = ({ currentXp, totalXp }) => {
@@ -261,6 +175,17 @@ export default function Level1Page() {
     xpGained: 0,
     badgeName: '',
   });
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
+        
+          useEffect(() => {
+            loadSession();
+          }, []);
+        
+          useEffect(() => {
+            if (isHydrated && !isAuthenticated) {
+              router.push('/auth/login');
+            }
+          }, [isHydrated, isAuthenticated, router]);
   
   useEffect(() => {
     if (id) {
@@ -316,12 +241,12 @@ export default function Level1Page() {
   const firstIncompleteLevel = project?.levels?.find((l) => !l.completed) || { id: 1 };
 
   // Handlers
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!interest.trim()) {
       alert('Silakan isi minat/bidang Anda terlebih dahulu.');
       return;
     }
-    const ideas = generateThreeIdeasFromInterest(interest);
+    const ideas = await generateThreeIdeasFromInterest(interest);
     setGeneratedIdeas(ideas);
     setSelectedIdea(null);
     setVpcData({
@@ -710,8 +635,13 @@ export default function Level1Page() {
                                     placeholder="Apa yang kamu jual?"
                                     value={vpcData.productsServices?.[0]?.title}
                                     onChange={(e) => {
-                                      const newPs = { ...ps, ide: e.target.value };
-                                      handleVpcChange('productsServices', formatProductsServices(newPs));
+                                      const oldItem = vpcData.productsServices?.[0] || {};
+                                      const newItem = { ...oldItem, ide: e.target.value };
+
+                                      handleVpcChange(
+                                        "productsServices",
+                                        formatProductsServices(newItem)
+                                      );
                                     }}
                                     className="w-full p-2 border border-gray-300 rounded text-sm"
                                   />
