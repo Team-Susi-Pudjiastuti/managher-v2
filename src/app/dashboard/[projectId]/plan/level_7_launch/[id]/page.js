@@ -355,7 +355,7 @@ export default function Level7Page() {
 
                     <div className="flex gap-2">
                       <button
-                        onClick={() => router.push(`/dashboard/${projectId}/plan/level_6_beta_testing`)}
+                        onClick={() =>router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/id`)}
                         className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
                       >
                         <ChevronLeft size={16} />
@@ -363,7 +363,7 @@ export default function Level7Page() {
                       </button>
                       <button
                         onClick={handleSelesaiClick}
-                        className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
+                        className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border hover:bg-[#7abfc0] flex items-center gap-1"
                       >
                         Selesai
                         <ChevronRight size={16} />
