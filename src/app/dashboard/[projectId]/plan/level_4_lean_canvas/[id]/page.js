@@ -15,6 +15,7 @@ import { useLeanCanvasStore } from '@/store/useLeanCanvasStore';
 import useProjectStore from '@/store/useProjectStore';
 import Confetti from '@/components/Confetti';
 import useBusinessIdeaStore from '@/store/useBusinessIdeaStore';
+import useAuthStore from '@/store/useAuthStore';
 
 function mapIdeaToLeanCanvas(idea, projectId) {
   const product = idea.productsServices?.[0] || {};
@@ -65,6 +66,7 @@ const PhaseProgressBar = ({ currentXp, totalXp }) => {
 export default function Level4Page() {
   const { id, projectId } = useParams();
   const router = useRouter();
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
 
   const { planLevels, getLevels } = useProjectStore();
   const {
@@ -76,6 +78,16 @@ export default function Level4Page() {
     setCanvas,
   } = useLeanCanvasStore();
   const { businessIdea } = useBusinessIdeaStore()
+
+  useEffect(() => {
+    loadSession();
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isHydrated, isAuthenticated, router]);
 
   const [isEditing, setIsEditing] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
@@ -299,11 +311,11 @@ export default function Level4Page() {
                       </h3>
                       <div className="space-y-2">
                         {[
-                          'Isi semua bagian Lean Canvas berdasarkan ide bisnismu',
-                          'Fokus pada masalah nyata & solusi yang jelas',
-                          'Tentukan metrik utama untuk mengukur keberhasilan',
-                          'Identifikasi keunggulan yang sulit ditiru pesaing',
-                          'Simpan canvas untuk lanjut ke Level 5',
+                          'Lean Canvas ini merupakan hasil generate dari VPC di Level 1',
+                          'Cek kembali dan edit terlebih dahulu isi Lean Canvas jika perlu',
+                          'Pastikan semua 9 komponen terisi dengan jelas dan spesifik',
+                          'Gunakan kalimat singkat, fokus pada validasi nyata',
+                          'Klik “Simpan” untuk lanjut ke Level 5',
                         ].map((text, i) => (
                           <div key={i} className="flex items-start gap-2 text-sm text-[#5b5b5b]">
                             <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#f02d9c] text-white text-xs font-bold mt-0.5">
@@ -323,19 +335,38 @@ export default function Level4Page() {
                       </div>
                     </div>
 
-                    <div className="border border-gray-200 rounded-xl p-4 bg-white">
-                      <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
-                        <BookOpen size={14} /> Resources
+                    <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                      <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
+                        <BookOpen size={16} className="text-[#f02d9c]" />
+                        Resources
                       </h3>
                       <ul className="text-sm text-[#5b5b5b] space-y-2">
                         <li className="flex items-start gap-2">
-                          <Clipboard size={14} className="text-[#f02d9c] mt-0.5 flex-shrink-0" />
                           <span>
                             <strong>Apa itu Lean Canvas?</strong> Model bisnis satu halaman untuk merancang ide bisnis secara cepat dan berbasis validasi nyata.
                           </span>
                         </li>
+                        <li className="ml-5.5">
+                                <a
+                                  href="https://leancanvas.com/"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#f02d9c] hover:underline"
+                                >
+                                  Lean Canvas Guide (by Ash Maurya)
+                                </a>
+                        </li>
+                        <li className="ml-5.5">
+                                <a
+                                  href="https://miro.com/templates/lean-canvas/"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#f02d9c] hover:underline"
+                                >
+                                  Miro – Kolaborasi Lean Canvas real-time
+                                </a>
+                        </li>
                         <li className="flex items-start gap-2">
-                          <Lightbulb size={14} className="text-[#f02d9c] mt-0.5 flex-shrink-0" />
                           <span><strong>9 Komponen Utama:</strong></span>
                         </li>
                         <ul className="list-disc pl-7 space-y-1 text-[#5b5b5b] text-sm">
@@ -537,12 +568,27 @@ export default function Level4Page() {
                       </button>
                       </> 
                     )}
-                    <button
-                      onClick={() => router.push(`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}`)}
-                        className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] flex items-center gap-1"
-                      >
-                        Next <ChevronRight size={16} />
-                    </button>
+                    {currentLevel?.completed ? (
+                          <button
+                            onClick={() => {
+                              if (nextPrevLevel(3)) {
+                                router.push(`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(3)}`);
+                              } else {
+                                router.push(`/dashboard/${projectId}/plan`);
+                              }
+                            }}
+                            className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] flex items-center gap-1"
+                          >
+                            Next <ChevronRight size={16} />
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="px-4 py-2.5 bg-gray-200 text-gray-500 font-medium rounded-lg border border-gray-300 cursor-not-allowed"
+                          >
+                            Next
+                          </button>
+                        )}
                   </div>
                 </div>
               </div>
