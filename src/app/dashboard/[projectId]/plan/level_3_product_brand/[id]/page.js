@@ -15,6 +15,7 @@ import {
   ChevronRight,
   CheckCircle,
   Menu,
+  Loader2
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
@@ -86,7 +87,7 @@ export default function Level3Page() {
   const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
 
   const { planLevels, updateLevelStatus } = useProjectStore();
-  const { brandIdentity, getBrandIdentity, updateBrandIdentity } = useBrandIdentityStore();
+  const { brandIdentity, getBrandIdentity, updateBrandIdentity, logoPreview, setLogoPreview, updateLogo } = useBrandIdentityStore();
 
   useEffect(() => {
     loadSession();
@@ -122,7 +123,7 @@ export default function Level3Page() {
   const [showNotification, setShowNotification] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [notificationData, setNotificationData] = useState({
-    message: '',
+    pesan: '',
     xpGained: 0,
     badgeName: '',
   });
@@ -132,10 +133,10 @@ export default function Level3Page() {
   const [palette, setPalette] = useState(['#F6E8D6']);
   const [activePickerIndex, setActivePickerIndex] = useState(0);
   const MAX_COLORS = 6;
-  const [logoPreview, setLogoPreview] = useState('');
+  // const [logoPreview, setLogoPreview] = useState('');
   const logoUploadRef = useRef(null);
 
-  const [isEditing, setIsEditing] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -211,26 +212,7 @@ export default function Level3Page() {
     const formData = new FormData();
     formData.append('file', file);
 
-    try {
-      const res = await fetch(`http://localhost:3000/api/brand-identity/${brandIdentityId}/logoPreview`, {
-        method: 'PUT',
-        body: formData,
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setLogoPreview(data.brandIdentity?.logoPreview || '');
-      } else {
-        const err = await res.json().catch(() => ({}));
-        alert('Gagal upload: ' + (err.message || 'Server error'));
-        setLogoPreview('');
-      }
-    } catch (err) {
-      console.error('Upload error:', err);
-      alert('Gagal koneksi ke server.');
-      setLogoPreview('');
-    }
+    await updateLogo(brandIdentityId, formData)
   };
 
   const handleSave = async () => {
@@ -264,15 +246,22 @@ export default function Level3Page() {
     await updateBrandIdentity(brandIdentityId, data);
     await updateLevelStatus(level3._id, { completed: true });
 
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 3000);
-
-    setNotificationData({
-      message: 'Konsep brand berhasil disimpan!',
-      xpGained: level3.xp || 0,
-      badgeName: level3.badge || '',
-    });
-    setShowNotification(true);
+    setIsEditing(false)
+    if (currentLevel?.completed == false) {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+      setNotificationData({
+        pesan: 'Konsep brand berhasil disimpan!',
+        xpGained: level3.xp || 0,
+        badgeName: level3.badge || '',
+      });
+      setShowNotification(true);
+    } else {
+      setNotificationData({
+        pesan: 'Konsep brand berhasil disimpan!',
+      });
+      setShowNotification(true);
+    }
   };
 
   const brandInitials = getInitials(brandName);
@@ -284,7 +273,11 @@ export default function Level3Page() {
   ];
 
   if (!isMounted) {
-    return <div className="min-h-screen bg-white p-6">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
+      </div>
+    );
   }
 
   const prevLevelId = getLevelEntityId(2);
@@ -314,7 +307,7 @@ export default function Level3Page() {
         </header>
       )}
 
-      <div className="flex">
+      <div className="flex mt-6">
         <PlanSidebar
           projectId={projectId}
           currentLevelId={3}
@@ -454,8 +447,8 @@ export default function Level3Page() {
                           </div>
                         </div>
                       ) : (
-                        /* ✅ BRAND PREVIEW: DUKUNG >1 WARNA */
-                        <div className="p-4 border border-gray-300 rounded-xl bg-white shadow-sm">
+                        /* BRAND PREVIEW: DUKUNG >1 WARNA */
+                        <div className="border border-gray-300 rounded-xl p-4 bg-white">
                           <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
                             <Eye size={16} /> Brand Preview
                           </h3>
@@ -551,7 +544,7 @@ export default function Level3Page() {
                         </div>
                       )}
 
-                      <div className="flex flex-wrap gap-2 mt-4">
+                      <div className="flex flex-wrap gap-2 mt-6 justify-center">
                         <button
                           onClick={() => {
                             if (prevLevelId) {
@@ -583,22 +576,26 @@ export default function Level3Page() {
                         {currentLevel?.completed ? (
                           <button
                             onClick={() => {
-                              if (nextLevelId) {
                                 router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextLevelId}`);
-                              } else {
-                                router.push(`/dashboard/${projectId}/plan`);
-                              }
                             }}
                             className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] flex items-center gap-1"
                           >
-                            Next <ChevronRight size={16} />
+                            { nextLevelId ? (
+                            <>
+                            Next <ChevronRight size={16} /> 
+                            </>
+                            ) : (
+                              <>
+                              <Loader2 className="w-6 h-6 animate-spin text-[#0a5f61]" />
+                              </>
+                            ) }
                           </button>
                         ) : (
                           <button
                             disabled
-                            className="px-4 py-2.5 bg-gray-200 text-gray-500 font-medium rounded-lg border border-gray-300 cursor-not-allowed"
+                            className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 cursor-not-allowed"
                           >
-                            Next
+                            Next <ChevronRight size={16} />
                           </button>
                         )}
                       </div>
@@ -753,6 +750,7 @@ export default function Level3Page() {
       <NotificationModalPlan
         isOpen={showNotification}
         type="success"
+        pesan={notificationData.pesan}
         xpGained={notificationData.xpGained}
         badgeName={notificationData.badgeName}
         onClose={() => setShowNotification(false)}

@@ -19,14 +19,12 @@ import {
   BarChart3,
   Eye,
   Zap,
-  Package,
-  ChevronDown,
-  ChevronUp,
   Loader2
 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 import useRWWTestingStore from '@/store/useRWWTesting';
 import useBusinessIdeaStore from '@/store/useBusinessIdeaStore';
+import useAuthStore from '@/store/useAuthStore';
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
@@ -62,69 +60,6 @@ const PhaseProgressBar = ({ currentXp, totalXp }) => {
   );
 };
 
-// === HELPER: Parse & Format Products & Services ===
-const parseProductsServices = (text) => {
-  if (!text) return {};
-  const lines = text.split('\n').map((l) => l.trim()).filter((l) => l);
-  let ide = '',
-    jenis = '',
-    deskripsi = '',
-    fitur = '',
-    manfaat = '',
-    harga = '',
-    biayaModal = '',
-    biayaBahanBaku = '',
-    hargaJual = '',
-    margin = '',
-    uniqueAdvantage = '',
-    keyMetrics = '',
-    channel = '';
-  for (const line of lines) {
-    if (line.startsWith('Jenis:')) jenis = line.replace('Jenis:', '').trim();
-    else if (line.startsWith('Deskripsi:')) deskripsi = line.replace('Deskripsi:', '').trim();
-    else if (line.startsWith('Fitur')) fitur = line;
-    else if (line.startsWith('Manfaat')) manfaat = line;
-    else if (line.startsWith('Harga:')) harga = line;
-    else if (line.startsWith('Biaya Modal:')) biayaModal = line;
-    else if (line.startsWith('Biaya Bahan Baku:')) biayaBahanBaku = line;
-    else if (line.startsWith('Harga Jual:')) hargaJual = line;
-    else if (line.startsWith('Margin:')) margin = line;
-    else if (line.startsWith('Keunggulan Unik:')) uniqueAdvantage = line;
-    else if (line.startsWith('Angka Penting:')) keyMetrics = line;
-    else if (line.startsWith('Cara Jualan:')) channel = line;
-    else if (!ide) ide = line;
-  }
-  return {
-    ide,
-    jenis,
-    deskripsi,
-    fitur,
-    manfaat,
-    harga,
-    biayaModal,
-    biayaBahanBaku,
-    hargaJual,
-    margin,
-    uniqueAdvantage,
-    keyMetrics,
-    channel,
-  };
-};
-
-const parseModalDetails = (text) => {
-  if (!text) return [];
-  const clean = text.replace('Biaya Modal: ', '').trim();
-  const match = clean.match(/\((.+)\)/);
-  return match ? match[1].split(',').map((item) => item.trim()) : [clean];
-};
-
-const parseBahanBakuDetails = (text) => {
-  if (!text) return [];
-  const clean = text.replace('Biaya Bahan Baku: ', '').trim();
-  const parts = clean.split('→')[0].split(',');
-  return parts.map((part) => part.trim());
-};
-
 // === MAIN COMPONENT ===
 const scaleLabels = ['Tidak Pernah', 'Pernah', 'Kadang', 'Sering', 'Sangat Sering'];
 const range5 = [1, 2, 3, 4, 5];
@@ -132,9 +67,10 @@ const range5 = [1, 2, 3, 4, 5];
 export default function RWW() {
   const { id, projectId } = useParams();
   const router = useRouter();
-  const { rwwTesting, getRWWTesting, addRWWTesting } = useRWWTestingStore();
+  const { getRWWTesting, addRWWTesting } = useRWWTestingStore();
   const { getBusinessIdea, businessIdea} = useBusinessIdeaStore();
   const { planLevels, updateLevelStatus } = useProjectStore();
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
   const nextPrevLevel = (num) => {
     const level = planLevels?.find(
       (l) => l?.project?._id === projectId && l?.order === num
@@ -146,12 +82,12 @@ export default function RWW() {
   const [showConfetti, setShowConfetti] = useState(false);
   
   // Top-level states
+  const [isMounted, setIsMounted] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationData, setNotificationData] = useState({
     xpGained: 0,
     badgeName: '',
   });
-  const [isEditing, setIsEditing] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [responses, setResponses] = useState([]);
@@ -161,6 +97,20 @@ export default function RWW() {
     totalScore: ''
   });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  useEffect(() => {
+      setIsMounted(true);
+    }, []);
+
+  useEffect(() => {
+      loadSession();
+    }, []);
+  
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isHydrated, isAuthenticated, router]);
 
   useEffect(() => {
   // Jika ada data di form atau di tabel tapi belum disimpan → ada perubahan
@@ -243,17 +193,23 @@ export default function RWW() {
   }, [projectId, getRWWTesting]);
 
   if (!businessIdea._id || !businessIdea.productsServices) {
-  return(
-    <div className="flex justify-center items-center py-10">
-      <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
-    </div>
-  );
-}
+    return(
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
+      </div>
+    );
+  }
+
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
+      </div>
+    );
+  }
 
 
   // --- PROGRESS BAR LOGIC ---
-  const totalLevels = planLevels.length;
-  const completedLevels = planLevels?.filter((l) => l.completed).length || 0;
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
@@ -905,27 +861,37 @@ const handleSave = async () => {
                           <BookOpen size={16} /> Resources Validasi Ide
                         </h3>
                         <ul className="text-sm space-y-1">
+                                                    {/* Tahap 2: Validasi Pasar */}
                           <li>
                             <a
-                              href="https://www.youtube.com/watch?v=VlX9Kq2e5qU"
+                              href="https://www.smetoolkit.org/indonesia/toolkit/"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Cara Validasi Ide dalam 15 Menit
+                              SME Toolkit Indonesia – Validasi Pasar untuk UMKM
                             </a>
                           </li>
                           <li>
                             <a
-                              href="https://www.strategyzer.com/blog/validate-your-ideas-before-you-build"
+                              href="https://www.youtube.com/watch?v=5QsFFO2DqR4"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Validate Before You Build (Strategyzer)
+                              YouTube: Cara Melakukan Survei dan Validasi Ide Produk
                             </a>
                           </li>
-                          
+                          <li>
+                            <a
+                              href="https://www.startupbootcamp.org/blog/market-validation/"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                            >
+                              Startupbootcamp: Panduan Validasi Pasar untuk Startup & UMKM
+                            </a>
+                          </li>
                         </ul>
                       </div>
 

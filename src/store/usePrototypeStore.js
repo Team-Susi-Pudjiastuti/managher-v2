@@ -31,4 +31,24 @@ export const usePrototypeStore = create((set, get) => ({
       throw err;
     }
   },
+
+  updateProductImage: async (id, file) => {
+    try {
+      if (!file) throw new Error("File tidak ada");
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // pakai apiRequest tanpa Content-Type (browser akan otomatis set)
+      const data = await apiRequest(`prototype/${id}/upload`, 'PATCH', formData);
+      return data.url;
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert(err.message || "Gagal upload image.");
+      return null;
+    }
+  }
+
+
+
 }));

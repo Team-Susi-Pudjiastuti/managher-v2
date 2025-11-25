@@ -29,86 +29,7 @@ import Confetti from '@/components/Confetti';
 import useBusinessIdeaStore from '@/store/useBusinessIdeaStore';
 import generateBusinessIdea from '@/ai/flows/generateBusinessIdea';
 
-// === HELPER: Parse & Format Products & Services ===
-const parseProductsServices = (text) => {
-  const lines = text.split('\n').map((l) => l.trim()).filter((l) => l);
-  let ide = '',
-    jenis = '',
-    deskripsi = '',
-    fitur = '',
-    manfaat = '',
-    harga = '',
-    biayaModal = '',
-    biayaBahanBaku = '',
-    hargaJual = '',
-    margin = '',
-    uniqueAdvantage = '',
-    keyMetrics = '',
-    channel = '';
-  for (const line of lines) {
-    if (line.startsWith('Jenis:')) jenis = line.replace('Jenis:', '').trim();
-    else if (line.startsWith('Deskripsi:')) deskripsi = line.replace('Deskripsi:', '').trim();
-    else if (line.startsWith('Fitur')) fitur = line;
-    else if (line.startsWith('Manfaat')) manfaat = line;
-    else if (line.startsWith('Harga:')) harga = line;
-    else if (line.startsWith('Biaya Modal:')) biayaModal = line;
-    else if (line.startsWith('Biaya Bahan Baku:')) biayaBahanBaku = line;
-    else if (line.startsWith('Harga Jual:')) hargaJual = line;
-    else if (line.startsWith('Margin:')) margin = line;
-    else if (line.startsWith('Keunggulan Unik:')) uniqueAdvantage = line;
-    else if (line.startsWith('Angka Penting:')) keyMetrics = line;
-    else if (line.startsWith('Cara Jualan:')) channel = line;
-    else if (!ide) ide = line;
-  }
-  return {
-    ide,
-    jenis,
-    deskripsi,
-    fitur,
-    manfaat,
-    harga,
-    biayaModal,
-    biayaBahanBaku,
-    hargaJual,
-    margin,
-    uniqueAdvantage,
-    keyMetrics,
-    channel,
-  };
-};
-
-const formatProductsServices = ({
-  ide,
-  jenis,
-  deskripsi,
-  fitur,
-  manfaat,
-  harga,
-  biayaModal,
-  biayaBahanBaku,
-  hargaJual,
-  margin,
-  uniqueAdvantage,
-  keyMetrics,
-  channel,
-}) => {
-  const parts = [ide];
-  if (jenis) parts.push(`Jenis: ${jenis}`);
-  if (deskripsi) parts.push(`Deskripsi: ${deskripsi}`);
-  if (fitur) parts.push(fitur);
-  if (manfaat) parts.push(manfaat);
-  if (harga) parts.push(harga);
-  if (biayaModal) parts.push(biayaModal);
-  if (biayaBahanBaku) parts.push(biayaBahanBaku);
-  if (hargaJual) parts.push(hargaJual);
-  if (margin) parts.push(margin);
-  if (uniqueAdvantage) parts.push(uniqueAdvantage);
-  if (keyMetrics) parts.push(keyMetrics);
-  if (channel) parts.push(channel);
-  return parts.join('\n');
-};
-
-let baseIdeas = []
+  let baseIdeas = []
 
 // === GENERATOR IDE (DIPERBAIKI) ===
   const generateThreeIdeasFromInterest = async (interest) => {
@@ -131,34 +52,6 @@ let baseIdeas = []
     return parts.map((part) => part.trim());
   };
 
-// === PROGRESS BAR ===
-const PhaseProgressBar = ({ currentXp, totalXp }) => {
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    const calculatedProgress = totalXp > 0 ? Math.min(100, Math.floor((currentXp / totalXp) * 100)) : 0;
-    setProgress(calculatedProgress);
-  }, [currentXp, totalXp]);
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 p-3 w-full">
-      <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-xs font-bold text-[#5b5b5b]">
-          XP Fase Plan: {currentXp} / {totalXp}
-        </span>
-        <span className="text-xs font-bold text-[#f02d9c]">{progress}%</span>
-      </div>
-      <div className="w-full bg-[#f0f0f0] rounded-full h-1.5">
-        <div
-          className="h-1.5 rounded-full bg-[#f02d9c] transition-all duration-500"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-      {progress >= 100 && (
-        <p className="text-[10px] text-[#7a7a7a] mt-1 text-right">Selesai!</p>
-      )}
-    </div>
-  );
-};
-
 // === MAIN COMPONENT ===
 export default function Level1Page() {
   const { id, projectId } = useParams();
@@ -176,6 +69,7 @@ export default function Level1Page() {
     painRelievers: '',
     gainCreators: '',
   });
+  const [isMounted, setIsMounted]  = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [generatedIdeas, setGeneratedIdeas] = useState([]);
   const [selectedIdea, setSelectedIdea] = useState(null);
@@ -232,22 +126,43 @@ export default function Level1Page() {
     }
   }, [id, businessIdea]);
 
-
-
-  const [mounted, setMounted] = useState(false);
+   
   useEffect(() => {
-    setMounted(true);
+    setIsMounted(true);
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  if (!mounted) return null;
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
+      </div>
+    )
+  };
 
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
+   if (!isHydrated) {
+      return (
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
+        </div>
+      );
+    }
+
+    if (!isAuthenticated) return null;
+    
+    if (!businessIdea) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
+        </div>
+      );
+    }
 
   // Handlers
   const handleGenerate = async () => {
@@ -448,21 +363,6 @@ export default function Level1Page() {
                                   </li>
                                 </ul>
                               </div>
-                              <div className="p-3 mb-3 bg-[#f8fbfb] rounded border border-[#c2e9e8]">
-                                <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
-                                  <Zap size={14} /> Nilai Produk
-                                </h4>
-                                <ul className="text-[15px] text-[#5b5b5b] space-y-1.5">
-                                  <li>
-                                    <span className="font-medium">Apa yang kamu tawarkan buat bantu dia?</span>{' '}
-                                    {businessIdea.painRelievers || '-'}
-                                  </li>
-                                  <li>
-                                    <span className="font-medium">Apa yang bikin dia seneng banget?</span>{' '}
-                                    {businessIdea.gainCreators || '-'}
-                                  </li>
-                                </ul>
-                              </div>
                               <div className="p-3 bg-[#f8fbfb] rounded border border-[#c2e9e8]">
                                 <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
                                   <Package size={14} /> Produk & Layanan
@@ -562,6 +462,22 @@ export default function Level1Page() {
                                   )}
                                 </div>
                               </div>
+                              <div className="p-3 mb-3 bg-[#f8fbfb] rounded border border-[#c2e9e8] mt-3">
+                                <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
+                                  <Zap size={14} /> Nilai Produk
+                                </h4>
+                                <ul className="text-[15px] text-[#5b5b5b] space-y-1.5">
+                                  <li>
+                                    <span className="font-medium">Apa yang kamu tawarkan buat bantu dia?</span>{' '}
+                                    {businessIdea.painRelievers || '-'}
+                                  </li>
+                                  <li>
+                                    <span className="font-medium">Apa yang bikin dia seneng banget?</span>{' '}
+                                    {businessIdea.gainCreators || '-'}
+                                  </li>
+                                </ul>
+                              </div>
+
                             </div>
                           ) : (
                           <div className="space-y-4">
@@ -628,6 +544,273 @@ export default function Level1Page() {
                               </div>
                             </div>
                             <div className="border border-gray-300 rounded-xl p-4 bg-[#f8fbfb]">
+                              <h3 className="font-bold text-[#f02d9c] mb-3 flex items-center gap-1">
+                                <Package size={14} /> Produk & Layanan
+                              </h3>
+                              <div className="space-y-2 text-xs">
+                                <input
+                                  type="text"
+                                  placeholder="Apa yang kamu jual?"
+                                  value={localIdea.productsServices?.[0]?.title || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, title: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Jenis Produk"
+                                  value={localIdea.productsServices?.[0]?.jenis || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, jenis: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <textarea
+                                  placeholder="Deskripsi"
+                                  value={localIdea.productsServices?.[0]?.deskripsi || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, deskripsi: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                  rows="2"
+                                />
+                                <textarea
+                                  placeholder="Fitur Utama"
+                                  value={localIdea.productsServices?.[0]?.fitur_utama || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, fitur_utama: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                  rows="2"
+                                />
+                                <textarea
+                                  placeholder="Manfaat"
+                                  value={localIdea.productsServices?.[0]?.manfaat || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, manfaat: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                  rows="2"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Harga (contoh: Rp25.000/cup)"
+                                  value={localIdea.productsServices?.[0]?.harga || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, harga: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Keunggulan Unik"
+                                  value={localIdea.productsServices?.[0]?.keunggulan_unik || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, keunggulan_unik: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Angka Penting (pisahkan dengan koma)"
+                                  value={localIdea.productsServices?.[0]?.angka_penting || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, angka_penting: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Cara Jualan (pisahkan dengan koma)"
+                                  value={localIdea.productsServices?.[0]?.cara_jualan || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, cara_jualan: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Biaya Modal (contoh: Rp10.000)"
+                                  value={localIdea.productsServices?.[0]?.biaya_modal || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, biaya_modal: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <textarea
+                                  placeholder="Biaya Bahan Baku"
+                                  value={localIdea.productsServices?.[0]?.biaya_bahan_baku || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, biaya_bahan_baku: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                  rows="2"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Harga Jual (contoh: Rp25.000/cup)"
+                                  value={localIdea.productsServices?.[0]?.harga_jual || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, harga_jual: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Margin (contoh: ±68%)"
+                                  value={localIdea.productsServices?.[0]?.margin || ''}
+                                  onChange={(e) => {
+                                    const current = localIdea.productsServices?.[0] || {};
+                                    const updated = { ...current, margin: e.target.value };
+
+                                    setLocalIdea({
+                                      ...localIdea,
+                                      productsServices: [updated],
+                                    });
+                                  }}
+                                  onBlur={() => {
+                                    updateBusinessIdea(localIdea._id, {
+                                      productsServices: localIdea.productsServices,
+                                    });
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                              </div>
+                            </div>
+                            <div className="border border-gray-300 rounded-xl p-4 bg-[#f8fbfb]">
                               <h3 className="font-bold text-[#f02d9c] mb-3 flex items-center gap-2">
                                 <Zap size={16} /> Nilai Produk
                               </h3>
@@ -669,271 +852,7 @@ export default function Level1Page() {
                                   rows="3"
                                 />
                               </div>
-                              <div className="mb-3">
-                                <label className="block text-xs font-medium text-[#5b5b5b] mb-2">Produk & Layanan</label>
-                                <div className="space-y-2 text-xs">
-                                  <input
-                                    type="text"
-                                    placeholder="Apa yang kamu jual?"
-                                    value={localIdea.productsServices?.[0]?.title || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, title: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Jenis Produk"
-                                    value={localIdea.productsServices?.[0]?.jenis || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, jenis: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <textarea
-                                    placeholder="Deskripsi"
-                                    value={localIdea.productsServices?.[0]?.deskripsi || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, deskripsi: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                    rows="2"
-                                  />
-                                  <textarea
-                                    placeholder="Fitur Utama"
-                                    value={localIdea.productsServices?.[0]?.fitur_utama || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, fitur_utama: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                    rows="2"
-                                  />
-                                  <textarea
-                                    placeholder="Manfaat"
-                                    value={localIdea.productsServices?.[0]?.manfaat || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, manfaat: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                    rows="2"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Harga (contoh: Rp25.000/cup)"
-                                    value={localIdea.productsServices?.[0]?.harga || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, harga: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Keunggulan Unik"
-                                    value={localIdea.productsServices?.[0]?.keunggulan_unik || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, keunggulan_unik: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Angka Penting (pisahkan dengan koma)"
-                                    value={localIdea.productsServices?.[0]?.angka_penting || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, angka_penting: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Cara Jualan (pisahkan dengan koma)"
-                                    value={localIdea.productsServices?.[0]?.cara_jualan || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, cara_jualan: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Biaya Modal (contoh: Rp10.000)"
-                                    value={localIdea.productsServices?.[0]?.biaya_modal || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, biaya_modal: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <textarea
-                                    placeholder="Biaya Bahan Baku"
-                                    value={localIdea.productsServices?.[0]?.biaya_bahan_baku || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, biaya_bahan_baku: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                    rows="2"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Harga Jual (contoh: Rp25.000/cup)"
-                                    value={localIdea.productsServices?.[0]?.harga_jual || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, harga_jual: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Margin (contoh: ±68%)"
-                                    value={localIdea.productsServices?.[0]?.margin || ''}
-                                    onChange={(e) => {
-                                      const current = localIdea.productsServices?.[0] || {};
-                                      const updated = { ...current, margin: e.target.value };
-
-                                      setLocalIdea({
-                                        ...localIdea,
-                                        productsServices: [updated],
-                                      });
-                                    }}
-                                    onBlur={() => {
-                                      updateBusinessIdea(localIdea._id, {
-                                        productsServices: localIdea.productsServices,
-                                      });
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                </div>
-                              </div>
+                              
                             </div>
                           </div>
                           )
@@ -962,7 +881,7 @@ export default function Level1Page() {
                           </>
                         )}
 
-                        <div className="flex flex-wrap gap-2 mt-4">
+                        <div className="flex flex-wrap gap-2 mt-4 justify-center">
                           <button
                             onClick={() => {
                               if (generatedIdeas.length > 0) {
@@ -1039,21 +958,6 @@ export default function Level1Page() {
                               </ul>
                             </div>
                             <div className="p-3 mb-3 bg-[#f8fbfb] rounded border border-[#c2e9e8]">
-                              <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
-                                <Zap size={14} /> Nilai Produk
-                              </h4>
-                              <ul className="text-[15px] text-[#5b5b5b] space-y-1.5">
-                                <li>
-                                  <span className="font-medium">Apa yang kamu tawarkan buat bantu dia?</span>{' '}
-                                  {vpcData.painRelievers || '-'}
-                                </li>
-                                <li>
-                                  <span className="font-medium">Apa yang bikin dia seneng banget?</span>{' '}
-                                  {vpcData.gainCreators || '-'}
-                                </li>
-                              </ul>
-                            </div>
-                            <div className="p-3 bg-[#f8fbfb] rounded border border-[#c2e9e8]">
                               <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
                                 <Package size={14} /> Produk & Layanan
                               </h4>
@@ -1152,6 +1056,21 @@ export default function Level1Page() {
                                 )}
                               </div>
                             </div>
+                            <div className="p-3 mb-3 bg-[#f8fbfb] rounded border border-[#c2e9e8]">
+                              <h4 className="font-bold text-[#f02d9c] text-sm mb-2 flex items-center gap-1">
+                                <Zap size={14} /> Nilai Produk
+                              </h4>
+                              <ul className="text-[15px] text-[#5b5b5b] space-y-1.5">
+                                <li>
+                                  <span className="font-medium">Apa yang kamu tawarkan buat bantu dia?</span>{' '}
+                                  {vpcData.painRelievers || '-'}
+                                </li>
+                                <li>
+                                  <span className="font-medium">Apa yang bikin dia seneng banget?</span>{' '}
+                                  {vpcData.gainCreators || '-'}
+                                </li>
+                              </ul>
+                            </div>
                           </div>
                         ) : (
                           <div className="space-y-4">
@@ -1193,6 +1112,156 @@ export default function Level1Page() {
                                 </div>
                               </div>
                             </div>
+                            <div className="border border-gray-300 rounded-xl p-4 bg-[#f8fbfb] mb-3">
+                              <h3 className="font-bold text-[#f02d9c] mb-3 flex items-center gap-1">
+                                <Package size={14} /> Produk & Layanan
+                              </h3>
+                              <div className="space-y-2 text-xs">
+                                <input
+                                  type="text"
+                                  placeholder="Apa yang kamu jual?"
+                                  value={vpcData.productsServices?.[0]?.title || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, title: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Jenis Produk"
+                                  value={vpcData.productsServices?.[0]?.jenis || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, jenis: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <textarea
+                                  placeholder="Deskripsi"
+                                  value={vpcData.productsServices?.[0]?.deskripsi || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, deskripsi: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                  rows="2"
+                                />
+                                <textarea
+                                  placeholder="Fitur Utama"
+                                  value={vpcData.productsServices?.[0]?.fitur_utama || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, fitur_utama: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                  rows="2"
+                                />
+                                <textarea
+                                  placeholder="Manfaat"
+                                  value={vpcData.productsServices?.[0]?.manfaat || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, manfaat: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                  rows="2"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Harga (contoh: Rp25.000/cup)"
+                                  value={vpcData.productsServices?.[0]?.harga || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, harga: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Keunggulan Unik"
+                                  value={vpcData.productsServices?.[0]?.keunggulan_unik || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, keunggulan_unik: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Angka Penting (pisahkan dengan koma)"
+                                  value={vpcData.productsServices?.[0]?.angka_penting || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, angka_penting: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Cara Jualan (pisahkan dengan koma)"
+                                  value={vpcData.productsServices?.[0]?.cara_jualan || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, cara_jualan: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Biaya Modal (contoh: Rp10.000)"
+                                  value={vpcData.productsServices?.[0]?.biaya_modal || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, biaya_modal: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <textarea
+                                  placeholder="Biaya Bahan Baku"
+                                  value={vpcData.productsServices?.[0]?.biaya_bahan_baku || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, biaya_bahan_baku: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                  rows="2"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Harga Jual (contoh: Rp25.000/cup)"
+                                  value={vpcData.productsServices?.[0]?.harga_jual || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, harga_jual: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Margin (contoh: ±68%)"
+                                  value={vpcData.productsServices?.[0]?.margin || ''}
+                                  onChange={(e) => {
+                                    const current = vpcData.productsServices?.[0] || {};
+                                    const updated = { ...current, margin: e.target.value };
+                                    handleVpcChange('productsServices', [updated]);
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                                />
+                              </div>
+                            </div>
                             <div className="border border-gray-300 rounded-xl p-4 bg-[#f8fbfb]">
                               <h3 className="font-bold text-[#f02d9c] mb-3 flex items-center gap-2">
                                 <Zap size={16} /> Nilai Produk
@@ -1219,158 +1288,10 @@ export default function Level1Page() {
                                   rows="3"
                                 />
                               </div>
-                              <div className="mb-3">
-                                <label className="block text-xs font-medium text-[#5b5b5b] mb-2">Produk & Layanan</label>
-                                <div className="space-y-2 text-xs">
-                                  <input
-                                    type="text"
-                                    placeholder="Apa yang kamu jual?"
-                                    value={vpcData.productsServices?.[0]?.title || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, title: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Jenis Produk"
-                                    value={vpcData.productsServices?.[0]?.jenis || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, jenis: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <textarea
-                                    placeholder="Deskripsi"
-                                    value={vpcData.productsServices?.[0]?.deskripsi || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, deskripsi: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                    rows="2"
-                                  />
-                                  <textarea
-                                    placeholder="Fitur Utama"
-                                    value={vpcData.productsServices?.[0]?.fitur_utama || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, fitur_utama: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                    rows="2"
-                                  />
-                                  <textarea
-                                    placeholder="Manfaat"
-                                    value={vpcData.productsServices?.[0]?.manfaat || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, manfaat: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                    rows="2"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Harga (contoh: Rp25.000/cup)"
-                                    value={vpcData.productsServices?.[0]?.harga || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, harga: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Keunggulan Unik"
-                                    value={vpcData.productsServices?.[0]?.keunggulan_unik || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, keunggulan_unik: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Angka Penting (pisahkan dengan koma)"
-                                    value={vpcData.productsServices?.[0]?.angka_penting || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, angka_penting: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Cara Jualan (pisahkan dengan koma)"
-                                    value={vpcData.productsServices?.[0]?.cara_jualan || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, cara_jualan: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Biaya Modal (contoh: Rp10.000)"
-                                    value={vpcData.productsServices?.[0]?.biaya_modal || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, biaya_modal: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <textarea
-                                    placeholder="Biaya Bahan Baku"
-                                    value={vpcData.productsServices?.[0]?.biaya_bahan_baku || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, biaya_bahan_baku: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                    rows="2"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Harga Jual (contoh: Rp25.000/cup)"
-                                    value={vpcData.productsServices?.[0]?.harga_jual || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, harga_jual: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Margin (contoh: ±68%)"
-                                    value={vpcData.productsServices?.[0]?.margin || ''}
-                                    onChange={(e) => {
-                                      const current = vpcData.productsServices?.[0] || {};
-                                      const updated = { ...current, margin: e.target.value };
-                                      handleVpcChange('productsServices', [updated]);
-                                    }}
-                                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                                  />
-                                </div>
-                              </div>
                             </div>
                           </div>
                         )}
-                        <div className="flex flex-wrap gap-2 mt-4">
+                        <div className="flex flex-wrap gap-2 mt-4 justify-center">
                           <button
                             onClick={() => {
                               if (shouldShowVpc != false) {
