@@ -115,8 +115,6 @@ export default function Level5Page() {
     }
   }, [projectId, isMounted]);
 
-  console.log(products)
-
   // Sinkronisasi store → state lokal (untuk form interaktif)
   useEffect(() => {
     if (products.length > 0) {
@@ -133,9 +131,6 @@ export default function Level5Page() {
       setLocalProducts([{ id: generateId(), name: '', concept: '', price: '', previewUrl: '' }]);
     }
   }, [products]);
-
-  console.log(products)
-
 
   // === Progress & Level Data ===
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
