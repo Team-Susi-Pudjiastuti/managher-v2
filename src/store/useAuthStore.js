@@ -52,6 +52,7 @@ const useAuthStore = create(
           isAuthenticated: true,
           user: {
             id: data.id,
+            name: data.name,
             username: data.username,
             email: data.email,
           },

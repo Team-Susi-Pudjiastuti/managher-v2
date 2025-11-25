@@ -80,7 +80,7 @@ export default function OnboardingPage() {
             className="p-2 rounded-full hover:bg-gray-100 transition"
             title="Profile"
             onClick={() => {
-              router.push('/profile');
+              router.push(`/onboarding/${id}/userprofile`);
             }}
           >
             <UserCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-[#5b5b5b]" />
