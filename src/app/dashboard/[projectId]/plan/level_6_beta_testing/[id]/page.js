@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -17,6 +18,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell 
 } from 'recharts';
+
+// === KONSTANTA SHARED ===
+const satisfactionLabels = ['Sangat Tidak Puas', 'Tidak Puas', 'Netral', 'Puas', 'Sangat Puas'];
+const range5 = [1, 2, 3, 4, 5];
 
 // === PROGRESS BAR ===
 const PhaseProgressBar = ({ currentXp, totalXp }) => {
@@ -46,63 +51,56 @@ const PhaseProgressBar = ({ currentXp, totalXp }) => {
   );
 };
 
+// === RATING BOX MOBILE ===
+const RatingBoxMobile = ({ value, onChange, labels = satisfactionLabels }) => (
+  <div className="grid grid-cols-2 gap-3 mt-4">
+    {range5.map(num => (
+      <button
+        key={num}
+        type="button"
+        onClick={() => onChange(num)}
+        className={`py-3 px-2 flex flex-col items-center justify-center rounded-lg text-sm font-[Poppins] font-medium transition-all border-t border-l border-black`}
+        style={{
+          backgroundColor: value === num ? '#f02d9c' : '#ffffff',
+          color: value === num ? '#ffffff' : '#5b5b5b',
+          boxShadow: '2px 2px 0 0 #f02d9c',
+        }}
+      >
+        <span className="font-bold">{num}</span>
+        <span className="text-[10px] mt-1">{labels[num - 1]}</span>
+      </button>
+    ))}
+  </div>
+);
 
-const RatingBoxMobile = ({ value, onChange }) => {
-  const labels = ['Sangat Tidak Puas', 'Tidak Puas', 'Netral', 'Puas', 'Sangat Puas'];
-  const range5 = [1, 2, 3, 4, 5];
-  return (
-    <div className="grid grid-cols-3 gap-4 mt-4 pb-1 px-1 max-w-sm mx-auto">
-      {range5.map(num => (
-        <button
-          key={num}
-          type="button"
-          onClick={() => onChange(num)}
-          className={`w-full min-w-[50px] max-w-[70px] h-16 flex flex-col items-center justify-center rounded-lg text-xs font-[Poppins] font-medium transition-all border-t border-l border-black`}
-          style={{
-            backgroundColor: value === num ? '#f02d9c' : '#ffffff',
-            color: value === num ? '#ffffff' : '#5b5b5b',
-            boxShadow: '2px 2px 0 0 #f02d9c',
-          }}
-        >
-          <span className="font-bold text-base">{num}</span>
-          <span className="text-[8px] mt-1 leading-tight">{labels[num - 1]}</span>
-        </button>
-      ))}
-    </div>
-  );
-};
-
-
-const RatingBoxDesktop = ({ value, onChange }) => {
-  const labels = ['Sangat Tidak Puas', 'Tidak Puas', 'Netral', 'Puas', 'Sangat Puas'];
-  const range5 = [1, 2, 3, 4, 5];
-  return (
-    <div className="flex justify-between gap-2 mt-4 overflow-x-auto pb-1 -mx-1 px-1 max-w-md mx-auto">
-      {range5.map(num => (
-        <button
-          key={num}
-          type="button"
-          onClick={() => onChange(num)}
-          className={`flex-1 min-w-[50px] max-w-[70px] h-14 flex flex-col items-center justify-center rounded-lg text-xs font-[Poppins] font-medium transition-all border-t border-l border-black flex-shrink-0`}
-          style={{
-            backgroundColor: value === num ? '#f02d9c' : '#ffffff',
-            color: value === num ? '#ffffff' : '#5b5b5b',
-            boxShadow: '2px 2px 0 0 #f02d9c',
-          }}
-        >
-          <span className="font-bold text-sm">{num}</span>
-          <span className="text-[7px] sm:text-[9px] mt-1 hidden sm:block leading-tight">{labels[num - 1]}</span>
-          <span className="text-[7px] mt-1 sm:hidden leading-tight">{labels[num - 1].split(' ')[0]}</span>
-        </button>
-      ))}
-    </div>
-  );
-};
+// === RATING BOX DESKTOP ===
+const RatingBoxDesktop = ({ value, onChange, labels = satisfactionLabels }) => (
+  <div className="flex justify-between gap-2 mt-4 overflow-x-auto pb-1 -mx-1 px-1 max-w-md mx-auto">
+    {range5.map(num => (
+      <button
+        key={num}
+        type="button"
+        onClick={() => onChange(num)}
+        className={`flex-1 min-w-[50px] max-w-[70px] h-14 flex flex-col items-center justify-center rounded-lg text-xs font-[Poppins] font-medium transition-all border-t border-l border-black flex-shrink-0`}
+        style={{
+          backgroundColor: value === num ? '#f02d9c' : '#ffffff',
+          color: value === num ? '#ffffff' : '#5b5b5b',
+          boxShadow: '2px 2px 0 0 #f02d9c',
+        }}
+      >
+        <span className="font-bold text-sm">{num}</span>
+        <span className="text-[7px] sm:text-[9px] mt-1 hidden sm:block leading-tight">{labels[num - 1]}</span>
+        <span className="text-[7px] mt-1 sm:hidden leading-tight">{labels[num - 1].split(' ')[0]}</span>
+      </button>
+    ))}
+  </div>
+);
 
 export default function Level6Page() {
   const { projectId } = useParams();
   const router = useRouter();
-  const nextPrevLevel = (num) => planLevels.find(l => l.project._id === projectId && l.order === num)?.entities[0]?.entity_ref;
+  const nextPrevLevel = (num) => planLevels.find(l => l.project?._id === projectId && l.order === num)?.entities?.[0]?.entity_ref;
+
   const { planLevels, getLevels } = useProjectStore();
   const { responses: storedResponses, loading: storeLoading, fetchResponses, saveResponses } = useBetaTestingStore();
   const { isAuthenticated, loadSession, isHydrated } = useAuthStore(); 
@@ -122,6 +120,7 @@ export default function Level6Page() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+
   useEffect(() => {
     loadSession(); 
   }, []);
@@ -147,12 +146,10 @@ export default function Level6Page() {
     const updatedResponses = [...allResponses, newResp];
     setAllResponses(updatedResponses);
     
-    // Auto-save ke backend setiap kali menambah data
     try {
       await saveResponses(projectId, updatedResponses);
     } catch (err) {
       console.error('Gagal auto-save:', err);
-      // Data tetap ada di state lokal meski gagal save
     }
     
     setCurrentResponse({
@@ -166,7 +163,6 @@ export default function Level6Page() {
     const updatedResponses = allResponses.filter(r => r.id !== idToDelete);
     setAllResponses(updatedResponses);
     
-    // Auto-save ke backend setelah delete
     try {
       await saveResponses(projectId, updatedResponses);
     } catch (err) {
@@ -217,8 +213,11 @@ export default function Level6Page() {
     }
   });
   const satisfactionChartData = satisfactionDist.map((count, i) => ({
-    score: i + 1, label: ['Sangat Tidak Puas', 'Tidak Puas', 'Netral', 'Puas', 'Sangat Puas'][i], count,
+    score: i + 1,
+    label: satisfactionLabels[i], // ✅ gunakan konstanta
+    count,
   }));
+
   const ageBuckets = { '<18': 0, '18-24': 0, '25-34': 0, '35-44': 0, '45+': 0 };
   allResponses.forEach(r => {
     const a = Number(r.age);
@@ -230,16 +229,19 @@ export default function Level6Page() {
     else ageBuckets['45+']++;
   });
   const ageChartData = Object.entries(ageBuckets).map(([k, v]) => ({ name: k, value: v }));
+
   const activityCounts = {};
   allResponses.forEach(r => {
     const act = r.activity?.trim() || 'Lainnya';
     activityCounts[act] = (activityCounts[act] || 0) + 1;
   });
   const activityChartData = Object.entries(activityCounts).map(([name, value]) => ({ name, value }));
+
   const recChartData = ['Ya', 'Tidak', 'Mungkin'].map(opt => ({
     name: opt,
     value: allResponses.filter(r => r.recommendation === opt).length,
   }));
+
   const genderChartData = [
     { name: 'Laki-laki', value: allResponses.filter(r => r.gender === 'Laki-laki').length, fill: '#4A90E2' },
     { name: 'Perempuan', value: allResponses.filter(r => r.gender === 'Perempuan').length, fill: '#f02d9c' },
@@ -255,13 +257,12 @@ export default function Level6Page() {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
-  // --- PERBAIKI EFEK INISIALISASI DATA DENGAN MENAMBAHKAN isAuthenticated SEBAGAI DEPENDENSI ---
   useEffect(() => {
     if (projectId && projectId !== 'undefined' && isMounted && isAuthenticated) {
       getLevels(projectId);
       fetchResponses(projectId);
     }
-  }, [projectId, isMounted, isAuthenticated]); // Tambahkan isAuthenticated
+  }, [projectId, isMounted, isAuthenticated]);
 
   useEffect(() => {
     setAllResponses(storedResponses);
@@ -273,6 +274,7 @@ export default function Level6Page() {
   const badgeName = currentLevel?.badge || 'Beta Master';
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
+
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },
     { href: `/dashboard/${projectId}/plan`, label: 'Fase Plan' },
@@ -293,7 +295,7 @@ export default function Level6Page() {
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
         <Breadcrumb items={breadcrumbItems} />
       </div>
-      {/* MOBILE HEADER (only when sidebar is closed) */}
+
       {isMobile && !mobileSidebarOpen && (
         <header className="p-3 flex items-center border-b border-gray-200 bg-white sticky top-10 z-30">
           <button onClick={() => setMobileSidebarOpen(true)} aria-label="Open menu">
@@ -302,6 +304,7 @@ export default function Level6Page() {
           <h1 className="ml-2 font-bold text-[#5b5b5b] text-base">Level 6: Beta Testing</h1>
         </header>
       )}
+
       <div className="flex">
         <PlanSidebar
           projectId={projectId}
@@ -310,6 +313,7 @@ export default function Level6Page() {
           mobileSidebarOpen={mobileSidebarOpen}
           setMobileSidebarOpen={setMobileSidebarOpen}
         />
+
         <main className="flex-1">
           <div className="py-6 px-3 sm:px-4 md:px-6">
             <div className="max-w-6xl mx-auto">
@@ -319,13 +323,12 @@ export default function Level6Page() {
                   className="relative bg-white rounded-2xl border-t border-l border-black p-4 sm:p-5 md:p-6"
                   style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                 >
-                  {/* === JUDUL LEVEL 6 (tanpa penjelasan) === */}
                   <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-4 sm:mb-6">
                     Level 6: Beta Testing
                   </h1>
-                  {/* RESPONSIVE GRID: 1 COL MOBILE, 2 COL DESKTOP */}
+
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* === KOLOM KIRI: FORM & RINGKASAN === */}
+                    {/* Kolom Kiri */}
                     <div>
                       <div
                         className="mb-6 p-4 bg-white rounded-xl border-t border-l border-black"
@@ -393,6 +396,7 @@ export default function Level6Page() {
                             </select>
                           </div>
                         </div>
+
                         <div className="mb-6 p-4 bg-[#fdf6f0] rounded-lg border border-[#f0d5c2]">
                           <h3 className="font-bold text-[#0a5f61] mb-3 text-sm sm:text-base">
                             Tingkat Kepuasan Produk (1-5)
@@ -400,15 +404,14 @@ export default function Level6Page() {
                           <p className="text-sm text-[#5b5b5b] mb-2">
                             Pilih angka yang paling menggambarkan kepuasan responden terhadap produk.
                           </p>
-                          {/* RENDER BERDASARKAN ISMOBILE */}
                           {isMobile ? (
                             <RatingBoxMobile
-                              value={currentResponse.scale} 
+                              value={currentResponse.scale}
                               onChange={(val) => setCurrentResponse((prev) => ({ ...prev, scale: val }))}
                             />
                           ) : (
                             <RatingBoxDesktop
-                              value={currentResponse.scale} 
+                              value={currentResponse.scale}
                               onChange={(val) => setCurrentResponse((prev) => ({ ...prev, scale: val }))}
                             />
                           )}
@@ -420,6 +423,7 @@ export default function Level6Page() {
                             style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                           />
                         </div>
+
                         <div className="mb-6 p-4 bg-[#f8fbff] rounded-lg border border-[#d0e7f9]">
                           <h3 className="font-bold text-[#0a5f61] mb-3 text-sm sm:text-base">Saran & Rekomendasi</h3>
                           <textarea
@@ -457,6 +461,7 @@ export default function Level6Page() {
                             style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                           />
                         </div>
+
                         <button
                           onClick={addNewResponse}
                           className="w-full bg-[#f02d9c] text-white font-bold py-3 rounded-lg font-[Poppins] border-t border-l border-black hover:bg-[#fbe2a7] hover:text-[#333333] transition-colors"
@@ -465,7 +470,7 @@ export default function Level6Page() {
                           Tambah ke Tabel Responden
                         </button>
                       </div>
-                      {/* Ringkasan & Navigasi */}
+
                       {allResponses.length > 0 && (
                         <div className="mt-6">
                           <div
@@ -495,6 +500,7 @@ export default function Level6Page() {
                                 ))}
                               </div>
                             </div>
+
                             <div className="text-center mb-5">
                               {canLaunch ? (
                                 <span className="inline-flex items-center gap-1.5 bg-[#e8f5f4] text-[#0d8a85] px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold text-xs sm:text-sm border border-[#8acfd1]">
@@ -508,12 +514,14 @@ export default function Level6Page() {
                                 </span>
                               )}
                             </div>
+
                             {allResponses.length < 5 && (
                               <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-center text-yellow-700 text-sm">
                                 <AlertTriangle size={16} className="inline mr-1" />
                                 Kamu butuh minimal <strong>5 responden</strong> sebelum bisa menyimpan dan lanjut.
                               </div>
                             )}
+
                             <div className="flex flex-wrap gap-2 justify-center">
                               <Link
                                 href={`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}`}
@@ -560,7 +568,8 @@ export default function Level6Page() {
                         </div>
                       )}
                     </div>
-                    {/* === KOLOM KANAN: PROGRESS, CHART, PETUNJUK === */}
+
+                    {/* Kolom Kanan */}
                     <div className="space-y-5">
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-3">
@@ -569,6 +578,7 @@ export default function Level6Page() {
                         </div>
                         <PhaseProgressBar currentXp={currentXp} totalXp={totalXp} />
                       </div>
+
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <h3 className="font-bold text-[#5b5b5b] mb-2 flex items-center gap-1">
                           <Award size={16} className="text-[#f02d9c]" />
@@ -586,6 +596,7 @@ export default function Level6Page() {
                           Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
                         </p>
                       </div>
+
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
                           <BookOpen size={16} className="text-[#f02d9c]" />
@@ -616,7 +627,7 @@ export default function Level6Page() {
                           </span>
                         </div>
                       </div>
-                      {/* === RESOURCES (UPDATE: RELEVAN & VERIFIED) === */}
+
                       <div className="border border-gray-200 rounded-xl p-4 bg-white">
                         <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
                           <BookOpen size={14} /> Resources
@@ -654,7 +665,7 @@ export default function Level6Page() {
                           </li>
                         </ul>
                       </div>
-                      {/* DATA VISUAL (Chart + Tabel) */}
+
                       <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
                         <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
                           <Users size={16} /> Data Responden
@@ -692,7 +703,7 @@ export default function Level6Page() {
                             </tbody>
                           </table>
                         </div>
-                        {/* Charts */}
+
                         <div className="space-y-4">
                           <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-300">
                             <h4 className="text-[13px] sm:text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Kepuasan</h4>
@@ -710,7 +721,14 @@ export default function Level6Page() {
                             <h4 className="text-[13px] sm:text-sm font-bold mb-2 text-[#0a5f61]">Jenis Kelamin</h4>
                             <ResponsiveContainer width="100%" height={180}>
                               <PieChart>
-                                <Pie dataKey="value" data={genderChartData} cx="50%" cy="50%" outerRadius={60} label>
+                                <Pie
+                                  dataKey="value"
+                                  data={genderChartData}
+                                  cx="50%"
+                                  cy="50%"
+                                  outerRadius={60}
+                                  label
+                                >
                                   {genderChartData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={entry.fill} />
                                   ))}
@@ -754,6 +772,7 @@ export default function Level6Page() {
           </div>
         </main>
       </div>
+
       <NotificationModalPlan
         isOpen={showNotification}
         type="success"
