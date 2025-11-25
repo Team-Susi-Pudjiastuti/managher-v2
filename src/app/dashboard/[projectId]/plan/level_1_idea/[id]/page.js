@@ -388,7 +388,8 @@ export default function Level1Page() {
         <main className="flex-1">
           <div className="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto">
             <div className="relative">
-              <div className="relative bg-white rounded-2xl border-2 border-[#f02d9c] p-4 sm:p-5 md:p-6">
+              <div className="relative bg-white rounded-2xl border-t border-l border-black p-5 md:p-7"
+                  style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}>
                 {!isMobile && (
                   <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-4 sm:mb-6">
                     Level 1: Ide Generator
@@ -991,7 +992,7 @@ export default function Level1Page() {
                           >
                             <CheckCircle size={16} /> Simpan
                           </button>
-                            {/* ✅ Tombol Next hanya aktif jika planLevels[0].completed === true */}
+                            {/* Tombol Next hanya aktif jika planLevels[0].completed === true */}
                             {planLevels?.[0]?.completed ? (
                               <Link
                               href={`/dashboard/${projectId}/plan/level_2_rww/${nextPrevLevel(2)}`}
@@ -1394,7 +1395,7 @@ export default function Level1Page() {
                           >
                             <CheckCircle size={16} /> Simpan
                           </button>
-                          {/* ✅ Tombol Next hanya aktif jika planLevels[0].completed === true */}
+                          {/* Tombol Next hanya aktif jika planLevels[0].completed === true */}
                           {planLevels?.[0]?.completed ? (
                             <Link
                               href={`/dashboard/${projectId}/plan/level_2_rww/${nextPrevLevel(2)}`}
@@ -1407,7 +1408,7 @@ export default function Level1Page() {
                               disabled
                               className="px-4 py-2.5 bg-gray-200 text-gray-500 font-medium rounded-lg cursor-not-allowed"
                             >
-                              Next
+                              Next <ChevronRight size={16} />
                             </button>
                           )}
                         </div>

@@ -5,43 +5,62 @@ import { apiRequest } from '../lib/api';
 const useRWWTestingStore = create(
   persist(
     (set, get) => ({
-      rwwTesting: [],
+      responses: [],
+      loading: false,
+      error: null,
+
       getRWWTesting: async (projectId) => {
         try {
-          const res = await apiRequest(`rww-testing/${projectId}`, 'GET');
-          const rwwTesting = res.data || [];
-          set({ rwwTesting });
-          return rwwTesting;
+          const data = await apiRequest(`rww-testing/${projectId}`, 'GET');
+          let responses = [];
+          if (Array.isArray(data)) {
+            responses = data;
+          } else if (Array.isArray(data.responses)) {
+            responses = data.responses;
+          } else if (Array.isArray(data.data)) {
+            responses = data.data;
+          } else if (data && typeof data === 'object' && Array.isArray(data.responses)) {
+            responses = data.responses;
+          };
+          // Normalisasi _id jadi id (string)
+          const normalized = responses.map(item => ({
+            ...item,
+            id: (item._id?.$oid || item._id || String(item._id)) || Date.now() + Math.random()
+          }));
+
+          set({ responses: normalized, loading: false });
+          return normalized;
         } catch (error) {
           console.error('Error fetching RWW data:', error);
-          return [];
+          set({ error: err.message || 'Gagal memuat data', loading: false });
         }
       },
-      updateRWWTesting: async (id, updateData) => {
+      // updateRWWTesting: async (id, updateData) => {
+      //   try {
+      //     const res = await apiRequest(`rww-testing/${id}`, 'PUT', updateData);
+      //     const updated = res.data?.data || {};
+      //     set((state) => ({
+      //       rwwTesting: Array.isArray(state.rwwTesting)
+      //         ? state.rwwTesting.map((p) => (p._id === id ? updated : p))
+      //         : []
+      //     }));
+      //   } catch (error) {
+      //     console.error('Error updating RWW:', error);
+      //   }
+      // },
+      addRWWTesting: async (projectId, responses) => {
+        set({ loading: true, error: null });
         try {
-          const res = await apiRequest(`rww-testing/${id}`, 'PUT', updateData);
-          const updated = res.data?.data || {};
-          set((state) => ({
-            rwwTesting: Array.isArray(state.rwwTesting)
-              ? state.rwwTesting.map((p) => (p._id === id ? updated : p))
-              : []
-          }));
-        } catch (error) {
-          console.error('Error updating RWW:', error);
+          await apiRequest(`rww-testing/${projectId}`,'PATCH',{ responses });
+          set({ loading: false });
+        } catch (err) {
+          console.error('Gagal simpan beta testing:', err);
+          set({ error: err.message || 'Gagal menyimpan', loading: false });
+          throw err;
         }
       },
-      addRWWTesting: async (data) => {
-        try {
-          // Pastikan data berisi real, win, worth sebagai array
-          const res = await apiRequest(`rww-testing`, 'POST', data);
-          const newData = res.data?.data || {};
-          set((state) => ({
-            rwwTesting: [...(state.rwwTesting || []), newData]
-          }));
-        } catch (error) {
-          console.error('Error adding RWW:', error);
-        }
-      },
+      
+
     }),
     {
       name: 'rww-testing-storage',

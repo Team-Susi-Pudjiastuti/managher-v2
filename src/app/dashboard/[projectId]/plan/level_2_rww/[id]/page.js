@@ -261,62 +261,60 @@ export default function RWW() {
   
   <Confetti />
 
-const handleAddResponden = () => {
-  const { name, age, gender, activity, real, win, worth } = currentResponse;
-  const allAnswered = [name, gender, activity].every(val => val !== '') &&
-                      real.length === 3 && win.length === 3 && worth.length === 3 &&
-                      real.every(v => v !== null) &&
-                      win.every(v => v !== null) &&
-                      worth.every(v => v !== null);
+  const handleAddResponden = () => {
+    const { name, age, gender, activity, real, win, worth } = currentResponse;
+    const allAnswered = [name, gender, activity].every(val => val !== '') &&
+                        real.length === 3 && win.length === 3 && worth.length === 3 &&
+                        real.every(v => v !== null) &&
+                        win.every(v => v !== null) &&
+                        worth.every(v => v !== null);
 
-  if (!allAnswered) {
-    alert('Mohon lengkapi semua form.');
-    return;
-  }
+    if (!allAnswered) {
+      alert('Mohon lengkapi semua form.');
+      return;
+    }
 
-  const realAvg = parseFloat((real.reduce((a, b) => a + b, 0) / 3).toFixed(1));
-  const winAvg = parseFloat((win.reduce((a, b) => a + b, 0) / 3).toFixed(1));
-  const worthAvg = parseFloat((worth.reduce((a, b) => a + b, 0) / 3).toFixed(1));
-  const total = ((realAvg + winAvg + worthAvg) / 3).toFixed(1);
+    const realAvg = parseFloat((real.reduce((a, b) => a + b, 0) / 3).toFixed(1));
+    const winAvg = parseFloat((win.reduce((a, b) => a + b, 0) / 3).toFixed(1));
+    const worthAvg = parseFloat((worth.reduce((a, b) => a + b, 0) / 3).toFixed(1));
+    const total = ((realAvg + winAvg + worthAvg) / 3).toFixed(1);
 
-  const newResponder = {
-    id: Date.now().toString(),
-    name: name || '—',
-    gender: gender || 'Tidak mau memberi tau',
-    age: age ? parseInt(age, 10) : null,
-    activity: activity || 'Tidak mau memberi tau',
-    realRaw: [...real],
-    winRaw: [...win],
-    worthRaw: [...worth],
-    real: realAvg,
-    win: winAvg,
-    worth: worthAvg,
-    total,
+    const newResponder = {
+      id: Date.now().toString(),
+      name: name || '—',
+      gender: gender || 'Tidak mau memberi tau',
+      age: age ? parseInt(age, 10) : null,
+      activity: activity || 'Tidak mau memberi tau',
+      realRaw: [...real],
+      winRaw: [...win],
+      worthRaw: [...worth],
+      real: realAvg,
+      win: winAvg,
+      worth: worthAvg,
+      total,
+    };
+
+    setResponses(prev => [...prev, newResponder]);
+
+    // Reset currentResponse
+    setCurrentResponse({
+      name: '', age: '', gender: '', activity: '',
+      real: [], win: [], worth: [],
+      totalScore: ''
+    });
   };
 
-  setResponses(prev => [...prev, newResponder]);
-
-  // Reset currentResponse
-  setCurrentResponse({
-    name: '', age: '', gender: '', activity: '',
-    real: [], win: [], worth: [],
-    totalScore: ''
-  });
-};
+  const deleteResponse = (idToDelete) => {
+    setResponses(prev => prev.filter(r => r.id !== idToDelete));
+  };
   
   const calculateAverages = () => {
      if (responses.length === 0) return { real: 0, win: 0, worth: 0, total: 0 };
-
-    // const avg = (arr) => {
-    //   if (!Array.isArray(arr) || arr.length === 0) return 0;
-    //   return arr.reduce((a,b)=>a+b,0)/arr.length;
-    // };
 
     const totalReal = responses.reduce((sum, r) => sum + r.real, 0);
     const totalWin = responses.reduce((sum, r) => sum + r.win, 0);
     const totalWorth = responses.reduce((sum, r) => sum + r.worth, 0);
     const totalOverall = responses.reduce((sum, r) => sum + parseFloat(r.total), 0);
-
 
     return {
       real: (totalReal / responses.length).toFixed(1),
@@ -326,9 +324,7 @@ const handleAddResponden = () => {
     };
   };
 
-
   const averages = calculateAverages();
-  console.log(businessIdea)
 
   const getGenderSummary = () => {
     const genderMap = {};
@@ -742,6 +738,8 @@ const handleSave = async () => {
                                   IDE VALID — LANJUT KE TAHAP BERIKUTNYA
                                 </span>
                                 <div className="flex flex-wrap gap-2 justify-center mt-5">
+                                  {nextPrevLevel != null ? (
+
                                   <button
                                    onClick={async () => {
                                       if (hasUnsavedChanges) {
@@ -750,18 +748,34 @@ const handleSave = async () => {
                                       }
                                       router.push(`/dashboard/${projectId}/plan/level_1_idea/${nextPrevLevel(1)}`);
                                     }}
-                                    className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
+                                    className="px-4 py-2 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
                                   >
                                     <ChevronLeft size={16} />
                                     Prev
                                   </button>
+                                  ) : (
                                   <button
+                                   onClick={async () => {
+                                      if (hasUnsavedChanges) {
+                                        const confirmed = window.confirm('Data belum disimpan. Tetap kembali?');
+                                        if (!confirmed) return;
+                                      }
+                                      router.push(`/dashboard/${projectId}/plan/level_1_idea/${nextPrevLevel(1)}`);
+                                    }}
+                                    className="px-4 py-2 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
+                                  >
+                                    <ChevronLeft size={16} />
+                                      <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
+                                  </button>
+                                    
+                                  )}
+                                  {/* <button
                                     onClick={() => setIsEditing(!isEditing)}
                                     className="px-4 py-2 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] flex items-center gap-1"
                                   >
                                     <Edit3 size={16} />
                                     {isEditing ? 'Batal Edit' : 'Edit'}
-                                  </button>
+                                  </button> */}
                                   <button
                                     onClick={handleSave}
                                     className="px-4 py-2 bg-[#f02d9c] text-white font-medium rounded-lg flex items-center gap-1"
@@ -787,7 +801,7 @@ const handleSave = async () => {
                               ) : (
                                 <>
                                 { responses.length < 5 && (
-                                  <span className="inline-flex items-center gap-1.5 bg-[#fff8e1] text-[#c98a00] px-4 py-2 rounded-full font-bold text-sm border border-[#fbe2a7]">
+                                  <span className="inline-flex items-center gap-1.5 bg-[#fff8e1] text-[#c98a00] px-4 py-2 rounded-full font-bold text-sm border border-[#fbe2a7] mx-3">
                                   <AlertTriangle size={16} />
                                   CARI RESPONDEN LAGI
                                 </span>
@@ -805,7 +819,7 @@ const handleSave = async () => {
                                       }
                                       router.push(`/dashboard/${projectId}/plan/level_1_idea/${nextPrevLevel(1)}`);
                                     }}
-                                    className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
+                                    className="px-4 py-2 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
                                   >
                                     <ChevronLeft size={16} />
                                     Prev
@@ -886,7 +900,7 @@ const handleSave = async () => {
                       </div>
 
                       {/* Resources */}
-                      <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
                           <BookOpen size={16} /> Resources Validasi Ide
                         </h3>
@@ -911,16 +925,7 @@ const handleSave = async () => {
                               Validate Before You Build (Strategyzer)
                             </a>
                           </li>
-                          <li>
-                            <a
-                              href="https://perempuaninovasi.id/workshop"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline"
-                            >
-                              Panduan Validasi Ide (Perempuan Inovasi)
-                            </a>
-                          </li>
+                          
                         </ul>
                       </div>
 
@@ -941,6 +946,7 @@ const handleSave = async () => {
                                   <th className="py-2 px-3 border border-gray-300 text-left">Usia</th>
                                   <th className="py-2 px-3 border border-gray-300 text-left">Aktivitas</th>
                                   <th className="py-2 px-3 border border-gray-300 text-center">Skor</th>
+                                  <th className="py-2 px-3 border border-gray-300 text-center"></th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -953,6 +959,14 @@ const handleSave = async () => {
                                     <td className="py-2 px-3 border border-gray-300 text-center font-bold text-[#f02d9c]">
                                       {r.total}
                                     </td>
+                                    <td className="py-2 px-3 border border-gray-300">
+                                    <button
+                                      onClick={() => deleteResponse(r.id)} 
+                                      className="px-2 py-1 bg-red-100 text-red-600 rounded-md text-xs"
+                                    >
+                                      Hapus
+                                    </button>
+                                  </td>
                                   </tr>
                                 ))}
                               </tbody>
