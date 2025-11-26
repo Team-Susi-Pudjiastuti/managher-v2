@@ -52,6 +52,7 @@ const useAuthStore = create(
           isAuthenticated: true,
           user: {
             id: data.id,
+            name: data.name,
             username: data.username,
             email: data.email,
           },
@@ -99,6 +100,74 @@ const useAuthStore = create(
         isHydrated: true,
       });
     },
+
+     // === UPDATE PROFIL (nama, username, email) ===
+    updateProfile: async (data) => {
+    try {
+      const res = await apiRequest('/profile', 'PUT', data);
+      set({ user: res.user });
+      return { success: true, message: 'Profil berhasil diperbarui', user: res.user };
+    } catch (error) {
+      console.error('Update profile failed:', error.message);
+      return { success: false, message: error.message };
+    }
+  },
+
+  // === UPLOAD FOTO PROFIL ===
+  uploadAvatar: async (file) => {
+    if (!file) {
+      return { success: false, message: 'File tidak ditemukan' };
+    }
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+      const res = await fetch(`http://localhost:3000/api/avatar`, {
+        method: 'PUT',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Upload gagal');
+      }
+
+      const data = await res.json();
+      set({ user: data.user });
+      return { success: true, message: 'Foto profil berhasil diperbarui', user: data.user };
+    } catch (error) {
+      console.error('Avatar upload failed:', error.message);
+      return { success: false, message: error.message };
+    }
+  },
+
+  // === GANTI PASSWORD ===
+  changePassword: async (oldPassword, newPassword) => {
+    try {
+      const res = await apiRequest('change-password', 'PUT', {
+        oldPassword,
+        newPassword,
+      });
+      return { success: true, message: res.message };
+    } catch (error) {
+      console.error('Change password failed:', error.message);
+      return { success: false, message: error.message };
+    }
+  },
+
+  // === HAPUS AKUN ===
+  deleteAccount: async () => {
+    try {
+      await apiRequest('profile', 'DELETE');
+      set({ user: null, isAuthenticated: false });
+      return { success: true, message: 'Akun berhasil dihapus' };
+    } catch (error) {
+      console.error('Delete account failed:', error.message);
+      return { success: false, message: error.message };
+    }
+  },
 })
     // {
     //   name: 'auth-storage', // disimpan di localStorage

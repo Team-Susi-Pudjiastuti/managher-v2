@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Menu,
   Target,
@@ -25,6 +26,7 @@ import {
   Clock,
   CheckCircle,
   Zap,
+  Loader2
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
@@ -32,6 +34,7 @@ import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 import useProjectStore from '@/store/useProjectStore';
 import { useLaunchChecklistStore } from '@/store/useLaunchChecklistStore';
+import useAuthStore from '@/store/useAuthStore'; 
 
 // === CONFETTI ===
 const Confetti = () => {
@@ -135,13 +138,25 @@ export default function Level7Page() {
   const router = useRouter();
 
   const { planLevels, getLevels, updateLevelStatus } = useProjectStore();
-  const { checklist, fetchChecklist, toggleItem } = useLaunchChecklistStore();
+  const { checklist, toggleItem } = useLaunchChecklistStore(); // fetchChecklist dihapus
 
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore(); 
+
+  useEffect(() => {
+    loadSession(); 
+  }, []); 
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push('/auth/login'); 
+    }
+  }, [isHydrated, isAuthenticated, router]); 
 
   useEffect(() => setIsMounted(true), []);
 
@@ -155,33 +170,13 @@ export default function Level7Page() {
   useEffect(() => {
     if (projectId && projectId !== 'undefined') {
       getLevels(projectId);
-      fetchChecklist(projectId);
+      // fetchChecklist(projectId); — DIHAPUS agar tidak reset ke false
     }
   }, [projectId]);
 
   // Helper: Kembalikan level lengkap berdasarkan order
   const getLevel = (order) => {
     return planLevels.find((l) => l.order === order) || null;
-  };
-
-  const vpc = getLevel(1);
-  const rww = getLevel(2);
-  const brand = getLevel(3);
-  const lean = getLevel(4);
-  const mvp = getLevel(5);
-  const beta = getLevel(6);
-
-  // Status
-  const vpcStatus = vpc?.data?.productsServices ? 'Selesai' : 'Belum selesai';
-  const rwwStatus = rww?.data?.problem ? 'Selesai' : 'Belum selesai';
-  const brandStatus = brand?.data?.brandName ? 'Selesai' : 'Belum selesai';
-  const leanStatus = lean?.data?.problem ? 'Selesai' : 'Belum selesai';
-  const mvpStatus = mvp?.data?.products?.length > 0 ? 'Ada produk' : 'Belum diisi';
-  const betaStatus = beta?.data?.feedback?.length > 0 ? `${beta.data.feedback.length} feedback` : 'Belum diuji';
-
-  const getVPCProductTitle = (ps) => {
-    if (!ps) return '-';
-    return ps.split('\n')[0] || '-';
   };
 
   // Progress XP
@@ -192,6 +187,7 @@ export default function Level7Page() {
   const currentLevel = planLevels.find((l) => l.order === 7);
   const xpGained = currentLevel?.xp || 10;
   const badgeName = currentLevel?.badge || 'Launch Star';
+  const nextPrevLevel = (num) => planLevels.find(l => l.project._id === projectId && l.order === num).entities[0].entity_ref
 
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },
@@ -203,22 +199,22 @@ export default function Level7Page() {
     const allDone = Object.values(checklist).every((v) => v);
     if (allDone) {
       updateLevelStatus(currentLevel._id, { completed: true });
-      setShowConfetti(true);
-      setShowNotification(true);
-      setTimeout(() => setShowConfetti(false), 5000);
+      if (currentLevel?.completed) {
+        setShowNotification(true);
+      } else {
+        setShowConfetti(true);
+        setShowNotification(true);
+        setTimeout(() => setShowConfetti(false), 5000);
+      }
     } else {
       alert('Selesaikan semua checklist terlebih dahulu untuk melanjutkan.');
     }
   };
 
-  const totalItems = CHECKLIST_ITEMS.length;
-  const completedItems = Object.values(checklist).filter(Boolean).length;
-  const progressPercentage = Math.round((completedItems / totalItems) * 100);
-
   if (!isMounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-[#f02d9c] font-medium">Memuat data...</p>
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
       </div>
     );
   }
@@ -244,7 +240,7 @@ export default function Level7Page() {
         </header>
       )}
 
-      <div className="flex">
+      <div className="flex mt-6">
         <PlanSidebar
           projectId={projectId}
           currentLevelId={7}
@@ -267,24 +263,24 @@ export default function Level7Page() {
                   </h1>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* RESPONSIVE: 1 kolom di mobile, 2 di lg+ */}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   {/* Kolom Kiri */}
                   <div className="space-y-6">
                     {/* Checklist */}
                     <div className="border border-gray-300 rounded-xl p-4 bg-[#f0f9f9]">
                       <h3 className="font-bold text-[#f02d9c] mb-3 flex items-center gap-2">
                         <ClipboardCheck size={16} />
-                        Checklist Launching (Solopreneur Pemula)
+                        Checklist Launching
                       </h3>
                       <ul className="space-y-2">
                         {CHECKLIST_ITEMS.map((item) => {
-                          const Icon = item.icon;
                           const isChecked = checklist[item.id] || false;
                           return (
                             <li key={item.id} className="flex items-start gap-2 text-sm">
                               <button
                                 onClick={() => toggleItem(projectId, item.id)}
-                                className="mt-0.5 w-5 h-5 flex items-center justify-center border border-gray-400 rounded-sm bg-white hover:bg-[#f0f9f9]"
+                                className="mt-0.5 w-5 h-5 flex items-center justify-center border border-gray-400 rounded-sm bg-white hover:bg-[#f0f9f9] flex-shrink-0"
                                 aria-label={`Toggle ${item.label}`}
                               >
                                 {isChecked && <CheckCircle size={14} className="text-green-600" />}
@@ -297,73 +293,47 @@ export default function Level7Page() {
                         })}
                       </ul>
                     </div>
+                    {console.log(nextPrevLevel(1))}
 
                     {/* Aset */}
                     <div>
                       <h3 className="font-bold text-[#5b5b5b] mb-3">Aset Hasil Level 1–6</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="border border-gray-300 rounded-xl p-3 bg-[#fdf6f0]">
-                          <h4 className="font-bold text-[#0a5f61] text-sm flex items-center gap-1">
-                            <Target size={14} /> VPC
-                          </h4>
-                          <p className="text-xs text-[#5b5b5b] mt-1">
-                            {getLevel(1)?.completed ? 'Selesai' : 'Belum selesai'}
-                          </p>
-                        </div>
-                        <div className="border border-gray-300 rounded-xl p-3 bg-[#fdf6f0]">
-                          <h4 className="font-bold text-[#0a5f61] text-sm flex items-center gap-1">
-                            <BarChart3 size={14} /> RWW Analysis
-                          </h4>
-                          <p className="text-xs text-[#5b5b5b] mt-1">
-                            {getLevel(2)?.completed ? 'Selesai' : 'Belum selesai'}
-                          </p>
-                        </div>
-                        <div className="border border-gray-300 rounded-xl p-3 bg-[#fdf6f0]">
-                          <h4 className="font-bold text-[#0a5f61] text-sm flex items-center gap-1">
-                            <Palette size={14} /> Brand Identity
-                          </h4>
-                          <p className="text-xs text-[#5b5b5b] mt-1">
-                            {getLevel(3)?.completed ? 'Selesai' : 'Belum selesai'}
-                          </p>
-                        </div>
-                        <div className="border border-gray-300 rounded-xl p-3 bg-[#fdf6f0]">
-                          <h4 className="font-bold text-[#0a5f61] text-sm flex items-center gap-1">
-                            <FileText size={14} /> Lean Canvas
-                          </h4>
-                          <p className="text-xs text-[#5b5b5b] mt-1">
-                            {getLevel(4)?.completed ? 'Selesai' : 'Belum selesai'}
-                          </p>
-                        </div>
-                        <div className="border border-gray-300 rounded-xl p-3 bg-[#fdf6f0]">
-                          <h4 className="font-bold text-[#0a5f61] text-sm flex items-center gap-1">
-                            <Rocket size={14} /> MVP
-                          </h4>
-                          <p className="text-xs text-[#5b5b5b] mt-1">
-                            {getLevel(5)?.completed ? 'Selesai' : 'Belum diisi'}
-                          </p>
-                        </div>
-                        <div className="border border-gray-300 rounded-xl p-3 bg-[#fdf6f0]">
-                          <h4 className="font-bold text-[#0a5f61] text-sm flex items-center gap-1">
-                            <Users size={14} /> Beta Testing
-                          </h4>
-                          <p className="text-xs text-[#5b5b5b] mt-1">
-                            {getLevel(6)?.completed ? 'Selesai' : 'Belum diuji'}
-                          </p>
-                        </div>
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-2">
+                        {[
+                          { id: 1, label: 'VPC', icon: Target, completed: getLevel(1)?.completed, href: `/dashboard/${projectId}/plan/level_1_idea/${nextPrevLevel(1)}` },
+                          { id: 2, label: 'RWW Analysis', icon: BarChart3, completed: getLevel(2)?.completed, href: `/dashboard/${projectId}/plan/level_2_rww/${nextPrevLevel(2)}` },
+                          { id: 3, label: 'Brand Identity', icon: Palette, completed: getLevel(3)?.completed, href: `/dashboard/${projectId}/plan/level_3_product_brand/${nextPrevLevel(3)}` },
+                          { id: 4, label: 'Lean Canvas', icon: FileText, completed: getLevel(4)?.completed, href: `/dashboard/${projectId}/plan/level_4_lean_canvas/${nextPrevLevel(4)}` },
+                          { id: 5, label: 'Prototype', icon: Rocket, completed: getLevel(5)?.completed, href: `/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}` },
+                          { id: 6, label: 'Beta Testing', icon: Users, completed: getLevel(6)?.completed, href: `/dashboard/${projectId}/plan/level_6_beta_testing/${nextPrevLevel(6)}` },
+                        ].map((item) => {
+                          const Icon = item.icon;
+                          const status = item.completed ? 'Selesai' : 'Belum selesai';
+                          return (
+                            <div key={item.id} className="border border-gray-300 rounded-xl p-3 bg-[#fdf6f0]">
+                              <Link href={item.href}>
+                                <h4 className="font-bold text-[#0a5f61] text-sm flex items-center gap-1 hover:underline">
+                                  <Icon size={14} /> {item.label}
+                                </h4>
+                              </Link>
+                              <p className="text-xs text-[#5b5b5b] mt-1">{status}</p>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 justify-center">
                       <button
-                        onClick={() => router.push(`/dashboard/${projectId}/plan/level_6_beta_testing`)}
-                        className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
+                        onClick={() => router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/${nextPrevLevel(6)}`)}
+                        className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1 min-w-[80px]"
                       >
                         <ChevronLeft size={16} />
                         Prev
                       </button>
                       <button
                         onClick={handleSelesaiClick}
-                        className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
+                        className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg  hover:bg-[#7abfc0] flex items-center gap-1 min-w-[100px]"
                       >
                         Selesai
                         <ChevronRight size={16} />
@@ -416,10 +386,10 @@ export default function Level7Page() {
                           'Tentukan jam operasional & respons',
                         ].map((text, i) => (
                           <div key={i} className="flex items-start gap-2 text-sm text-[#5b5b5b]">
-                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#f02d9c] text-white text-xs font-bold mt-0.5">
+                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#f02d9c] text-white text-xs font-bold mt-0.5 flex-shrink-0">
                               {i + 1}
                             </span>
-                            {text}
+                            <span>{text}</span>
                           </div>
                         ))}
                       </div>
@@ -433,7 +403,7 @@ export default function Level7Page() {
                       </div>
                     </div>
 
-                    {/* Resources */}
+                    {/* Resources — SESUAI LEVEL 7 */}
                     <div className="border border-gray-200 rounded-xl p-4 bg-white">
                       <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
                         <BookOpen size={14} /> Resources
@@ -441,32 +411,72 @@ export default function Level7Page() {
                       <ul className="text-sm text-[#5b5b5b] space-y-1.5">
                         <li>
                           <a
-                            href="https://miro.com/templates/value-proposition-canvas/"
+                            href="https://www.canva.com/templates/?category=Instagram%20post"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                           >
-                            Miro VPC Template <ChevronRight size={12} />
+                            Template Konten Instagram (Canva) <ChevronRight size={12} />
                           </a>
                         </li>
                         <li>
                           <a
-                            href="https://miro.com/templates/lean-canvas/"
+                            href="https://www.canva.com/templates/?category=product%20catalog"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                           >
-                            Miro Lean Canvas Template <ChevronRight size={12} />
+                            Template Katalog Produk <ChevronRight size={12} />
                           </a>
                         </li>
                         <li>
                           <a
-                            href="https://perempuaninovasi.id/workshop"
+                            href="https://merchant.qris.id/"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                           >
-                            Workshop Perempuan Inovasi <ChevronRight size={12} />
+                            Daftar QRIS Resmi untuk Pembayaran <ChevronRight size={12} />
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            href="https://www.photopea.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                          >
+                            Edit Foto Produk Gratis (Photopea) <ChevronRight size={12} />
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            href="https://www.instagram.com/business/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                          >
+                            Panduan Optimasi Instagram Bisnis <ChevronRight size={12} />
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            href="https://www.whatsapp.com/business/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                          >
+                            WhatsApp Business – Fitur & Pengaturan Lengkap <ChevronRight size={12} />
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            href="https://www.canva.com/templates/EADapCj8m3M-minimalist-review-testimonial-instagram-post/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                          >
+                            Template Testimoni Pelanggan <ChevronRight size={12} />
                           </a>
                         </li>
                       </ul>
@@ -479,16 +489,30 @@ export default function Level7Page() {
         </main>
       </div>
 
-      <NotificationModalPlan
-        isOpen={showNotification}
-        type="success"
-        xpGained={xpGained}
-        badgeName={badgeName}
-        onClose={() => {
-          setShowNotification(false);
-          router.push(`/dashboard/${projectId}`);
-        }}
-      />
+      {currentLevel?.completed ? (
+        <NotificationModalPlan
+         isOpen={showNotification}
+         type="success"
+         pesan="Fase Plan telah selesai!"
+         keterangan="Setelah ide bisnismu berhasil dilaunching pantau perkembangan penjualan bisnismu di Fase Sell!"
+         onClose={() => {
+           setShowNotification(false);
+           router.push(`/dashboard/${projectId}`);
+         }}
+       />
+      ) : (
+        <NotificationModalPlan
+          isOpen={showNotification}
+          type="success"
+          xpGained={xpGained}
+          badgeName={badgeName}
+          onClose={() => {
+            setShowNotification(false);
+            router.push(`/dashboard/${projectId}`);
+          }}
+        />
+      )}
+
     </div>
   );
 }

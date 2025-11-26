@@ -36,6 +36,8 @@ const getBadgeIcon = (badgeName) => {
 export default function NotificationModal({ 
   isOpen, 
   onClose,
+  pesan = "Selamat! Kamu telah menyelesaikan Level ini.",
+  keterangan = "Lanjut ke level berikutnya untuk mengembangkan ide bisnismu!",
   xpGained = null,
   badgeName = null
 }) {
@@ -58,7 +60,7 @@ export default function NotificationModal({
 
         {/* Pesan Selamat */}
         <p className="font-bold text-lg mb-4">
-          Selamat! Kamu telah menyelesaikan Level ini.
+          {pesan}
         </p>
 
         {/* Badge */}
@@ -79,7 +81,7 @@ export default function NotificationModal({
         )}
 
         <p className="text-sm mb-4">
-          Lanjut ke level berikutnya untuk mengembangkan ide bisnismu!
+          {keterangan}
         </p>
 
         <button

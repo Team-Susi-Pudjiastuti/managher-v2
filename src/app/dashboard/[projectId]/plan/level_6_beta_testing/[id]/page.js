@@ -1,24 +1,27 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Menu, Users, Goal, Sparkles, ChevronLeft, ChevronRight, Trash2,
-  BarChart3, CheckCircle, BookOpen, Edit3, AlertTriangle, Award, Lightbulb, Zap,
+  BarChart3, CheckCircle, BookOpen, Edit3, AlertTriangle, Award, Lightbulb, Zap, Loader2
 } from 'lucide-react';
-
 import useProjectStore from '@/store/useProjectStore';
 import { useBetaTestingStore } from '@/store/useBetaTestingStore';
+import useAuthStore from '@/store/useAuthStore'; 
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 import Confetti from '@/components/Confetti';
-
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell 
 } from 'recharts';
+
+// === KONSTANTA SHARED ===
+const satisfactionLabels = ['Sangat Tidak Puas', 'Tidak Puas', 'Netral', 'Puas', 'Sangat Puas'];
+const range5 = [1, 2, 3, 4, 5];
 
 // === PROGRESS BAR ===
 const PhaseProgressBar = ({ currentXp, totalXp }) => {
@@ -27,7 +30,6 @@ const PhaseProgressBar = ({ currentXp, totalXp }) => {
     const calculatedProgress = totalXp > 0 ? Math.min(100, Math.floor((currentXp / totalXp) * 100)) : 0;
     setProgress(calculatedProgress);
   }, [currentXp, totalXp]);
-
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-3 w-full">
       <div className="flex items-center justify-between gap-2 mb-1">
@@ -49,16 +51,59 @@ const PhaseProgressBar = ({ currentXp, totalXp }) => {
   );
 };
 
-const satisfactionLabels = ['Sangat Tidak Puas', 'Tidak Puas', 'Netral', 'Puas', 'Sangat Puas'];
-const range5 = [1, 2, 3, 4, 5];
+// === RATING BOX MOBILE ===
+const RatingBoxMobile = ({ value, onChange, labels = satisfactionLabels }) => (
+  <div className="grid grid-cols-2 gap-3 mt-4">
+    {range5.map(num => (
+      <button
+        key={num}
+        type="button"
+        onClick={() => onChange(num)}
+        className={`py-3 px-2 flex flex-col items-center justify-center rounded-lg text-sm font-[Poppins] font-medium transition-all border-t border-l border-black`}
+        style={{
+          backgroundColor: value === num ? '#f02d9c' : '#ffffff',
+          color: value === num ? '#ffffff' : '#5b5b5b',
+          boxShadow: '2px 2px 0 0 #f02d9c',
+        }}
+      >
+        <span className="font-bold">{num}</span>
+        <span className="text-[10px] mt-1">{labels[num - 1]}</span>
+      </button>
+    ))}
+  </div>
+);
+
+// === RATING BOX DESKTOP ===
+const RatingBoxDesktop = ({ value, onChange, labels = satisfactionLabels }) => (
+  <div className="flex justify-between gap-2 mt-4 overflow-x-auto pb-1 -mx-1 px-1 max-w-md mx-auto">
+    {range5.map(num => (
+      <button
+        key={num}
+        type="button"
+        onClick={() => onChange(num)}
+        className={`flex-1 min-w-[50px] max-w-[70px] h-14 flex flex-col items-center justify-center rounded-lg text-xs font-[Poppins] font-medium transition-all border-t border-l border-black flex-shrink-0`}
+        style={{
+          backgroundColor: value === num ? '#f02d9c' : '#ffffff',
+          color: value === num ? '#ffffff' : '#5b5b5b',
+          boxShadow: '2px 2px 0 0 #f02d9c',
+        }}
+      >
+        <span className="font-bold text-sm">{num}</span>
+        <span className="text-[7px] sm:text-[9px] mt-1 hidden sm:block leading-tight">{labels[num - 1]}</span>
+        <span className="text-[7px] mt-1 sm:hidden leading-tight">{labels[num - 1].split(' ')[0]}</span>
+      </button>
+    ))}
+  </div>
+);
 
 export default function Level6Page() {
   const { projectId } = useParams();
   const router = useRouter();
-  const nextPrevLevel = (num) => planLevels.find(l => l.project._id === projectId && l.order === num).entities[0].entity_ref
+  const nextPrevLevel = (num) => planLevels.find(l => l.project?._id === projectId && l.order === num)?.entities?.[0]?.entity_ref;
 
   const { planLevels, getLevels } = useProjectStore();
   const { responses: storedResponses, loading: storeLoading, fetchResponses, saveResponses } = useBetaTestingStore();
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore(); 
 
   const [allResponses, setAllResponses] = useState([]);
   const [currentResponse, setCurrentResponse] = useState({
@@ -70,25 +115,43 @@ export default function Level6Page() {
     comment: '',
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // === Fungsi Form ===
+  useEffect(() => {
+    loadSession(); 
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isHydrated, isAuthenticated, router]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentResponse(prev => ({ ...prev, [name]: value }));
   };
 
-  const addNewResponse = () => {
+  const addNewResponse = async () => {
     const { name, age } = currentResponse;
     if (!name || !age) {
       alert('Nama dan usia harus diisi.');
       return;
     }
     const newResp = { ...currentResponse, id: Date.now() + Math.random() };
-    setAllResponses(prev => [...prev, newResp]);
+    const updatedResponses = [...allResponses, newResp];
+    setAllResponses(updatedResponses);
+    
+    try {
+      await saveResponses(projectId, updatedResponses);
+    } catch (err) {
+      console.error('Gagal auto-save:', err);
+    }
+    
     setCurrentResponse({
       name: '', gender: '', age: '', activity: '',
       scale: null, satisfaction_reason: '',
@@ -96,9 +159,15 @@ export default function Level6Page() {
     });
   };
 
-  // logika delete
-  const deleteResponse = (idToDelete) => {
-    setAllResponses(prev => prev.filter(r => r.id !== idToDelete));
+  const deleteResponse = async (idToDelete) => {
+    const updatedResponses = allResponses.filter(r => r.id !== idToDelete);
+    setAllResponses(updatedResponses);
+    
+    try {
+      await saveResponses(projectId, updatedResponses);
+    } catch (err) {
+      console.error('Gagal auto-save setelah delete:', err);
+    }
   };
 
   // === Analisis ===
@@ -114,8 +183,11 @@ export default function Level6Page() {
     : 0;
   const canLaunch = allResponses.length >= 5 && parseFloat(avgSatisfaction) >= 4.0 && recommendRate >= 70;
 
-  // Simpan ke backend
   const handleSave = async () => {
+    if (allResponses.length < 5) {
+      alert('Kamu harus mengumpulkan minimal 5 responden sebelum menyimpan.');
+      return;
+    }
     try {
       await saveResponses(projectId, allResponses);
       const currentLevel = planLevels.find(l => l.order === 6);
@@ -123,10 +195,8 @@ export default function Level6Page() {
         const { updateLevelStatus } = useProjectStore.getState();
         await updateLevelStatus(currentLevel._id, { completed: true });
       }
-      
-
       setShowNotification(true);
-      if (canLaunch) {
+      if (canLaunch && !currentLevel?.completed) {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 3000);
       }
@@ -138,12 +208,14 @@ export default function Level6Page() {
   // === Chart Data ===
   const satisfactionDist = [0, 0, 0, 0, 0];
   allResponses.forEach(r => {
-    if (typeof r.scale === 'number' && r.scale >= 1 && r.scale <= 5) { // ✅ scale
+    if (typeof r.scale === 'number' && r.scale >= 1 && r.scale <= 5) {
       satisfactionDist[Math.floor(r.scale) - 1]++;
     }
   });
   const satisfactionChartData = satisfactionDist.map((count, i) => ({
-    score: i + 1, label: satisfactionLabels[i], count,
+    score: i + 1,
+    label: satisfactionLabels[i], // ✅ gunakan konstanta
+    count,
   }));
 
   const ageBuckets = { '<18': 0, '18-24': 0, '25-34': 0, '35-44': 0, '45+': 0 };
@@ -176,28 +248,8 @@ export default function Level6Page() {
     { name: 'Lainnya', value: allResponses.filter(r => r.gender === 'Lainnya').length, fill: '#C4C4C4' },
   ];
 
-  const RatingBox = ({ value, onChange, labels = satisfactionLabels }) => (
-    <div className="flex flex-wrap justify-center gap-4 mt-4">
-      {range5.map(num => (
-        <button
-          key={num}
-          type="button"
-          onClick={() => onChange(num)}
-          className={`w-14 h-14 flex flex-col items-center justify-center rounded-lg text-xs font-[Poppins] font-medium transition-all border-t border-l border-black`}
-          style={{
-            backgroundColor: value === num ? '#f02d9c' : '#ffffff',
-            color: value === num ? '#ffffff' : '#5b5b5b',
-            boxShadow: '2px 2px 0 0 #f02d9c',
-          }}
-        >
-          <span className="font-bold">{num}</span>
-          <span className="hidden sm:block mt-1 text-[10px]">{labels[num - 1]}</span>
-        </button>
-      ))}
-    </div>
-  );
-
-  // === Load Data ===
+  // === Init ===
+  useEffect(() => setIsMounted(true), []);
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 1024);
     handler();
@@ -206,13 +258,12 @@ export default function Level6Page() {
   }, []);
 
   useEffect(() => {
-    if (projectId && projectId !== 'undefined') {
+    if (projectId && projectId !== 'undefined' && isMounted && isAuthenticated) {
       getLevels(projectId);
       fetchResponses(projectId);
     }
-  }, [projectId]);
+  }, [projectId, isMounted, isAuthenticated]);
 
-  // Sync store → state (tanpa reset)
   useEffect(() => {
     setAllResponses(storedResponses);
   }, [storedResponses]);
@@ -221,7 +272,6 @@ export default function Level6Page() {
   const currentLevel = planLevels.find(l => l.order === 6);
   const xpGained = currentLevel?.xp || 10;
   const badgeName = currentLevel?.badge || 'Beta Master';
-  const totalLevels = planLevels.length;
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
@@ -231,10 +281,10 @@ export default function Level6Page() {
     { label: 'Level 6: Beta Testing' },
   ];
 
-  if (storeLoading) {
+  if (!isMounted || storeLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-[#f02d9c] font-medium">Memuat data beta testing...</p>
+       <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
       </div>
     );
   }
@@ -242,14 +292,13 @@ export default function Level6Page() {
   return (
     <div className="min-h-screen bg-white font-[Poppins]">
       {showConfetti && <Confetti />}
-
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
         <Breadcrumb items={breadcrumbItems} />
       </div>
 
       {isMobile && !mobileSidebarOpen && (
-        <header className="p-3 flex items-center border-b border-gray-200 bg-white top-10 z-30">
-          <button onClick={() => setMobileSidebarOpen(true)} className="p-1.5 rounded-lg hover:bg-gray-100" aria-label="Open menu">
+        <header className="p-3 flex items-center border-b border-gray-200 bg-white sticky top-10 z-30">
+          <button onClick={() => setMobileSidebarOpen(true)} aria-label="Open menu">
             <Menu size={20} className="text-[#5b5b5b]" />
           </button>
           <h1 className="ml-2 font-bold text-[#5b5b5b] text-base">Level 6: Beta Testing</h1>
@@ -266,32 +315,29 @@ export default function Level6Page() {
         />
 
         <main className="flex-1">
-          <div className="py-8 px-4 md:px-6">
+          <div className="py-6 px-3 sm:px-4 md:px-6">
             <div className="max-w-6xl mx-auto">
               <div className="relative">
                 <div className="absolute inset-0 translate-x-1 translate-y-1 bg-[#f02d9c] rounded-2xl"></div>
                 <div
-                  className="relative bg-white rounded-2xl border-t border-l border-black p-5 md:p-7"
+                  className="relative bg-white rounded-2xl border-t border-l border-black p-4 sm:p-5 md:p-6"
                   style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                 >
-                  <h1 className="text-2xl md:text-3xl font-bold text-[#f02d9c] mb-2 text-center">
+                  <h1 className="text-xl sm:text-2xl font-bold text-[#f02d9c] mb-4 sm:mb-6">
                     Level 6: Beta Testing
                   </h1>
-                  <p className="text-[#5b5b5b] text-center mb-6 max-w-2xl mx-auto">
-                    Kumpulkan masukan dari pengguna nyata untuk menguji MVP-mu sebelum peluncuran resmi.
-                  </p>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Kolom Kiri */}
                     <div>
                       <div
-                        className="mb-6 p-5 bg-white rounded-xl border-t border-l border-black"
+                        className="mb-6 p-4 bg-white rounded-xl border-t border-l border-black"
                         style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                       >
                         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
                           <Users size={16} /> Tambah Data Responden
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                           <div>
                             <label className="block text-sm font-medium mb-2">Nama Lengkap</label>
                             <input
@@ -300,7 +346,7 @@ export default function Level6Page() {
                               value={currentResponse.name}
                               onChange={handleInputChange}
                               placeholder="Contoh: Ahmad"
-                              className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
+                              className="w-full px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                             />
                           </div>
@@ -310,7 +356,7 @@ export default function Level6Page() {
                               name="gender"
                               value={currentResponse.gender}
                               onChange={handleInputChange}
-                              className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] bg-white"
+                              className="w-full px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                             >
                               <option value="">Pilih Jenis Kelamin</option>
@@ -329,7 +375,7 @@ export default function Level6Page() {
                               min="13"
                               max="100"
                               placeholder="Contoh: 25"
-                              className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
+                              className="w-full px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] placeholder:text-[#7a7a7a] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                             />
                           </div>
@@ -339,7 +385,7 @@ export default function Level6Page() {
                               name="activity"
                               value={currentResponse.activity}
                               onChange={handleInputChange}
-                              className="w-full px-3.5 py-2.5 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] bg-white"
+                              className="w-full px-3 py-2 border-t border-l border-black rounded-lg font-[Poppins] text-[#5b5b5b] bg-white"
                               style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                             >
                               <option value="">Pilih Aktivitas</option>
@@ -352,16 +398,23 @@ export default function Level6Page() {
                         </div>
 
                         <div className="mb-6 p-4 bg-[#fdf6f0] rounded-lg border border-[#f0d5c2]">
-                          <h3 className="font-bold text-[#0a5f61] mb-4">
-                            Tingkat Kepuasan Produk (1–5)
+                          <h3 className="font-bold text-[#0a5f61] mb-3 text-sm sm:text-base">
+                            Tingkat Kepuasan Produk (1-5)
                           </h3>
                           <p className="text-sm text-[#5b5b5b] mb-2">
                             Pilih angka yang paling menggambarkan kepuasan responden terhadap produk.
                           </p>
-                          <RatingBox
-                            value={currentResponse.scale} 
-                            onChange={(val) => setCurrentResponse((prev) => ({ ...prev, scale: val }))}
-                          />
+                          {isMobile ? (
+                            <RatingBoxMobile
+                              value={currentResponse.scale}
+                              onChange={(val) => setCurrentResponse((prev) => ({ ...prev, scale: val }))}
+                            />
+                          ) : (
+                            <RatingBoxDesktop
+                              value={currentResponse.scale}
+                              onChange={(val) => setCurrentResponse((prev) => ({ ...prev, scale: val }))}
+                            />
+                          )}
                           <textarea
                             value={currentResponse.satisfaction_reason}
                             onChange={(e) => setCurrentResponse((prev) => ({ ...prev, satisfaction_reason: e.target.value }))}
@@ -372,7 +425,7 @@ export default function Level6Page() {
                         </div>
 
                         <div className="mb-6 p-4 bg-[#f8fbff] rounded-lg border border-[#d0e7f9]">
-                          <h3 className="font-bold text-[#0a5f61] mb-4">Saran & Rekomendasi</h3>
+                          <h3 className="font-bold text-[#0a5f61] mb-3 text-sm sm:text-base">Saran & Rekomendasi</h3>
                           <textarea
                             value={currentResponse.suggestion}
                             onChange={(e) => setCurrentResponse((prev) => ({ ...prev, suggestion: e.target.value }))}
@@ -383,7 +436,7 @@ export default function Level6Page() {
                           />
                           <div className="mb-3">
                             <label className="block text-sm font-medium mb-2">Rekomendasi?</label>
-                            <div className="flex gap-4">
+                            <div className="flex flex-wrap gap-3">
                               {['Ya', 'Tidak', 'Mungkin'].map((opt) => (
                                 <label key={opt} className="flex items-center gap-1 cursor-pointer">
                                   <input
@@ -418,7 +471,6 @@ export default function Level6Page() {
                         </button>
                       </div>
 
-                      {/* Ringkasan & Navigasi */}
                       {allResponses.length > 0 && (
                         <div className="mt-6">
                           <div
@@ -429,7 +481,7 @@ export default function Level6Page() {
                               <BarChart3 size={16} /> Ringkasan Beta Testing
                             </h2>
                             <div className="flex justify-center">
-                              <div className="grid grid-cols-3 gap-3 mb-5 max-w-md w-full">
+                              <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5 max-w-md w-full">
                                 {[
                                   { label: 'Kepuasan', value: avgSatisfaction, color: '#f02d9c' },
                                   { label: 'Rekomendasi', value: `${recommendRate}%`, color: '#8acfd1' },
@@ -437,13 +489,13 @@ export default function Level6Page() {
                                 ].map((item, i) => (
                                   <div
                                     key={i}
-                                    className="text-center p-3 bg-white rounded-lg border-t border-l border-black"
+                                    className="text-center p-2.5 sm:p-3 bg-white rounded-lg border-t border-l border-black"
                                     style={{ boxShadow: '2px 2px 0 0 #f02d9c' }}
                                   >
-                                    <div className="text-xl font-bold" style={{ color: item.color }}>
+                                    <div className="text-lg sm:text-xl font-bold" style={{ color: item.color }}>
                                       {item.value}
                                     </div>
-                                    <div className="text-xs mt-1">{item.label}</div>
+                                    <div className="text-[10px] sm:text-xs mt-1">{item.label}</div>
                                   </div>
                                 ))}
                               </div>
@@ -451,43 +503,62 @@ export default function Level6Page() {
 
                             <div className="text-center mb-5">
                               {canLaunch ? (
-                                <span className="inline-flex items-center gap-1.5 bg-[#e8f5f4] text-[#0d8a85] px-4 py-2 rounded-full font-bold text-sm border border-[#8acfd1]">
-                                  <CheckCircle size={16} />
-                                  MVP SIAP DILUNCURKAN!
+                                <span className="inline-flex items-center gap-1.5 bg-[#e8f5f4] text-[#0d8a85] px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold text-xs sm:text-sm border border-[#8acfd1]">
+                                  <CheckCircle size={14} />
+                                  PRODUK SIAP DILUNCURKAN!
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 bg-[#fff8e1] text-[#c98a00] px-4 py-2 rounded-full font-bold text-sm border border-[#fbe2a7]">
-                                  <AlertTriangle size={16} />
+                                <span className="inline-flex items-center gap-1.5 bg-[#fff8e1] text-[#c98a00] px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold text-xs sm:text-sm border border-[#fbe2a7]">
+                                  <AlertTriangle size={14} />
                                   BUTUH PENYEMPURNAAN
                                 </span>
                               )}
                             </div>
 
+                            {allResponses.length < 5 && (
+                              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-center text-yellow-700 text-sm">
+                                <AlertTriangle size={16} className="inline mr-1" />
+                                Kamu butuh minimal <strong>5 responden</strong> sebelum bisa menyimpan dan lanjut.
+                              </div>
+                            )}
+
                             <div className="flex flex-wrap gap-2 justify-center">
                               <Link
                                 href={`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}`}
-                                className="px-4 py-2 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
+                                className="px-4 py-2.5 bg-white text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1"
                               >
                                 <ChevronLeft size={16} />
                                 Prev
                               </Link>
                               <button
                                 onClick={() => setIsEditing(!isEditing)}
-                                className="px-4 py-2 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] flex items-center gap-1"
+                                className="px-4 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] flex items-center gap-1"
                               >
                                 <Edit3 size={16} />
                                 {isEditing ? 'Batal Edit' : 'Edit'}
                               </button>
                               <button
                                 onClick={handleSave}
-                                className="px-4 py-2 bg-[#f02d9c] text-white font-medium rounded-lg border border-black flex items-center gap-1"
+                                disabled={allResponses.length < 5}
+                                className={`px-4 py-2.5 font-medium rounded-lg border flex items-center gap-1 ${
+                                  allResponses.length < 5
+                                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                    : 'bg-[#f02d9c] text-white'
+                                }`}
                               >
                                 <CheckCircle size={16} />
                                 Simpan
                               </button>
                               <Link
-                                href={`/dashboard/${projectId}/plan/level_7_launch/${nextPrevLevel(7)}`}
-                                className="px-4 py-2 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black flex items-center gap-1"
+                                href={allResponses.length >= 5 ? `/dashboard/${projectId}/plan/level_7_launch/${nextPrevLevel(7)}` : '#'}
+                                onClick={(e) => {
+                                  if (allResponses.length < 5) e.preventDefault();
+                                }}
+                                className={`px-4 py-2.5 font-medium rounded-lg flex items-center gap-1 ${
+                                  allResponses.length < 5
+                                    ? 'bg-gray-200 text-gray-500 pointer-events-none'
+                                    : 'bg-[#8acfd1] text-[#0a5f61]'
+                                }`}
                               >
                                 Next
                                 <ChevronRight size={16} />
@@ -521,6 +592,9 @@ export default function Level6Page() {
                             <Award size={12} /> {badgeName}
                           </span>
                         </div>
+                        <p className="mt-2 text-xs text-[#5b5b5b]">
+                          Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
+                        </p>
                       </div>
 
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
@@ -530,8 +604,8 @@ export default function Level6Page() {
                         </h3>
                         <div className="space-y-2">
                           {[
-                            'Undang 5–15 orang dari target pasar untuk uji MVP',
-                            'Catat tingkat kepuasan (skala 1–5) dan alasan mereka',
+                            'Undang 5-15 orang dari target pasar untuk uji MVP',
+                            'Catat tingkat kepuasan (skala 1-5) dan alasan mereka',
                             'Tanyakan apakah mereka merekomendasikan produkmu',
                             'Kumpulkan saran perbaikan spesifik',
                             'Simpan data untuk evaluasi sebelum launching',
@@ -560,55 +634,66 @@ export default function Level6Page() {
                         </h3>
                         <ul className="text-sm text-[#5b5b5b] space-y-1.5">
                           <li>
-                            <a href="https://www.youtube.com/watch?v=VlX9Kq2e5qU" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline inline-flex items-center gap-1">
-                              Cara Validasi Ide dalam 15 Menit <ChevronRight size={12} />
+                            <a
+                              href="https://www.productplan.com/glossary/beta-test/"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                            >
+                              What is Beta Testing? (ProductPlan) <ChevronRight size={12} />
                             </a>
                           </li>
                           <li>
-                            <a href="https://www.strategyzer.com/blog/validate-your-ideas-before-you-build" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline inline-flex items-center gap-1">
-                              Validate Before You Build (Strategyzer) <ChevronRight size={12} />
+                            <a
+                              href="https://developer.apple.com/testflight/"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                            >
+                              TestFlight - Apple Developer <ChevronRight size={12} />
                             </a>
                           </li>
                           <li>
-                            <a href="https://perempuaninovasi.id/workshop" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline inline-flex items-center gap-1">
-                              Panduan Validasi Ide (Perempuan Inovasi) <ChevronRight size={12} />
+                            <a
+                              href="https://www.atlassian.com/continuous-delivery/software-testing/beta-testing"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                            >
+                              Beta Testing Best Practices (Atlassian) <ChevronRight size={12} />
                             </a>
                           </li>
                         </ul>
                       </div>
 
-                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd] mt-5">
+                      <div className="border border-gray-200 rounded-lg p-4 bg-[#fdfdfd]">
                         <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
-                          <Users size={16} /> Visualisasi Data Responden
+                          <Users size={16} /> Data Responden
                         </h3>
                         <div className="overflow-x-auto mb-4">
-                          <table className="min-w-full border border-gray-300 text-sm">
+                          <table className="min-w-full border border-gray-300 text-[13px] sm:text-sm">
                             <thead className="bg-[#f02d9c] text-white">
                               <tr>
-                                <th className="py-2 px-3 border border-gray-300 text-left">Nama</th>
-                                <th className="py-2 px-3 border border-gray-300 text-left">Jenis Kelamin</th>
-                                <th className="py-2 px-3 border border-gray-300 text-left">Usia</th>
-                                <th className="py-2 px-3 border border-gray-300 text-left">Aktivitas</th>
-                                <th className="py-2 px-3 border border-gray-300 text-left">Kepuasan</th>
-                                <th className="py-2 px-3 border border-gray-300 text-left">Saran</th>
-                                <th className="py-2 px-3 border border-gray-300 text-left">Rekomendasi</th>
-                                <th className="py-2 px-3 border border-gray-300 text-left">Aksi</th>
+                                <th className="py-2 px-2 sm:px-3 border border-gray-300 text-left">Nama</th>
+                                <th className="py-2 px-2 sm:px-3 border border-gray-300 text-left">JK</th>
+                                <th className="py-2 px-2 sm:px-3 border border-gray-300 text-left">Usia</th>
+                                <th className="py-2 px-2 sm:px-3 border border-gray-300 text-left">Kepuasan</th>
+                                <th className="py-2 px-2 sm:px-3 border border-gray-300 text-left">Rekom</th>
+                                <th className="py-2 px-2 sm:px-3 border border-gray-300 text-left">Aksi</th>
                               </tr>
                             </thead>
                             <tbody>
                               {allResponses.map((r) => (
-                                <tr key={r.id} className="odd:bg-white even:bg-[#f9f9f9]"> 
-                                  <td className="py-2 px-3 border border-gray-300">{r.name}</td>
-                                  <td className="py-2 px-3 border border-gray-300">{r.gender}</td>
-                                  <td className="py-2 px-3 border border-gray-300">{r.age}</td>
-                                  <td className="py-2 px-3 border border-gray-300">{r.activity}</td>
-                                  <td className="py-2 px-3 border border-gray-300">{r.scale ?? '-'}</td>
-                                  <td className="py-2 px-3 border border-gray-300 max-w-[120px] truncate">{r.suggestion || '-'}</td>
-                                  <td className="py-2 px-3 border border-gray-300">{r.recommendation ?? '-'}</td>
-                                  <td className="py-2 px-3 border border-gray-300">
+                                <tr key={r.id} className="odd:bg-white even:bg-[#f9f9f9]">
+                                  <td className="py-2 px-2 sm:px-3 border border-gray-300">{r.name}</td>
+                                  <td className="py-2 px-2 sm:px-3 border border-gray-300">{r.gender}</td>
+                                  <td className="py-2 px-2 sm:px-3 border border-gray-300">{r.age}</td>
+                                  <td className="py-2 px-2 sm:px-3 border border-gray-300">{r.scale ?? '-'}</td>
+                                  <td className="py-2 px-2 sm:px-3 border border-gray-300">{r.recommendation ?? '-'}</td>
+                                  <td className="py-2 px-2 sm:px-3 border border-gray-300">
                                     <button
                                       onClick={() => deleteResponse(r.id)} 
-                                      className="px-2 py-1 bg-red-100 text-red-600 rounded-md text-xs"
+                                      className="px-2 py-1 bg-red-100 text-red-600 rounded-md text-[11px] sm:text-xs"
                                     >
                                       Hapus
                                     </button>
@@ -618,32 +703,43 @@ export default function Level6Page() {
                             </tbody>
                           </table>
                         </div>
-                        {/* Chart tetap sama */}
-                        <div className="grid grid-cols-1 gap-4">
-                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
-                            <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Kepuasan</h4>
-                            <ResponsiveContainer width="100%" height={200}>
+
+                        <div className="space-y-4">
+                          <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-300">
+                            <h4 className="text-[13px] sm:text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Kepuasan</h4>
+                            <ResponsiveContainer width="100%" height={180}>
                               <BarChart data={satisfactionChartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="score" />
                                 <YAxis allowDecimals={false} />
-                                <Tooltip formatter={(value) => [value, 'Jumlah Responden']} />
+                                <Tooltip formatter={(value) => [value, 'Jumlah']} />
                                 <Bar dataKey="count" fill="#f02d9c" />
                               </BarChart>
                             </ResponsiveContainer>
                           </div>
-                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
-                            <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Jenis Kelamin</h4>
-                            <ResponsiveContainer width="100%" height={200}>
+                          <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-300">
+                            <h4 className="text-[13px] sm:text-sm font-bold mb-2 text-[#0a5f61]">Jenis Kelamin</h4>
+                            <ResponsiveContainer width="100%" height={180}>
                               <PieChart>
-                                <Pie dataKey="value" data={genderChartData} cx="50%" cy="50%" outerRadius={70} label />
+                                <Pie
+                                  dataKey="value"
+                                  data={genderChartData}
+                                  cx="50%"
+                                  cy="50%"
+                                  outerRadius={60}
+                                  label
+                                >
+                                  {genderChartData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                                  ))}
+                                </Pie>
                                 <Tooltip />
                               </PieChart>
                             </ResponsiveContainer>
                           </div>
-                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
-                            <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Usia</h4>
-                            <ResponsiveContainer width="100%" height={200}>
+                          <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-300">
+                            <h4 className="text-[13px] sm:text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Usia</h4>
+                            <ResponsiveContainer width="100%" height={180}>
                               <BarChart data={ageChartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
@@ -653,11 +749,11 @@ export default function Level6Page() {
                               </BarChart>
                             </ResponsiveContainer>
                           </div>
-                          <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-sm">
-                            <h4 className="text-sm font-bold mb-2 text-[#0a5f61]">Distribusi Rekomendasi</h4>
-                            <ResponsiveContainer width="100%" height={220}>
+                          <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-300">
+                            <h4 className="text-[13px] sm:text-sm font-bold mb-2 text-[#0a5f61]">Rekomendasi</h4>
+                            <ResponsiveContainer width="100%" height={200}>
                               <PieChart>
-                                <Pie dataKey="value" data={recChartData} cx="50%" cy="50%" outerRadius={70} label>
+                                <Pie dataKey="value" data={recChartData} cx="50%" cy="50%" outerRadius={60} label>
                                   <Cell key="cell-ya" fill="#4A90E2" />
                                   <Cell key="cell-tidak" fill="#f02d9c" />
                                   <Cell key="cell-mungkin" fill="#C4C4C4" />
@@ -677,13 +773,28 @@ export default function Level6Page() {
         </main>
       </div>
 
-      <NotificationModalPlan
-        isOpen={showNotification}
-        type="success"
-        xpGained={xpGained}
-        badgeName={badgeName}
-        onClose={() => setShowNotification(false)}
-      />
+            {currentLevel?.completed ? (
+              <NotificationModalPlan
+               isOpen={showNotification}
+               type="success"
+               pesan="Testing berhasil disimpan!"
+               keterangan="Berdasarkan hasil testing kamu bisa menyempurnakan produkmu di level Prototype sebelum melanjutkan tahap Launching!"
+               onClose={() => {
+                 setShowNotification(false);
+               }}
+             />
+            ) : (
+              <NotificationModalPlan
+                isOpen={showNotification}
+                type="success"
+                keterangan="Berdasarkan hasil testing kamu bisa menyempurnakan produkmu di level Prototype sebelum melanjutkan tahap Launching!"
+                xpGained={xpGained}
+                badgeName={badgeName}
+                onClose={() => {
+                  setShowNotification(false);
+                }}
+              />
+            )}
     </div>
   );
 }

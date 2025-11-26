@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
-import { Sparkle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function DashboardLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -51,7 +51,9 @@ export default function DashboardLayout({ children }) {
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            <Sparkle size={24} className="text-[#f02d9c]" />
+            <Link href="/auth/register" className="text-[#f02d9c] font-bold text-xs">
+              <img src="/managher_logo.png" alt="ManagHer Logo" className="w-8 h-8" />
+            </Link>
             <h1 className="text-lg font-bold text-[#f02d9c] ml-2">ManagHer</h1>
           </header>
         )}

@@ -15,8 +15,7 @@ import {
   ChevronRight,
   CheckCircle,
   Menu,
-  ChevronDown,
-  ChevronUp,
+  Loader2
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
@@ -25,6 +24,7 @@ import useProjectStore from '@/store/useProjectStore';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 import Confetti from '@/components/Confetti';
 import useBrandIdentityStore from '@/store/useBrandIdentity';
+import useAuthStore from '@/store/useAuthStore';
 
 const PhaseProgressBar = ({ currentXp, totalXp }) => {
   const [progress, setProgress] = useState(0);
@@ -54,7 +54,6 @@ const PhaseProgressBar = ({ currentXp, totalXp }) => {
   );
 };
 
-// Helper: get initials
 const getInitials = (name) => {
   if (!name || name.trim() === '') return 'NB';
   return name
@@ -66,38 +65,66 @@ const getInitials = (name) => {
     .toUpperCase();
 };
 
-// Helper: contrast text
 const getContrastTextColor = (hex) => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.6 ? '#111827' : '#ffffff';
+  if (!hex || typeof hex !== 'string' || !hex.startsWith('#') || hex.length < 7) {
+    return '#111827';
+  }
+  try {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.6 ? '#111827' : '#ffffff';
+  } catch (e) {
+    return '#111827';
+  }
 };
 
 export default function Level3Page() {
   const { id, projectId } = useParams();
-  const brandIdentityId = id;
+  const brandIdentityId = id && id !== 'null' && id !== 'undefined' ? id : null;
   const router = useRouter();
-  const { planLevels, updateLevelStatus } = useProjectStore()
-  const { brandIdentity, getBrandIdentity, updateBrandIdentity, uploadBrandIdentityImage } = useBrandIdentityStore();
-  const nextPrevLevel = (num) => {
-  const level = planLevels?.find(
-    (l) => l?.project?._id === projectId && l?.order === num
-  );
-  return level?.entities?.[0]?.entity_ref || null;
-};
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
+
+  const { planLevels, updateLevelStatus } = useProjectStore();
+  const { brandIdentity, getBrandIdentity, updateBrandIdentity, logoPreview, setLogoPreview, updateLogo } = useBrandIdentityStore();
 
   useEffect(() => {
-    if (projectId) {
+    loadSession();
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isHydrated, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (isHydrated && isAuthenticated) {
+      if (!projectId || projectId === 'null' || projectId === 'undefined') {
+        router.push('/dashboard');
+        return;
+      }
+      if (!brandIdentityId) {
+        router.push(`/dashboard/${projectId}/plan`);
+        return;
+      }
       getBrandIdentity(projectId);
     }
-  }, [projectId]);
+  }, [isHydrated, isAuthenticated, projectId, brandIdentityId, router]);
+
+  const getLevelEntityId = (order) => {
+    const level = planLevels?.find(
+      (l) => l?.project?._id === projectId && l?.order === order
+    );
+    return level?.entities?.[0]?.entity_ref || null;
+  };
 
   const [showNotification, setShowNotification] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false); // <-- Tambahkan state ini
+  const [showConfetti, setShowConfetti] = useState(false);
   const [notificationData, setNotificationData] = useState({
-    message: '',
+    pesan: '',
+    keterangan: '',
     xpGained: 0,
     badgeName: '',
   });
@@ -107,22 +134,18 @@ export default function Level3Page() {
   const [palette, setPalette] = useState(['#F6E8D6']);
   const [activePickerIndex, setActivePickerIndex] = useState(0);
   const MAX_COLORS = 6;
-  const [logoPreview, setLogoPreview] = useState('');
+  // const [logoPreview, setLogoPreview] = useState('');
   const logoUploadRef = useRef(null);
 
-  const [isEditing, setIsEditing] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [project, setProject] = useState(null);
-
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Mounting
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Mobile detection
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
@@ -130,34 +153,30 @@ export default function Level3Page() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // // Load saved data
-  // useEffect(() => {
-  //   if (projectId) {
-  //     const found = projects.find((p) => p.id === projectId);
-  //     setProject(found);
-  //     const saved = localStorage.getItem(`concept-${projectId}`);
-  //     if (saved) {
-  //       try {
-  //         const data = JSON.parse(saved);
-  //         setBrandName(data.brandName || '');
-  //         setTagline(data.tagline || '');
-  //         setPalette(data.palette || ['#F6E8D6']);
-  //         setLogoPreview(data.logoPreview || '');
-  //       } catch (e) {
-  //         console.warn('Failed to parse concept data', e);
-  //       }
-  //     }
-  //   }
-  // }, [projectId, projects]);
+  useEffect(() => {
+    if (brandIdentity) {
+      setBrandName(brandIdentity.brandName || '');
+      setTagline(brandIdentity.tagline || '');
+      setLogoPreview(brandIdentity.logoPreview || '');
 
-  // Progress data
-  const totalLevels = 7;
-  const completedLevels = planLevels.filter((l) => l.completed).length || 0;
-  const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
+      let validPalette = brandIdentity.palette || [];
+      if (!Array.isArray(validPalette)) validPalette = [];
+      validPalette = validPalette
+        .filter(color => typeof color === 'string')
+        .map(color => color.startsWith('#') ? color : `#${color}`)
+        .filter(color => /^#[0-9A-Fa-f]{6}$/.test(color));
+      if (validPalette.length === 0) validPalette = ['#F6E8D6'];
+      setPalette(validPalette);
+      setActivePickerIndex(0);
+    }
+  }, [brandIdentity]);
+
+  const currentXp = planLevels
+    .filter((l) => l.completed)
+    .reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
-  const firstIncompleteLevel = planLevels.find((l) => !l.completed) || { id: 3 };
+  const level3 = planLevels.find((l) => l.order === 3);
 
-  // Palette
   const updateColor = (idx, hex) => {
     setPalette((prev) => prev.map((c, i) => (i === idx ? hex : c)));
   };
@@ -176,7 +195,7 @@ export default function Level3Page() {
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !brandIdentityId) return;
 
     const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
     if (!validTypes.includes(file.type)) {
@@ -188,66 +207,63 @@ export default function Level3Page() {
       return;
     }
 
-    // simpan preview di UI
-    setLogoPreview(URL.createObjectURL(file));
+    const previewUrl = URL.createObjectURL(file);
+    setLogoPreview(previewUrl);
 
-    // upload ke backend
     const formData = new FormData();
-    formData.append('file', file); // kirim file asli
+    formData.append('file', file);
 
-    try {
-      const res = await fetch(`http://localhost:3000/api/brand-identity/${brandIdentityId}/logoPreview`, {
-        method: 'PUT',
-        body: formData,
-      });
-      const data = await res.json();
-      console.log('Upload success:', data);
-
-      // misal respon Cloudinary ada url-nya
-      setLogoPreview(data.secure_url);
-    } catch (err) {
-      console.error('Error uploading logo:', err);
-    }
+    await updateLogo(brandIdentityId, formData)
   };
 
-
-  // Save
   const handleSave = async () => {
+    if (!level3) {
+      alert('Level 3 tidak ditemukan.');
+      return;
+    }
+    if (!brandIdentityId) {
+      alert('ID Brand Identity tidak valid. Muat ulang halaman.');
+      return;
+    }
+
+    const validPalette = palette
+      .filter(color => color && typeof color === 'string')
+      .map(color => (color.startsWith('#') ? color : `#${color}`))
+      .filter(color => /^#[0-9A-Fa-f]{6}$/.test(color));
+
+    if (validPalette.length === 0) {
+      alert('Palet warna tidak valid. Gunakan format hex (#RRGGBB).');
+      return;
+    }
+
     const data = {
       brandName,
       tagline,
-      palette,
-      logoPreview,
+      palette: validPalette,
       updatedAt: new Date().toISOString(),
     };
+
     localStorage.setItem(`concept-${projectId}`, JSON.stringify(data));
-    if (brandIdentity) {
-      updateBrandIdentity(brandIdentityId, data);
-    }
-    await updateLevelStatus(planLevels[2]._id, { completed: true });
-    if (project) {
-      const updatedLevels = [...(project.levels || [])];
-      while (updatedLevels.length <= 2) {
-        updatedLevels.push({ id: updatedLevels.length + 1, completed: false });
-      }
-      updatedLevels[2] = {
-        id: 3,
-        completed: !!brandName,
-        data: { concept : data },
-      };
-      updateProject(projectId, { levels: updatedLevels });
-    }
+    await updateBrandIdentity(brandIdentityId, data);
+    await updateLevelStatus(level3._id, { completed: true });
 
-    // Tampilkan confetti saat berhasil menyimpan
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 3000);
-
-    setNotificationData({
-      message: 'Konsep brand berhasil disimpan!',
-      xpGained: planLevels[2]?.xp || 0,
-      badgeName: planLevels[2]?.badge || '',
-    });
-    setShowNotification(true);
+    setIsEditing(false)
+    if (currentLevel?.completed == false) {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+      setNotificationData({
+        keterangan: 'Perbaiki dan sempurnakan ide bisnismu di level selanjutnya dalam bentul model bisnis Lean Canvas!',
+        xpGained: level3.xp || 0,
+        badgeName: level3.badge || '',
+      });
+      setShowNotification(true);
+    } else {
+      setNotificationData({
+        pesan: 'Konsep brand berhasil disimpan!',
+        keterangan: 'Perbaiki dan sempurnakan ide bisnismu di level selanjutnya dalam bentul model bisnis Lean Canvas!'
+      });
+      setShowNotification(true);
+    }
   };
 
   const brandInitials = getInitials(brandName);
@@ -259,19 +275,27 @@ export default function Level3Page() {
   ];
 
   if (!isMounted) {
-    return <div className="min-h-screen bg-white p-6">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
+      </div>
+    );
   }
+
+  const prevLevelId = getLevelEntityId(2);
+  const nextLevelId = getLevelEntityId(4);
+
+  // ✅ Cari level 3 untuk status completed
+  const currentLevel = planLevels.find(l => l.order === 3);
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      {showConfetti && <Confetti />} {/* Render confetti jika true */}
+      {showConfetti && <Confetti />}
 
-      {/* Breadcrumb */}
       <div className="px-3 sm:px-4 md:px-6 py-2 border-b border-gray-200 bg-white">
         <Breadcrumb items={breadcrumbItems} />
       </div>
 
-      {/* Mobile Header */}
       {isMobile && !mobileSidebarOpen && (
         <header className="p-3 flex items-center border-b border-gray-200 bg-white sticky top-10 z-30">
           <button
@@ -285,7 +309,7 @@ export default function Level3Page() {
         </header>
       )}
 
-      <div className="flex">
+      <div className="flex mt-6">
         <PlanSidebar
           projectId={projectId}
           currentLevelId={3}
@@ -310,11 +334,9 @@ export default function Level3Page() {
                   )}
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Left Column: Form / Preview */}
                     <div>
                       {isEditing ? (
                         <div className="space-y-4">
-                          {/* Brand Info */}
                           <div className="border border-gray-300 rounded-xl p-4 bg-[#fdf6f0]">
                             <h3 className="font-bold text-[#0a5f61] mb-3 flex items-center gap-2">
                               <Target size={16} /> Brand Info
@@ -358,6 +380,9 @@ export default function Level3Page() {
                                         src={logoPreview}
                                         alt="Logo Preview"
                                         className="max-h-full max-w-full object-contain"
+                                        onError={(e) => {
+                                          e.currentTarget.src = '';
+                                        }}
                                       />
                                     </div>
                                   ) : (
@@ -377,7 +402,6 @@ export default function Level3Page() {
                             </div>
                           </div>
 
-                          {/* Palette Editor */}
                           <div className="border border-gray-300 rounded-xl p-4 bg-white">
                             <h3 className="font-bold text-[#f02d9c] mb-3">Palette Editor</h3>
                             <p className="text-xs text-[#5b5b5b] mb-2">
@@ -425,50 +449,112 @@ export default function Level3Page() {
                           </div>
                         </div>
                       ) : (
-                        /* PREVIEW MODE */
-                        <div className="p-4 border border-gray-300 rounded-xl bg-white shadow-sm">
+                        /* BRAND PREVIEW: DUKUNG >1 WARNA */
+                        <div className="border border-gray-300 rounded-xl p-4 bg-white">
                           <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-2">
                             <Eye size={16} /> Brand Preview
                           </h3>
-
-                          <div
-                            className="rounded-xl overflow-hidden p-4"
-                            style={{
-                              backgroundColor: palette[1] || palette[0],
-                              color: getContrastTextColor(palette[1] || palette[0]),
-                            }}
-                          >
-                            <div className="flex flex-col items-center text-center">
+                          {/* Grid 2x3 - Layout Magazine Style */}
+                          <div className="grid grid-cols-2 gap-3">
+                            {/* Kolom 1: Logo & Tagline */}
+                            <div>
+                              <h4 className="font-bold text-[#5b5b5b] text-sm mb-2">CARD</h4>
+                              <div className="flex flex-col items-center p-3 rounded-lg"
+                                 style={{
+                                  backgroundColor: palette[0] || '#F6E8D6',
+                                  color: getContrastTextColor(palette[0] || '#F6E8D6'),
+                                }}
+                              >
                               <div
-                                className="flex items-center justify-center rounded-lg mb-3"
+                                className="w-16 h-16 rounded-full p-3 mb-3 flex items-center justify-center"
                                 style={{
-                                  width: 64,
-                                  height: 64,
-                                  backgroundColor: palette[0],
-                                  color: getContrastTextColor(palette[0]),
+                                  backgroundColor: '#FFFFFF',
+                                  color: getContrastTextColor(palette[0] || '#F6E8D6'),
                                 }}
                               >
                                 {logoPreview ? (
                                   <img
                                     src={logoPreview}
                                     alt="Logo"
-                                    className="w-full h-full object-cover rounded-lg"
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
                                   />
                                 ) : (
-                                  <span className="text-lg font-bold">{brandInitials}</span>
+                                  <span className="text-xl font-bold">{brandInitials}</span>
                                 )}
                               </div>
-                              <p className="font-bold text-lg">{brandName || 'Nama Brand'}</p>
-                              <p className="text-sm opacity-90 mt-1">{tagline || 'Tagline Anda'}</p>
+                              <p className="font-bold text-center">{brandName || 'Nama Brand'}</p>
+                              <p className="text-xs mt-1 opacity-90 text-center">{tagline || 'Tagline Anda'}</p>
+                              </div>
+                            </div>
+
+                            {/* Kolom 2: Palet Warna */}
+                            <div className="p-3 bg-white rounded-lg">
+                              <h4 className="font-bold text-[#5b5b5b] text-sm mb-2">COLOR PALETTE</h4>
+                              <div className="flex gap-2 mb-2">
+                                {palette.slice(0, 3).map((color, i) => (
+                                  <div
+                                    key={i}
+                                    className="w-8 h-8 rounded"
+                                    style={{ backgroundColor: color }}
+                                    title={`Warna ${i + 1}: ${color.toUpperCase()}`}
+                                  />
+                                ))}
+                              </div>
+                              <div className="flex gap-2">
+                                {palette.slice(3, 6).map((color, i) => (
+                                  <div
+                                    key={i}
+                                    className="w-8 h-8 rounded"
+                                    style={{ backgroundColor: color }}
+                                    title={`Warna ${i + 4}: ${color.toUpperCase()}`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Kolom 3: Logo */}
+                            <div className="p-3 bg-white rounded-lg">
+                              <h4 className="font-bold text-[#5b5b5b] text-sm mb-2">LOGO</h4>
+                                {logoPreview ? (
+                                  <img
+                                    src={logoPreview}
+                                    alt="Logo"
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  <span className="text-xl font-bold">{brandInitials}</span>
+                                )}
+                            </div>
+
+                            {/* Kolom 4: Gradient Bar */}
+                            <div className="p-3 bg-white rounded-lg">
+                              <h4 className="font-bold text-[#5b5b5b] text-sm mb-2">GRADIENT</h4>
+                              <div
+                                className="h-4 rounded-md"
+                                style={{
+                                  background: `linear-gradient(90deg, ${palette[0] || '#F6E8D6'}, ${palette[1] || '#D9C9B6'}, ${palette[2] || '#A89F91'})`,
+                                }}
+                              ></div>
                             </div>
                           </div>
                         </div>
                       )}
 
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap gap-2 mt-4">
+                      <div className="flex flex-wrap gap-2 mt-6 justify-center">
                         <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_2_rww/${nextPrevLevel(2)}`)}
+                          onClick={() => {
+                            if (prevLevelId) {
+                              router.push(`/dashboard/${projectId}/plan/level_2_rww/${prevLevelId}`);
+                            } else {
+                              router.push(`/dashboard/${projectId}/plan`);
+                            }
+                          }}
                           className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
                         >
                           <ChevronLeft size={16} />
@@ -483,55 +569,71 @@ export default function Level3Page() {
                         </button>
                         <button
                           onClick={handleSave}
-                          className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
+                          className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg hover:bg-pink-600 flex items-center gap-1"
                         >
                           <CheckCircle size={16} />
                           Simpan
                         </button>
-                        <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextPrevLevel(4)}`)}
-                          className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
-                        >
-                          Next <ChevronRight size={16} />
-                        </button>
+                        {/* ✅ Tombol Next: aktif jika Level 3 completed */}
+                        {currentLevel?.completed ? (
+                          <button
+                            onClick={() => {
+                                router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextLevelId}`);
+                            }}
+                            className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] flex items-center gap-1"
+                          >
+                            { nextLevelId ? (
+                            <>
+                            Next <ChevronRight size={16} /> 
+                            </>
+                            ) : (
+                              <>
+                              <Loader2 className="w-6 h-6 animate-spin text-[#0a5f61]" />
+                              </>
+                            ) }
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 cursor-not-allowed"
+                          >
+                            Next <ChevronRight size={16} />
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    {/* Right Column: Edukasi — Progress Bar + Pencapaian + Petunjuk + Resources */}
                     <div className="space-y-5">
-                      {/* Progress Bar sebagai Card */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-3">
                           <Zap size={16} className="text-[#f02d9c]" />
                           <span className="font-bold text-[#5b5b5b]">Progress Fase Plan</span>
                         </div>
-                        <PhaseProgressBar
-                          currentXp={currentXp}
-                          totalXp={totalXp}
-                          firstIncompleteLevel={firstIncompleteLevel}
-                        />
+                        <PhaseProgressBar currentXp={currentXp} totalXp={totalXp} />
                       </div>
 
-                      {/* Achievements */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-3">
                           <Award size={16} className="text-[#f02d9c]" />
                           <span className="font-bold text-[#5b5b5b]">Pencapaian</span>
                         </div>
-                        <div className="flex flex-wrap gap-3">
-                          <div className="flex items-center gap-1.5 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Lightbulb size={12} /> +{planLevels[2].xp} XP
+                        {level3 ? (
+                          <div className="flex flex-wrap gap-3">
+                            <div className="flex items-center gap-1.5 bg-[#f02d9c] text-white px-3 py-1.5 rounded-full text-xs font-bold">
+                              <Lightbulb size={12} /> +{level3.xp} XP
+                            </div>
+                            <div className="flex items-center gap-1.5 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold">
+                              <Award size={12} /> {level3.badge}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1.5 bg-[#8acfd1] text-[#0a5f61] px-3 py-1.5 rounded-full text-xs font-bold">
-                            <Award size={12} /> {planLevels[2].badge}
-                          </div>
-                        </div>
+                        ) : (
+                          <p className="text-xs text-[#5b5b5b]">Data level belum tersedia.</p>
+                        )}
                         <p className="mt-3 text-xs text-[#5b5b5b]">
                           Kumpulkan XP & badge untuk naik pangkat dari Zero ke CEO!
                         </p>
                       </div>
 
-                      {/* Instructions */}
                       <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-3">
                           <BookOpen size={16} className="text-[#f02d9c]" />
@@ -564,39 +666,76 @@ export default function Level3Page() {
                       </div>
 
                       {/* Resources */}
-                      <div className="border border-gray-200 rounded-xl p-4 bg-white">
-                        <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
-                          <BookOpen size={14} /> Resources
-                        </h3>
-                        <ul className="text-sm text-[#5b5b5b] space-y-1.5">
+                      <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <BookOpen size={16} className="text-[#f02d9c]" />
+                          <span className="font-bold text-[#5b5b5b]">Resources</span>
+                        </div>
+                        <ul className="text-sm text-[#5b5b5b] space-y-2">
                           <li>
+                            <span className="font-medium text-[#0a5f61]">Bacaan:</span>
+                          </li>
+                          <li className="ml-3">
                             <a
-                              href="https://www.strategyzer.com/canvas/value-proposition-canvas"
+                              href="https://venngage.com/blog/brand-identity/"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline"
                             >
-                              Strategyzer: Value Proposition Design
+                              How to Build a Strong Brand Identity (Venngage)
                             </a>
                           </li>
-                          <li>
+                          <li className="ml-3">
                             <a
-                              href="https://miro.com/templates/value-proposition-canvas/"
+                              href="https://www.canva.com/learn/color-theory/"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline"
                             >
-                              Miro: Value Proposition Canvas Template
+                              Color Theory for Beginners (Canva Design School)
                             </a>
                           </li>
-                          <li>
+                          <li className="mt-2">
+                            <span className="font-medium text-[#0a5f61]">Tools:</span>
+                          </li>
+                          <li className="ml-3">
                             <a
-                              href="https://perempuaninovasi.id/workshop"
+                              href="https://www.canva.com/"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                              className="text-[#f02d9c] hover:underline"
                             >
-                              Workshop Branding untuk UMKM
+                              Canva – Desain logo & identitas visual
+                            </a>
+                          </li>
+                          <li className="ml-3">
+                            <a
+                              href="https://www.figma.com/"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline"
+                            >
+                              Figma – Desain kolaboratif & prototyping
+                            </a>
+                          </li>
+                          <li className="ml-3">
+                            <a
+                              href="https://www.remove.bg/"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline"
+                            >
+                              Remove.bg – Hapus latar belakang gambar otomatis
+                            </a>
+                          </li>
+                          <li className="ml-3">
+                            <a
+                              href="https://coolors.co/"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline"
+                            >
+                              Coolors – Generator palet warna profesional
                             </a>
                           </li>
                         </ul>
@@ -610,13 +749,17 @@ export default function Level3Page() {
         </main>
       </div>
 
-      {/* Notification Modal */}
       <NotificationModalPlan
         isOpen={showNotification}
         type="success"
+        pesan={notificationData.pesan}
+        keterangan={notificationData.keterangan}
         xpGained={notificationData.xpGained}
         badgeName={notificationData.badgeName}
-        onClose={() => setShowNotification(false)}
+        onClose={() => {
+          setShowNotification(false);
+          router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextLevelId}`);
+        }} 
       />
     </div>
   );

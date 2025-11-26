@@ -21,12 +21,14 @@ import {
   DollarSign,
   Award,
   Zap,
+  Loader2
 } from 'lucide-react';
 
 import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 import { usePrototypeStore } from '@/store/usePrototypeStore';
+import useAuthStore from '@/store/useAuthStore';
 import useProjectStore from '@/store/useProjectStore';
 import Confetti from '@/components/Confetti';
 
@@ -68,22 +70,34 @@ export default function Level5Page() {
     loading: productsLoading,
     fetchProducts,
     saveProducts,
+    updateProductImage
   } = usePrototypeStore();
 
-  const [isEditing, setIsEditing] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [localProducts, setLocalProducts] = useState([]);
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
   const nextPrevLevel = (num) => planLevels.find(l => l.project._id === projectId && l.order === num).entities[0].entity_ref
 
   const fileInputRefs = useRef({});
 
+  useEffect(() => {
+      loadSession();
+    }, []);
+  
+    useEffect(() => {
+      if (isHydrated && !isAuthenticated) {
+        router.push('/auth/login');
+      }
+    }, [isHydrated, isAuthenticated, router]);
+
   // === Generate Unique ID ===
   const generateId = () => Date.now() + Math.floor(Math.random() * 1000);
-
+  
   // === Init ===
   useEffect(() => setIsMounted(true), []);
 
@@ -119,7 +133,6 @@ export default function Level5Page() {
   }, [products]);
 
   // === Progress & Level Data ===
-  const totalLevels = planLevels.length;
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
@@ -142,7 +155,7 @@ export default function Level5Page() {
     );
   };
 
-  const handleImageUpload = (id, e) => {
+  const handleImageUpload = async (id, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
@@ -153,7 +166,8 @@ export default function Level5Page() {
       alert('Ukuran gambar terlalu besar. Maksimal 5MB.');
       return;
     }
-    const url = URL.createObjectURL(file);
+    const url = await updateProductImage(id, file);
+
     handleUpdateField(id, 'previewUrl', url);
   };
 
@@ -192,10 +206,14 @@ export default function Level5Page() {
         const { updateLevelStatus } = useProjectStore.getState();
         await updateLevelStatus(currentLevel._id, { completed: true });
       }
-
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 5000);
-      setShowNotification(true);
+      setIsEditing(false)
+      if (currentLevel?.completed) {
+        setShowNotification(true);
+      } else {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+        setShowNotification(true);
+      }
     } catch (err) {
       console.error('Save failed:', err);
       alert('Gagal menyimpan. Coba lagi.');
@@ -211,7 +229,7 @@ export default function Level5Page() {
   if (!isMounted || productsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-[#f02d9c] font-medium">Memuat data...</p>
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
       </div>
     );
   }
@@ -231,7 +249,7 @@ export default function Level5Page() {
         </header>
       )}
 
-      <div className="flex">
+      <div className="flex mt-6">
         <PlanSidebar
           projectId={projectId}
           currentLevelId={5}
@@ -254,6 +272,7 @@ export default function Level5Page() {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
                       {isEditing ? (
+                        <>
                         <div className="space-y-4">
                           {localProducts.map((product) => (
                             <div
@@ -362,78 +381,114 @@ export default function Level5Page() {
                             </button>
                           )}
                         </div>
+                        <div className="flex mt-6 justify-center">
+                          <button
+                            onClick={handleSave}
+                            className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg hover:bg-pink-600 flex items-center gap-1"
+                          >
+                            <CheckCircle size={16} />
+                            Simpan
+                          </button>
+                        </div>
+                        </>
                       ) : (
-                        <div className="space-y-4">
-                          {localProducts.map((product, idx) => (
-                            <div
-                              key={product.id} 
-                              className="border border-gray-300 rounded-xl overflow-hidden"
-                              style={{ backgroundColor: '#f0f2f5' }}
-                            >
-                              <div className="p-4" style={{ backgroundColor: '#fdf6f0' }}>
-                                <h4 className="text-xs font-semibold text-[#5b5b5b] mb-2">
-                                  Prototype Preview {localProducts.length > 1 ? `#${idx + 1}` : ''}
-                                </h4>
-                                <div className="flex items-start gap-3">
-                                  <div className="shrink-0 w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                                    {product.previewUrl ? (
-                                      <img
-                                        src={product.previewUrl}
-                                        alt="Prototype"
-                                        className="w-full h-full object-contain"
-                                      />
-                                    ) : (
-                                      <ImageIcon size={20} className="text-gray-500" />
-                                    )}
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-semibold text-[#f02d9c]">
-                                      {product.name || 'Tanpa Nama'}
-                                    </p>
-                                    <p className="text-xs text-[#5b5b5b] mt-1 whitespace-pre-line line-clamp-2">
-                                      {product.concept || 'Belum ada deskripsi'}
-                                    </p>
-                                    {product.price && (
-                                      <p className="text-xs font-medium text-green-600 mt-1">
-                                        Harga: Rp{Number(product.price).toLocaleString('id-ID')}
-                                      </p>
-                                    )}
+                        <>
+                        <div className="p-4">
+                          <div className="space-y-5">
+                            {localProducts.map((product, idx) => (
+                              <div
+                                key={product.id}
+                                className="border border-gray-200 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+                              >
+                                <div className="p-4 bg-white">
+                                  <h4 className="text-xs font-semibold text-gray-600 mb-3">
+                                    Prototype Preview {localProducts.length > 1 ? `#${idx + 1}` : ''}
+                                  </h4>
+                                  
+                                  <div className="flex gap-4">
+                                    {/* Gambar - Lebih besar */}
+                                    <div className="shrink-0 w-24 h-24 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
+                                      {product.previewUrl ? (
+                                        <img
+                                          src={product.previewUrl}
+                                          alt="Prototype"
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <ImageIcon size={32} className="text-gray-400" />
+                                      )}
+                                    </div>
+
+                                    {/* Konten Produk */}
+                                    <div className="flex-1 flex flex-col justify-between min-w-0">
+                                      {/* Nama & Deskripsi */}
+                                      <div>
+                                        <p className="text-lg font-bold text-pink-600 mb-2">
+                                          {product.name || 'Tanpa Nama'}
+                                        </p>
+                                        <p className="text-sm text-gray-700 line-clamp-2 leading-relaxed">
+                                          {product.concept || 'Belum ada deskripsi'}
+                                        </p>
+                                      </div>
+
+                                      {/* Harga di bawah */}
+                                      {product.price && (
+                                        <div className="mt-3 pt-3 border-t border-gray-200">
+                                          <p className="text-base font-semibold text-green-600">
+                                            Rp {Number(product.price).toLocaleString('id-ID')}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
+                        <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                          <button
+                            onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextPrevLevel(4)}`)}
+                            className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
+                          >
+                            <ChevronLeft size={16} />
+                            Prev
+                          </button>
+                          <button
+                            onClick={() => setIsEditing(!isEditing)}
+                            className="px-4 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1"
+                          >
+                            {isEditing ? <Eye size={16} /> : <Edit3 size={16} />}
+                            {isEditing ? 'Lihat Preview' : 'Edit'}
+                          </button>
+                          <button
+                            onClick={handleSave}
+                            className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg hover:bg-pink-600 flex items-center gap-1"
+                          >
+                            <CheckCircle size={16} />
+                            Simpan
+                          </button>
+                          {currentLevel?.completed ? (
+                            <button
+                              onClick={() => {
+                                  router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/${nextPrevLevel(6)}`);
+                                }}
+                              className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] flex items-center gap-1"
+                            >
+                              Next <ChevronRight size={16} />
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 cursor-not-allowed flex items-center gap-1"
+                            >
+                              Next  <ChevronRight size={16} />
+                            </button>
+                          )}
+                        </div>
+                        </>
                       )}
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextPrevLevel(4)}`)}
-                          className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-1"
-                        >
-                          <ChevronLeft size={16} />
-                          Prev
-                        </button>
-                        <button
-                          onClick={() => setIsEditing(!isEditing)}
-                          className="px-4 py-2.5 bg-white text-[#f02d9c] font-medium rounded-lg border border-[#f02d9c] hover:bg-[#fdf6f0] flex items-center gap-1"
-                        >
-                          {isEditing ? <Eye size={16} /> : <Edit3 size={16} />}
-                          {isEditing ? 'Lihat Preview' : 'Edit'}
-                        </button>
-                        <button
-                          onClick={handleSave}
-                          className="px-4 py-2.5 bg-[#f02d9c] text-white font-medium rounded-lg border border-black hover:bg-pink-600 flex items-center gap-1"
-                        >
-                          <CheckCircle size={16} />
-                          Simpan
-                        </button>
-                        <button
-                          onClick={() => router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/${nextPrevLevel(6)}`)}
-                          className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg border border-black hover:bg-[#7abfc0] flex items-center gap-1"
-                        >
-                          Next <ChevronRight size={16} />
-                        </button>
-                      </div>
+                      
                     </div>
 
                     {/* KOLOM KANAN */}
@@ -506,32 +561,32 @@ export default function Level5Page() {
                         <ul className="text-sm text-[#5b5b5b] space-y-1.5">
                           <li>
                             <a
-                              href="https://miro.com/templates/lean-canvas/"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
-                            >
-                              Miro: Lean Canvas Template
-                            </a>
-                          </li>
-                          <li>
-                            <a
-                              href="https://www.canva.com/templates/EAFhWMaXv5c-pink-modern-fashion-business-plan-presentation/"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
-                            >
-                              Template Canva UMKM
-                            </a>
-                          </li>
-                          <li>
-                            <a
                               href="https://perempuaninovasi.id/workshop"
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
                             >
-                              Workshop Prototype untuk Pemula
+                              Workshop Prototyping Produk Nyata untuk UMKM – Perempuan Inovasi
+                            </a>
+                          </li>
+                          <li>
+                            <a
+                              href="https://www.smescoindonesia.id/pelatihan"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                            >
+                              SMESCO Indonesia – Pelatihan Prototyping & Sampling Produk UMKM
+                            </a>
+                          </li>
+                          <li>
+                            <a
+                              href="https://www.canva.com/templates/search/product-packaging/"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#f02d9c] hover:underline inline-flex items-center gap-1"
+                            >
+                              Canva: Template Packaging & Label Produk untuk Prototype
                             </a>
                           </li>
                         </ul>
@@ -545,13 +600,30 @@ export default function Level5Page() {
         </main>
       </div>
 
-      <NotificationModalPlan
-        isOpen={showNotification}
-        type="success"
-        xpGained={xpGained}
-        badgeName={badgeName}
-        onClose={() => setShowNotification(false)}
-      />
+        {currentLevel?.completed ? (
+          <NotificationModalPlan
+            isOpen={showNotification}
+            type="success"
+            pesan="Prototype berhasil disimpan!"
+            keterangan="Mulai bagikan produk awalmu dan ketahui apa yang perlu disempurnakan dengaan tahap beta testing!"
+            onClose={() => {
+              setShowNotification(false)
+              router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/${nextPrevLevel(6)}`);
+            }}
+          />
+        ) : (
+          <NotificationModalPlan
+            isOpen={showNotification}
+            type="success"
+            keterangan="Mulai bagikan produk awalmu dan ketahui apa yang perlu disempurnakan dengaan tahap beta testing!"
+            xpGained={xpGained}
+            badgeName={badgeName}
+            onClose={() => {
+              setShowNotification(false)
+              router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/${nextPrevLevel(6)}`);
+            }}
+          />
+        )}
     </div>
   );
 }
