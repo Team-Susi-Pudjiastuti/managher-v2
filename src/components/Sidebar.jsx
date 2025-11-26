@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Home, FileText, Settings, LogOut, Sparkle } from 'lucide-react';
+import { Home, LogOut } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
@@ -47,8 +47,6 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar, isMobile }) {
 
   const menuItems = [
     { name: 'Dashboard', href: `/dashboard/${projectId}`, icon: Home },
-    { name: 'Profile Bisnis', href: `/dashboard/${projectId}/profile`, icon: FileText },
-    { name: 'Settings', href: `/dashboard/${projectId}/settings`, icon: Settings },
   ];
 
   return (

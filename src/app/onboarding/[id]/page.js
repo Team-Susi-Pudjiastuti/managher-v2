@@ -1,14 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
 import useProjectStore from '@/store/useProjectStore';
 import useAuthStore from '@/store/useAuthStore';
 import ProjectCard from '@/components/ProjectCard';
-import { LogOut, UserCircle2, Loader2 } from "lucide-react";
+import { LogOut, Loader2 } from 'lucide-react';
+
+// Fungsi untuk ambil inisial — konsisten dengan halaman profil
+const getInitials = (name, username, email) => {
+  if (name) {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  }
+  if (username) {
+    return username.substring(0, 2).toUpperCase();
+  }
+  if (email) {
+    return email.substring(0, 2).toUpperCase();
+  }
+  return 'UB';
+};
 
 export default function OnboardingPage() {
   const params = useParams();
@@ -18,7 +35,7 @@ export default function OnboardingPage() {
   const [isCreating, setIsCreating] = useState(false);
   const { projects, getAllprojects, addProject } = useProjectStore();
   const router = useRouter();
-  const { logout, isAuthenticated, loadSession, isHydrated } = useAuthStore();
+  const { logout, isAuthenticated, loadSession, isHydrated, user } = useAuthStore();
 
   useEffect(() => {
     loadSession();
@@ -31,21 +48,21 @@ export default function OnboardingPage() {
   }, [isHydrated, isAuthenticated, router]);
 
   useEffect(() => {
-      if (id) {
-        getAllprojects(id);
-      }
-  }, []);
+    if (id && isHydrated && isAuthenticated) {
+      getAllprojects(id);
+    }
+  }, [id, isHydrated, isAuthenticated]);
 
   if (!isHydrated) {
     return (
-      <div className="flex justify-center items-center py-10">
+      <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return null; // sedang redirect
+    return null;
   }
 
   const openModal = () => {
@@ -59,59 +76,68 @@ export default function OnboardingPage() {
 
   const handleCreate = async () => {
     if (!projectName.trim()) return;
-
     setIsCreating(true);
     await addProject(id, projectName);
     setIsCreating(false);
     setIsModalOpen(false);
-    await getAllprojects(id);
-
+    if (id) await getAllprojects(id);
   };
+
+  const initials = user ? getInitials(user.name, user.username, user.email) : 'UB';
 
   return (
     <div className="min-h-screen bg-white font-[Poppins] p-3 sm:p-4 md:p-6 flex flex-col">
       <div className="max-w-4xl mx-auto w-full flex flex-col items-center">
         {/* Header */}
         <div className="relative w-full">
-        {/* === Bar atas: Logout kiri & Profil kanan === */}
-        <div className="flex justify-between items-center px-4 sm:px-6 mb-4">
-          {/* Icon Profil */}
-          <button
-            className="p-2 rounded-full hover:bg-gray-100 transition"
-            title="Profile"
-            onClick={() => {
-              router.push('/profile');
-            }}
-          >
-            <UserCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-[#5b5b5b]" />
-          </button>
+          {/* Bar atas: Profil kiri & Logout kanan */}
+          <div className="flex justify-between items-center px-4 sm:px-6 mb-4">
+            {/* Foto Profil Kecil */}
+            <button
+              className="p-1 rounded-full hover:opacity-90 transition"
+              title="Profile"
+              onClick={() => router.push(`/onboarding/${id}/userprofile`)}
+            >
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border border-gray-200 shadow-sm">
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt="Foto profil"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#f02d9c] flex items-center justify-center">
+                    <span className="text-white text-[10px] sm:text-xs font-bold">{initials}</span>
+                  </div>
+                )}
+              </div>
+            </button>
 
-          {/* Tombol Logout */}
-          <button
-            className="p-2 rounded-full hover:bg-gray-100 transition"
-            title="Logout"
-            onClick={() => {
-              if (confirm('Apakah Anda yakin ingin logout?')) {
-                logout();
-                router.push('/auth/login');
-              }
-            }}
-          >
-            <LogOut className="w-5 h-5 sm:w-6 sm:h-6 text-[#f02d9c]" />
-          </button>
+            {/* Tombol Logout */}
+            <button
+              className="p-2 rounded-full hover:bg-gray-100 transition"
+              title="Logout"
+              onClick={() => {
+                if (confirm('Apakah Anda yakin ingin logout?')) {
+                  logout();
+                  router.push('/auth/login');
+                }
+              }}
+            >
+              <LogOut className="w-5 h-5 sm:w-6 sm:h-6 text-[#f02d9c]" />
+            </button>
+          </div>
 
+          {/* Teks Selamat Datang */}
+          <div className="text-center mb-6 sm:mb-8 px-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#5b5b5b] mb-2">
+              Selamat Datang di <span className="text-[#f02d9c]">ManagHer</span>
+            </h1>
+            <p className="text-[#7a7a7a] text-xs sm:text-sm md:text-base max-w-md mx-auto px-1">
+              Rancang, kelola, dan wujudkan ide bisnismu bersama komunitas perempuan inovatif
+            </p>
+          </div>
         </div>
-
-        {/* === Teks tengah === */}
-        <div className="text-center mb-6 sm:mb-8 px-2">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#5b5b5b] mb-2">
-            Selamat Datang di <span className="text-[#f02d9c]">ManagHer</span>
-          </h1>
-          <p className="text-[#7a7a7a] text-xs sm:text-sm md:text-base max-w-md mx-auto px-1">
-            Rancang, kelola, dan wujudkan ide bisnismu bersama komunitas perempuan inovatif
-          </p>
-        </div>
-      </div>
 
         {/* Card "Buat Proyek Baru" */}
         <div className="relative mb-6 sm:mb-8 w-full max-w-xs">
@@ -151,15 +177,11 @@ export default function OnboardingPage() {
               Proyekmu
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full max-w-2xl px-1">
-            {projects
-              .filter((p) => p && p._id)
-              .map((project, index) => (
-                <ProjectCard
-                  key={project._id || `temp-${index}`}
-                  project={project}
-                />
-              ))}
-
+              {projects
+                .filter((p) => p && p._id)
+                .map((project, index) => (
+                  <ProjectCard key={project._id || `temp-${index}`} project={project} />
+                ))}
             </div>
           </>
         )}
@@ -174,7 +196,12 @@ export default function OnboardingPage() {
                 stroke="currentColor"
                 className="w-8 h-8 sm:w-10 sm:h-10 text-[#b0b0b0]"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                />
               </svg>
             </div>
             <p className="text-[#7a7a7a] text-xs sm:text-sm max-w-xs mx-auto px-1">
@@ -184,7 +211,7 @@ export default function OnboardingPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal Buat Proyek */}
       {isModalOpen && (
         <div
           className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-3 sm:p-4"
@@ -228,7 +255,7 @@ export default function OnboardingPage() {
                     : 'bg-[#f0c2d9] text-[#7a7a7a] border-[#f0c2d9] cursor-not-allowed shadow-[2px_2px_0_0_#f0c2d9]'
                   }`}
               >
-                Buat
+                {isCreating ? 'Membuat...' : 'Buat'}
               </button>
             </div>
           </div>
