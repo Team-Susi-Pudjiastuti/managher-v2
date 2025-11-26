@@ -124,6 +124,7 @@ export default function Level3Page() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [notificationData, setNotificationData] = useState({
     pesan: '',
+    keterangan: '',
     xpGained: 0,
     badgeName: '',
   });
@@ -251,7 +252,7 @@ export default function Level3Page() {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
       setNotificationData({
-        pesan: 'Konsep brand berhasil disimpan!',
+        keterangan: 'Perbaiki dan sempurnakan ide bisnismu di level selanjutnya dalam bentul model bisnis Lean Canvas!',
         xpGained: level3.xp || 0,
         badgeName: level3.badge || '',
       });
@@ -259,6 +260,7 @@ export default function Level3Page() {
     } else {
       setNotificationData({
         pesan: 'Konsep brand berhasil disimpan!',
+        keterangan: 'Perbaiki dan sempurnakan ide bisnismu di level selanjutnya dalam bentul model bisnis Lean Canvas!'
       });
       setShowNotification(true);
     }
@@ -751,9 +753,13 @@ export default function Level3Page() {
         isOpen={showNotification}
         type="success"
         pesan={notificationData.pesan}
+        keterangan={notificationData.keterangan}
         xpGained={notificationData.xpGained}
         badgeName={notificationData.badgeName}
-        onClose={() => setShowNotification(false)}
+        onClose={() => {
+          setShowNotification(false);
+          router.push(`/dashboard/${projectId}/plan/level_4_lean_canvas/${nextLevelId}`);
+        }} 
       />
     </div>
   );

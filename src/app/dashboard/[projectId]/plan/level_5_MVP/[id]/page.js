@@ -207,9 +207,13 @@ export default function Level5Page() {
         await updateLevelStatus(currentLevel._id, { completed: true });
       }
       setIsEditing(false)
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 5000);
-      setShowNotification(true);
+      if (currentLevel?.completed) {
+        setShowNotification(true);
+      } else {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+        setShowNotification(true);
+      }
     } catch (err) {
       console.error('Save failed:', err);
       alert('Gagal menyimpan. Coba lagi.');
@@ -596,13 +600,30 @@ export default function Level5Page() {
         </main>
       </div>
 
-      <NotificationModalPlan
-        isOpen={showNotification}
-        type="success"
-        xpGained={xpGained}
-        badgeName={badgeName}
-        onClose={() => setShowNotification(false)}
-      />
+        {currentLevel?.completed ? (
+          <NotificationModalPlan
+            isOpen={showNotification}
+            type="success"
+            pesan="Prototype berhasil disimpan!"
+            keterangan="Mulai bagikan produk awalmu dan ketahui apa yang perlu disempurnakan dengaan tahap beta testing!"
+            onClose={() => {
+              setShowNotification(false)
+              router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/${nextPrevLevel(6)}`);
+            }}
+          />
+        ) : (
+          <NotificationModalPlan
+            isOpen={showNotification}
+            type="success"
+            keterangan="Mulai bagikan produk awalmu dan ketahui apa yang perlu disempurnakan dengaan tahap beta testing!"
+            xpGained={xpGained}
+            badgeName={badgeName}
+            onClose={() => {
+              setShowNotification(false)
+              router.push(`/dashboard/${projectId}/plan/level_6_beta_testing/${nextPrevLevel(6)}`);
+            }}
+          />
+        )}
     </div>
   );
 }

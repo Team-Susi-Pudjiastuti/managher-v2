@@ -78,6 +78,7 @@ export default function RWW() {
     return level?.entities?.[0]?.entity_ref || null;
   };
 
+  
   // --- Tambahkan state untuk confetti ---
   const [showConfetti, setShowConfetti] = useState(false);
   
@@ -212,7 +213,7 @@ export default function RWW() {
   // --- PROGRESS BAR LOGIC ---
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
-
+  const currentLevel = planLevels.find(l => l.order === 3);
   const firstIncompleteLevel = planLevels?.find(l => !l.completed) || { id: 3 };
   
   <Confetti />
@@ -376,15 +377,22 @@ const handleSave = async () => {
   await updateLevelStatus(planLevels[1]._id, { completed: isValid });
 
   // Notifikasi, confetti, dll.
-  if (isValid) {
+  if (isValid && currentLevel?.completed) {
+    setShowNotification(true);
+    setNotificationData({
+      pesan: "Validasi berhasil disimpan!",
+      keterangan: "Lanjut tetapkan identitas bisnismu supaya dikenal para customer!",
+  });
+  } else {
     setShowConfetti(true);
     setTimeout(() => setShowConfetti(false), 3000);
-  }
-  setNotificationData({
-    xpGained: planLevels[1].xp,
-    badgeName: planLevels[1].badge || 'Validator Pro',
+    setShowNotification(true);
+    setNotificationData({
+      keterangan: "Lanjut tetapkan identitas bisnismu supaya dikenal para customer!",
+      xpGained: planLevels[1].xp,
+      badgeName: planLevels[1].badge || 'Validator Pro',
   });
-  setShowNotification(true);
+  }
   setHasUnsavedChanges(false);
 };
 
@@ -694,7 +702,7 @@ const handleSave = async () => {
                                   IDE VALID — LANJUT KE TAHAP BERIKUTNYA
                                 </span>
                                 <div className="flex flex-wrap gap-2 justify-center mt-5">
-                                  {nextPrevLevel != null ? (
+                                  {nextPrevLevel(1) != null ? (
 
                                   <button
                                    onClick={async () => {
@@ -997,13 +1005,32 @@ const handleSave = async () => {
         </main>
       </div>
 
-      <NotificationModalPlan
-        isOpen={showNotification}
-        type="success"
-        xpGained={notificationData.xpGained}
-        badgeName={notificationData.badgeName}
-        onClose={() => setShowNotification(false)}
-      />
+      {currentLevel?.completed ? (
+        <NotificationModalPlan
+          isOpen={showNotification}
+          type="success"
+          pesan={notificationData.pesan}
+          keterangan={notificationData.keterangan}
+          xpGained={notificationData.xpGained}
+          badgeName={notificationData.badgeName}
+          onClose={() => {
+            setShowNotification(false)
+            router.push(`/dashboard/${projectId}/plan/level_3_product_brand/${nextPrevLevel(3)}`);
+          }}
+        />
+      ) : (
+        <NotificationModalPlan
+          isOpen={showNotification}
+          type="success"
+          keterangan={notificationData.keterangan}
+          xpGained={notificationData.xpGained}
+          badgeName={notificationData.badgeName}
+          onClose={() => {
+            setShowNotification(false)
+            router.push(`/dashboard/${projectId}/plan/level_3_product_brand/${nextPrevLevel(3)}`);
+          }}
+        />
+      )}
     </div>
   );
 }

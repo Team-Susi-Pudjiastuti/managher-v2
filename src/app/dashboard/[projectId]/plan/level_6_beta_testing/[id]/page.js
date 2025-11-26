@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Menu, Users, Goal, Sparkles, ChevronLeft, ChevronRight, Trash2,
-  BarChart3, CheckCircle, BookOpen, Edit3, AlertTriangle, Award, Lightbulb, Zap,
+  BarChart3, CheckCircle, BookOpen, Edit3, AlertTriangle, Award, Lightbulb, Zap, Loader2
 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 import { useBetaTestingStore } from '@/store/useBetaTestingStore';
@@ -196,7 +196,7 @@ export default function Level6Page() {
         await updateLevelStatus(currentLevel._id, { completed: true });
       }
       setShowNotification(true);
-      if (canLaunch) {
+      if (canLaunch && !currentLevel?.completed) {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 3000);
       }
@@ -283,8 +283,8 @@ export default function Level6Page() {
 
   if (!isMounted || storeLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-[#f02d9c] font-medium">Memuat data beta testing...</p>
+       <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
       </div>
     );
   }
@@ -305,7 +305,7 @@ export default function Level6Page() {
         </header>
       )}
 
-      <div className="flex">
+      <div className="flex mt-6">
         <PlanSidebar
           projectId={projectId}
           currentLevelId={6}
@@ -505,7 +505,7 @@ export default function Level6Page() {
                               {canLaunch ? (
                                 <span className="inline-flex items-center gap-1.5 bg-[#e8f5f4] text-[#0d8a85] px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold text-xs sm:text-sm border border-[#8acfd1]">
                                   <CheckCircle size={14} />
-                                  MVP SIAP DILUNCURKAN!
+                                  PRODUK SIAP DILUNCURKAN!
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1.5 bg-[#fff8e1] text-[#c98a00] px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold text-xs sm:text-sm border border-[#fbe2a7]">
@@ -773,13 +773,28 @@ export default function Level6Page() {
         </main>
       </div>
 
-      <NotificationModalPlan
-        isOpen={showNotification}
-        type="success"
-        xpGained={xpGained}
-        badgeName={badgeName}
-        onClose={() => setShowNotification(false)}
-      />
+            {currentLevel?.completed ? (
+              <NotificationModalPlan
+               isOpen={showNotification}
+               type="success"
+               pesan="Testing berhasil disimpan!"
+               keterangan="Berdasarkan hasil testing kamu bisa menyempurnakan produkmu di level Prototype sebelum melanjutkan tahap Launching!"
+               onClose={() => {
+                 setShowNotification(false);
+               }}
+             />
+            ) : (
+              <NotificationModalPlan
+                isOpen={showNotification}
+                type="success"
+                keterangan="Berdasarkan hasil testing kamu bisa menyempurnakan produkmu di level Prototype sebelum melanjutkan tahap Launching!"
+                xpGained={xpGained}
+                badgeName={badgeName}
+                onClose={() => {
+                  setShowNotification(false);
+                }}
+              />
+            )}
     </div>
   );
 }

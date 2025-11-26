@@ -171,7 +171,12 @@ export default function Level4Page() {
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
-  useEffect(() => setIsMounted(true), []);
+  useEffect(() => {
+    setIsMounted(true);
+    if (currentLevel?.completed) { 
+      setIsEditing(false)
+    }
+  }, []);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -211,10 +216,13 @@ export default function Level4Page() {
         await updateLevelStatus(currentLevel._id, { completed: true });
       }
       setIsEditing(!isEditing)
-
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
-      setShowNotification(true);
+      if (currentLevel?.completed) {
+        setShowNotification(true);
+      } else {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+        setShowNotification(true);
+      }
     } catch (err) {
       alert('Gagal menyimpan. Coba lagi.');
     }
@@ -596,13 +604,25 @@ export default function Level4Page() {
         </main>
       </div>
 
-      <NotificationModalPlan
-        isOpen={showNotification}
-        type="success"
-        xpGained={xpGained}
-        badgeName={badgeName}
-        onClose={() => setShowNotification(false)}
-      />
+      {currentLevel?.completed ? (
+        <NotificationModalPlan
+          isOpen={showNotification}
+          type="success"
+          pesan="Lean Canvas berhasil disimpan!"
+          keterangan="Kamu bisa mulai membuat produk awal dari ide bisnimu di level selanjutnya!"
+          onClose={() => setShowNotification(false)}
+        />
+      ) : (
+        <NotificationModalPlan
+          isOpen={showNotification}
+          type="success"
+          keterangan="Kamu bisa memulai untuk membuat produk awal dari ide bisnismu di level selanjutnya!"
+          xpGained={xpGained}
+          badgeName={badgeName}
+          onClose={() => setShowNotification(false)}
+        />
+      )}
+
     </div>
   );
 }

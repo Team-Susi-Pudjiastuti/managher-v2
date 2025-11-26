@@ -79,6 +79,8 @@ export default function Level1Page() {
   const [showNotification, setShowNotification] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [notificationData, setNotificationData] = useState({
+    pesan:'',
+    keterangan: '',
     message: '',
     xpGained: 0,
     badgeName: '',
@@ -145,6 +147,7 @@ export default function Level1Page() {
 
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
+  const currentLevel = planLevels.find(l => l.order === 3);
 
    if (!isHydrated) {
       return (
@@ -236,14 +239,22 @@ export default function Level1Page() {
     };
     await updateBusinessIdea(id, payload);
     await updateLevelStatus(planLevels[0]._id, { completed: true });
-    setShowConfetti(true);
-    setNotificationData({
-      message: 'Ide berhasil disimpan!',
-      xpGained: planLevels[0].xp,
-      badgeName: planLevels[0].badge,
-    });
-    setShowNotification(true);
-    setTimeout(() => setShowConfetti(false), 3000);
+    if (currentLevel?.completed) {
+        setShowNotification(true);
+         setNotificationData({
+          pesan: "Ide berhasil disimpan!",
+          keterangan: "Validasi ide bisnismu di level selanjutnya dengan teknik validasi real-win-worth!",
+        });
+      } else {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+        setShowNotification(true);
+         setNotificationData({
+          keterangan: "Validasi ide bisnismu di level selanjutnya dengan teknik validasi real-win-worth!",
+          xpGained: planLevels[0].xp,
+          badgeName: planLevels[0].badge,
+        });
+      }
   };
 
   const handleSaveView = async () => {
@@ -253,14 +264,24 @@ export default function Level1Page() {
     }
     await updateBusinessIdea(localIdea._id, localIdea);
     await updateLevelStatus(planLevels[0]._id, { completed: true });
-    setShowConfetti(true);
-    setNotificationData({
-      message: 'Ide berhasil disimpan!',
-      xpGained: planLevels[0].xp,
-      badgeName: planLevels[0].badge,
-    });
-    setShowNotification(true);
-    setTimeout(() => setShowConfetti(false), 3000);
+    if (currentLevel?.completed) {
+        setShowNotification(true);
+         setNotificationData({
+          message: 'Ide berhasil disimpan!',
+          pesan: "Ide bisnis berhasil disimpan!",
+          keterangan: "Validasi ide bisnismu di level selanjutnya dengan teknik validasi real-win-worth!",
+        });
+      } else {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+        setShowNotification(true);
+         setNotificationData({
+          message: 'Ide berhasil disimpan!',
+          keterangan: "Validasi ide bisnismu di level selanjutnya dengan teknik validasi real-win-worth!",
+          xpGained: planLevels[0].xp,
+          badgeName: planLevels[0].badge,
+        });
+      }
   };
 
   // Cek apakah sudah ada data tersimpan & sudah complete → tampilkan VPC langsung
@@ -1348,13 +1369,26 @@ export default function Level1Page() {
           </div>
         </main>
       </div>
-      <NotificationModalPlan
-        isOpen={showNotification}
-        type="success"
-        xpGained={notificationData.xpGained}
-        badgeName={notificationData.badgeName}
-        onClose={() => setShowNotification(false)}
-      />
+      {currentLevel?.completed ? (
+        <NotificationModalPlan
+          isOpen={showNotification}
+          type="success"
+          pesan={notificationData.pesan}
+          keterangan={notificationData.keterangan}
+          xpGained={notificationData.xpGained}
+          badgeName={notificationData.badgeName}
+          onClose={() => setShowNotification(false)}
+        />
+      ) : (
+        <NotificationModalPlan
+          isOpen={showNotification}
+          type="success"
+          keterangan={notificationData.keterangan}
+          xpGained={notificationData.xpGained}
+          badgeName={notificationData.badgeName}
+          onClose={() => setShowNotification(false)}
+        />
+      )}
     </div>
   );
 }
