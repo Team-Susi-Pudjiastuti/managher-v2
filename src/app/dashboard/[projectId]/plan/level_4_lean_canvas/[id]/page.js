@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
-  Printer, Target, Lightbulb, BookOpen, ChevronLeft, ChevronRight,
+  Printer, Target, Lightbulb, BookOpen, ChevronLeft, ChevronRight, Clipboard,
   CheckCircle, AlertTriangle, Wrench, BarChart3, ShieldCheck, Users,
   Send, Coins, TrendingUp, Eye, Edit3, Menu, Award, Zap, Loader2
 } from 'lucide-react';
@@ -15,6 +15,7 @@ import { useLeanCanvasStore } from '@/store/useLeanCanvasStore';
 import useProjectStore from '@/store/useProjectStore';
 import Confetti from '@/components/Confetti';
 import useBusinessIdeaStore from '@/store/useBusinessIdeaStore';
+import useAuthStore from '@/store/useAuthStore';
 
 function mapIdeaToLeanCanvas(idea, projectId) {
   const product = idea.productsServices?.[0] || {};
@@ -65,6 +66,7 @@ const PhaseProgressBar = ({ currentXp, totalXp }) => {
 export default function Level4Page() {
   const { id, projectId } = useParams();
   const router = useRouter();
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
 
   const { planLevels, getLevels } = useProjectStore();
   const {
@@ -76,6 +78,16 @@ export default function Level4Page() {
     setCanvas,
   } = useLeanCanvasStore();
   const { businessIdea } = useBusinessIdeaStore()
+
+  useEffect(() => {
+    loadSession();
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isHydrated, isAuthenticated, router]);
 
   const [isEditing, setIsEditing] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
@@ -159,7 +171,12 @@ export default function Level4Page() {
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
-  useEffect(() => setIsMounted(true), []);
+  useEffect(() => {
+    setIsMounted(true);
+    if (currentLevel?.completed) { 
+      setIsEditing(false)
+    }
+  }, []);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -199,10 +216,13 @@ export default function Level4Page() {
         await updateLevelStatus(currentLevel._id, { completed: true });
       }
       setIsEditing(!isEditing)
-
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
-      setShowNotification(true);
+      if (currentLevel?.completed) {
+        setShowNotification(true);
+      } else {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+        setShowNotification(true);
+      }
     } catch (err) {
       alert('Gagal menyimpan. Coba lagi.');
     }
@@ -218,12 +238,11 @@ export default function Level4Page() {
 
   if (!isMounted || canvasLoading) {
     return (
-      <div className="flex justify-center items-center py-10">
-        <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
       </div>
     );
   }
-
 
   return (
     <div className="min-h-screen bg-white font-[Poppins] text-[#333]">
@@ -240,7 +259,7 @@ export default function Level4Page() {
         </header>
       )}
 
-      <div className="flex">
+      <div className="flex mt-6">
         <PlanSidebar
           projectId={projectId}
           currentLevelId={4}
@@ -299,11 +318,11 @@ export default function Level4Page() {
                       </h3>
                       <div className="space-y-2">
                         {[
-                          'Isi semua bagian Lean Canvas berdasarkan ide bisnismu',
-                          'Fokus pada masalah nyata & solusi yang jelas',
-                          'Tentukan metrik utama untuk mengukur keberhasilan',
-                          'Identifikasi keunggulan yang sulit ditiru pesaing',
-                          'Simpan canvas untuk lanjut ke Level 5',
+                          'Lean Canvas ini merupakan hasil generate dari VPC di Level 1',
+                          'Cek kembali dan edit terlebih dahulu isi Lean Canvas jika perlu',
+                          'Pastikan semua 9 komponen terisi dengan jelas dan spesifik',
+                          'Gunakan kalimat singkat, fokus pada validasi nyata',
+                          'Klik “Simpan” untuk lanjut ke Level 5',
                         ].map((text, i) => (
                           <div key={i} className="flex items-start gap-2 text-sm text-[#5b5b5b]">
                             <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#f02d9c] text-white text-xs font-bold mt-0.5">
@@ -323,26 +342,51 @@ export default function Level4Page() {
                       </div>
                     </div>
 
-                    <div className="border border-gray-200 rounded-xl p-4 bg-white">
-                      <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
-                        <BookOpen size={14} /> Resources
+                    <div className="border border-[#fbe2a7] bg-[#fdfcf8] rounded-xl p-4">
+                      <h3 className="font-bold text-[#5b5b5b] mb-3 flex items-center gap-1">
+                        <BookOpen size={16} className="text-[#f02d9c]" />
+                        Resources
                       </h3>
-                      <ul className="text-sm text-[#5b5b5b] space-y-1.5">
-                        <li>
-                          <a href="https://miro.com/templates/lean-canvas/" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline inline-flex items-center gap-1">
-                            Miro: Lean Canvas Template <ChevronRight size={12} />
-                          </a>
+                      <ul className="text-sm text-[#5b5b5b] space-y-2">
+                        <li className="flex items-start gap-2">
+                          <span>
+                            <strong>Apa itu Lean Canvas?</strong> Model bisnis satu halaman untuk merancang ide bisnis secara cepat dan berbasis validasi nyata.
+                          </span>
                         </li>
-                        <li>
-                          <a href="https://www.strategyzer.com/canvas/lean-canvas" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline inline-flex items-center gap-1">
-                            Panduan Resmi Lean Canvas (Strategyzer) <ChevronRight size={12} />
-                          </a>
+                        <li className="ml-5.5">
+                                <a
+                                  href="https://leancanvas.com/"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#f02d9c] hover:underline"
+                                >
+                                  Lean Canvas Guide (by Ash Maurya)
+                                </a>
                         </li>
-                        <li>
-                          <a href="https://perempuaninovasi.id/workshop" target="_blank" rel="noopener noreferrer" className="text-[#f02d9c] hover:underline inline-flex items-center gap-1">
-                            Workshop Perempuan Inovasi <ChevronRight size={12} />
-                          </a>
+                        <li className="ml-5.5">
+                                <a
+                                  href="https://miro.com/templates/lean-canvas/"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#f02d9c] hover:underline"
+                                >
+                                  Miro – Kolaborasi Lean Canvas real-time
+                                </a>
                         </li>
+                        <li className="flex items-start gap-2">
+                          <span><strong>9 Komponen Utama:</strong></span>
+                        </li>
+                        <ul className="list-disc pl-7 space-y-1 text-[#5b5b5b] text-sm">
+                          <li><strong>Problem</strong> — Masalah utama yang dialami pelanggan.</li>
+                          <li><strong>Solution</strong> — Solusi yang kamu berikan untuk masalah tersebut.</li>
+                          <li><strong>Customer Segments</strong> — Kelompok orang yang benar-benar kamu layani.</li>
+                          <li><strong>UVP</strong> — Alasan utama pelanggan memilihmu.</li>
+                          <li><strong>Unfair Advantage</strong> — Keunggulan yang sulit ditiru pesaing.</li>
+                          <li><strong>Channels</strong> — Saluran untuk menjangkau dan melayani pelanggan.</li>
+                          <li><strong>Cost Structure</strong> — Biaya utama dalam menjalankan bisnis.</li>
+                          <li><strong>Revenue Streams</strong> — Sumber utama pendapatan bisnismu.</li>
+                          <li><strong>Key Metrics</strong> — Indikator utama keberhasilan bisnismu.</li>
+                        </ul>
                       </ul>
                     </div>
                   </div>
@@ -531,12 +575,27 @@ export default function Level4Page() {
                       </button>
                       </> 
                     )}
-                    <button
-                      onClick={() => router.push(`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}`)}
-                        className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] flex items-center gap-1"
-                      >
-                        Next <ChevronRight size={16} />
-                    </button>
+                    {currentLevel?.completed ? (
+                          <button
+                            onClick={() => {
+                              if (nextPrevLevel(3)) {
+                                router.push(`/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(3)}`);
+                              } else {
+                                router.push(`/dashboard/${projectId}/plan`);
+                              }
+                            }}
+                            className="px-4 py-2.5 bg-[#8acfd1] text-[#0a5f61] font-medium rounded-lg hover:bg-[#7abfc0] flex items-center gap-1"
+                          >
+                            Next <ChevronRight size={16} />
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 cursor-not-allowed flex items-center gap-1"
+                          >
+                            Next <ChevronRight size={16} />
+                          </button>
+                        )}
                   </div>
                 </div>
               </div>
@@ -545,13 +604,25 @@ export default function Level4Page() {
         </main>
       </div>
 
-      <NotificationModalPlan
-        isOpen={showNotification}
-        type="success"
-        xpGained={xpGained}
-        badgeName={badgeName}
-        onClose={() => setShowNotification(false)}
-      />
+      {currentLevel?.completed ? (
+        <NotificationModalPlan
+          isOpen={showNotification}
+          type="success"
+          pesan="Lean Canvas berhasil disimpan!"
+          keterangan="Kamu bisa mulai membuat produk awal dari ide bisnimu di level selanjutnya!"
+          onClose={() => setShowNotification(false)}
+        />
+      ) : (
+        <NotificationModalPlan
+          isOpen={showNotification}
+          type="success"
+          keterangan="Kamu bisa memulai untuk membuat produk awal dari ide bisnismu di level selanjutnya!"
+          xpGained={xpGained}
+          badgeName={badgeName}
+          onClose={() => setShowNotification(false)}
+        />
+      )}
+
     </div>
   );
 }

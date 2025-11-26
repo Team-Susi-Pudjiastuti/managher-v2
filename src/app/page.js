@@ -435,15 +435,15 @@ export default function LandingPage() {
                 </div>
                 <div className="space-y-3 text-sm text-[#5b5b5b]">
                   <div className="flex items-start gap-2">
-                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <CheckCircle size={16} className="text-[#f02d9c] shrink-0 mt-0.5" />
                     <span>Fase PLAN (mini business plan)</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <CheckCircle size={16} className="text-[#f02d9c] shrink-0 mt-0.5" />
                     <span>Fase SELL (mini ERP)</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <CheckCircle size={16} className="text-[#f02d9c] shrink-0 mt-0.5" />
                     <span>Fase SCALE UP</span>
                   </div>
                 </div>
@@ -478,15 +478,15 @@ export default function LandingPage() {
                 </div>
                 <div className="space-y-3 text-sm text-[#5b5b5b]">
                   <div className="flex items-start gap-2">
-                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <CheckCircle size={16} className="text-[#f02d9c] shrink-0 mt-0.5" />
                     <span>Fase PLAN (mini business plan)</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <CheckCircle size={16} className="text-[#f02d9c] shrink-0 mt-0.5" />
                     <span>Fase SELL (mini ERP)</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <CheckCircle size={16} className="text-[#f02d9c] flex-shrink-0 mt-0.5" />
+                    <CheckCircle size={16} className="text-[#f02d9c] shrink-0 mt-0.5" />
                     <span>Fase SCALE UP</span>
                   </div>
                 </div>
