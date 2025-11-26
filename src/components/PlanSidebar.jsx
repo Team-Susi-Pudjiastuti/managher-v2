@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Menu as MenuIcon, X } from 'lucide-react';
+import { Menu as MenuIcon, X, Loader2 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 
 import {
@@ -23,10 +23,11 @@ export default function PlanSidebar({
   mobileSidebarOpen = false,
   setMobileSidebarOpen = () => {},
 }) {
+  const { id } = useParams()
   const { planLevels } = useProjectStore();
   const pathname = usePathname();
   const projectId = planLevels?.[0]?.project._id;
-
+  
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('plan_sidebar_collapsed') === 'true';
@@ -41,7 +42,7 @@ export default function PlanSidebar({
       localStorage.setItem('plan_sidebar_collapsed', 'true');
     }
   }, [pathname]);
-
+  
   const handleToggle = () => {
     const newState = !isCollapsed;
     setIsCollapsed(newState);
@@ -52,15 +53,23 @@ export default function PlanSidebar({
     if (isMobile) setMobileSidebarOpen(false);
   };
 
+  const levelId = (num) => {
+    return planLevels?.[num]?.entities[0]?.entity_ref
+  }
+
+  const inLevel = (num) => {
+    return num === currentLevelId
+  } 
+
   const sidebarItems = [
     { id: 'overview', title: 'Overview', icon: LayoutDashboard, href: `/dashboard/${projectId}` },
-    { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level_1_idea/${planLevels?.[0]?.entities[0]?.entity_ref}` },
-    { id: 2, title: 'RWW Analysis', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww/${planLevels?.[1]?.entities[0]?.entity_ref}` },
-    { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level_3_product_brand/${planLevels?.[2]?.entities[0]?.entity_ref}` },
-    { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas/${planLevels?.[3]?.entities[0]?.entity_ref}` },
-    { id: 5, title: 'Prototype', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP/${planLevels?.[4]?.entities[0]?.entity_ref}` },
-    { id: 6, title: 'Beta Testing', icon: Users, href: `/dashboard/${projectId}/plan/level_6_beta_testing/${planLevels?.[5]?.entities[0]?.entity_ref}` },
-    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch/${planLevels?.[6]?.entities[0]?.entity_ref}` }
+    { id: 1, title: 'Ide Generator', icon: Lightbulb, href: `/dashboard/${projectId}/plan/level_1_idea/${levelId(0)}` },
+    { id: 2, title: 'RWW Analysis', icon: CheckCircle, href: `/dashboard/${projectId}/plan/level_2_rww/${levelId(1)}` },
+    { id: 3, title: 'Brand Identity', icon: Palette, href: `/dashboard/${projectId}/plan/level_3_product_brand/${levelId(2)}` },
+    { id: 4, title: 'Lean Canvas', icon: FileText, href: `/dashboard/${projectId}/plan/level_4_lean_canvas/${levelId(3)}` },
+    { id: 5, title: 'Prototype', icon: Box, href: `/dashboard/${projectId}/plan/level_5_MVP/${levelId(4)}` },
+    { id: 6, title: 'Beta Testing', icon: Users, href: `/dashboard/${projectId}/plan/level_6_beta_testing/${levelId(5)}` },
+    { id: 7, title: 'Persiapan Launching', icon: Rocket, href: `/dashboard/${projectId}/plan/level_7_launch/${levelId(6)}` }
   ];
 
   const isLevelCompleted = (order) => {
@@ -69,9 +78,17 @@ export default function PlanSidebar({
   };
 
   const isActive = (order) => {
-    if (order === 'overview') return pathname === `/dashboard/${projectId}`;
-    const levelPath = sidebarItems.find(item => item.id === order)?.href;
-    return levelPath && pathname.startsWith(levelPath);
+      const index = sidebarItems.findIndex(item => item.id === order);
+
+      const completed = isLevelCompleted(order);
+
+      if (completed) return false;
+
+      if (index === 0) return true;
+
+      const prev = sidebarItems[index - 1];
+
+      return isLevelCompleted(prev.id);
   };
 
   const showText = isMobile ? mobileSidebarOpen : !isCollapsed;
@@ -79,6 +96,8 @@ export default function PlanSidebar({
   if (isMobile && !mobileSidebarOpen) {
     return null;
   }
+
+  console.log(planLevels)
 
   return (
     <>
@@ -152,10 +171,15 @@ export default function PlanSidebar({
             const Icon = item.icon;
             const completed = isLevelCompleted(item.id);
             const active = isActive(item.id);
+            const init = inLevel(item.id)
 
-            let bgColor, textColor, borderColor;
+            let bgColor, textColor, borderColor, cursor;
 
-            if (completed) {
+            if (completed && init) {
+              bgColor = 'bg-pink-300';
+              textColor = 'text-pink-700';
+              borderColor = 'border-[#f02d9c]/30';
+            } else if (completed) {
               bgColor = 'bg-[#f02d9c]';
               textColor = 'text-white';
               borderColor = 'border-[#f02d9c]';
@@ -167,28 +191,40 @@ export default function PlanSidebar({
               bgColor = 'bg-gray-100';
               textColor = 'text-gray-500';
               borderColor = 'border-gray-300';
+              cursor = 'cursor-not-allowed'
             }
 
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                onClick={isMobile ? closeMobileSidebar : undefined}
+                onClick={(e) => {
+                  if (!isActive(item.id) && !isLevelCompleted(item.id)) {
+                     e.preventDefault();
+                     return
+                  }
+                  isMobile ? closeMobileSidebar : undefined
+                }}
                 title={!showText ? item.title : undefined}
                 className={`
-                  group block rounded-lg border ${borderColor} ${bgColor} ${textColor}
-                  transition-all duration-200 ease-in-out
+                  group block rounded-lg border ${borderColor} ${bgColor} ${textColor} ${cursor}
+                  transition-all duration-200 ease-in-out 
                   ${
                     !showText
-                      ? 'w-10 h-10 flex items-center justify-center mx-auto hover:border-[#f02d9c] hover:bg-[#fbe2a7] hover:text-[#5b5b5b]'
-                      : 'p-3 flex items-center hover:border-[#f02d9c] hover:bg-[#fbe2a7] hover:text-[#5b5b5b]'
+                      ? 'w-10 h-10 flex items-center justify-center mx-auto hover:border-[#f02d9c] hover:bg-pink-600 hover:text-white'
+                      : 'p-3 flex items-center hover:border-[#f02d9c] hover:bg-pink-600 hover:text-white'
                   }
                 `}
               >
-                <Icon
+                {!planLevels ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <Icon
                   size={!showText ? 16 : 18}
                   className="shrink-0"
-                />
+                  />
+                )}
+                
                 {showText && (
                   <span className="ml-3 font-medium truncate">{item.title}</span>
                 )}
