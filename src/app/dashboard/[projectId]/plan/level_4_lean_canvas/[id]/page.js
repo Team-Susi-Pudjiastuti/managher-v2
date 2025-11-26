@@ -171,7 +171,12 @@ export default function Level4Page() {
   const currentXp = planLevels.filter(l => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
 
-  useEffect(() => setIsMounted(true), []);
+  useEffect(() => {
+    setIsMounted(true);
+    if (currentLevel?.completed) { 
+      setIsEditing(false)
+    }
+  }, []);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -211,10 +216,13 @@ export default function Level4Page() {
         await updateLevelStatus(currentLevel._id, { completed: true });
       }
       setIsEditing(!isEditing)
-
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
-      setShowNotification(true);
+      if (currentLevel?.completed) {
+        setShowNotification(true);
+      } else {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+        setShowNotification(true);
+      }
     } catch (err) {
       alert('Gagal menyimpan. Coba lagi.');
     }
@@ -230,12 +238,11 @@ export default function Level4Page() {
 
   if (!isMounted || canvasLoading) {
     return (
-      <div className="flex justify-center items-center py-10">
-        <Loader2 className="w-6 h-6 text-[#f02d9c] animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
       </div>
     );
   }
-
 
   return (
     <div className="min-h-screen bg-white font-[Poppins] text-[#333]">
@@ -252,7 +259,7 @@ export default function Level4Page() {
         </header>
       )}
 
-      <div className="flex">
+      <div className="flex mt-6">
         <PlanSidebar
           projectId={projectId}
           currentLevelId={4}
@@ -584,9 +591,9 @@ export default function Level4Page() {
                         ) : (
                           <button
                             disabled
-                            className="px-4 py-2.5 bg-gray-200 text-gray-500 font-medium rounded-lg border border-gray-300 cursor-not-allowed"
+                            className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 cursor-not-allowed flex items-center gap-1"
                           >
-                            Next
+                            Next <ChevronRight size={16} />
                           </button>
                         )}
                   </div>
@@ -597,13 +604,25 @@ export default function Level4Page() {
         </main>
       </div>
 
-      <NotificationModalPlan
-        isOpen={showNotification}
-        type="success"
-        xpGained={xpGained}
-        badgeName={badgeName}
-        onClose={() => setShowNotification(false)}
-      />
+      {currentLevel?.completed ? (
+        <NotificationModalPlan
+          isOpen={showNotification}
+          type="success"
+          pesan="Lean Canvas berhasil disimpan!"
+          keterangan="Kamu bisa mulai membuat produk awal dari ide bisnimu di level selanjutnya!"
+          onClose={() => setShowNotification(false)}
+        />
+      ) : (
+        <NotificationModalPlan
+          isOpen={showNotification}
+          type="success"
+          keterangan="Kamu bisa memulai untuk membuat produk awal dari ide bisnismu di level selanjutnya!"
+          xpGained={xpGained}
+          badgeName={badgeName}
+          onClose={() => setShowNotification(false)}
+        />
+      )}
+
     </div>
   );
 }

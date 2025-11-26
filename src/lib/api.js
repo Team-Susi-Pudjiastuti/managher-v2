@@ -1,7 +1,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function apiRequest(endpoint, method = "GET", body) {
-  const headers = { "Content-Type": "application/json" };
+  const headers = {};
 
   const options = {
     method,
@@ -9,7 +9,12 @@ export async function apiRequest(endpoint, method = "GET", body) {
     credentials: "include",
   };
 
-  if (body) options.body = JSON.stringify(body);
+  if (body instanceof FormData) {
+    options.body = body;
+  } else if (body) {
+    headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(body);
+  }
 
   const res = await fetch(`${API_URL}/${endpoint}`, options);
   const data = await res.json();
