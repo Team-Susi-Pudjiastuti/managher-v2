@@ -218,7 +218,7 @@ export default function RWW() {
   
   <Confetti />
 
-  const handleAddResponden = () => {
+  const handleAddResponden = async () => {
     const { name, age, gender, activity, real, win, worth } = currentResponse;
     const allAnswered = [name, gender, activity].every(val => val !== '') &&
                         real.length === 3 && win.length === 3 && worth.length === 3 &&
@@ -251,7 +251,23 @@ export default function RWW() {
       total,
     };
 
-    setResponses(prev => [...prev, newResponder]);
+    const updatedResponses = [...responses, newResponder];
+
+    setResponses(updatedResponses);
+    
+    const dataToSave = updatedResponses.map(r => ({
+    name: r.name,
+    age: r.age,
+    gender: r.gender,
+    activity: r.activity,
+    real: r.realRaw,   // <-- array mentah
+    win: r.winRaw,
+    worth: r.worthRaw,
+    totalScore: r.total
+  }));
+
+  await addRWWTesting(
+    projectId, dataToSave);
 
     // Reset currentResponse
     setCurrentResponse({
@@ -369,15 +385,15 @@ const handleSave = async () => {
 
   const isValid = parseFloat(averages.total) >= 3.5;
 
-    await addRWWTesting(
-      projectId, dataToSave);
+  await addRWWTesting(
+    projectId, dataToSave);
   
 
   // Lanjutkan seperti biasa...
-  await updateLevelStatus(planLevels[1]._id, { completed: isValid });
+  await updateLevelStatus(planLevels[1]._id, { completed: true });
 
   // Notifikasi, confetti, dll.
-  if (isValid && currentLevel?.completed) {
+  if (currentLevel?.completed) {
     setShowNotification(true);
     setNotificationData({
       pesan: "Validasi berhasil disimpan!",
@@ -1011,11 +1027,8 @@ const handleSave = async () => {
           type="success"
           pesan={notificationData.pesan}
           keterangan={notificationData.keterangan}
-          xpGained={notificationData.xpGained}
-          badgeName={notificationData.badgeName}
           onClose={() => {
             setShowNotification(false)
-            router.push(`/dashboard/${projectId}/plan/level_3_product_brand/${nextPrevLevel(3)}`);
           }}
         />
       ) : (
@@ -1027,7 +1040,6 @@ const handleSave = async () => {
           badgeName={notificationData.badgeName}
           onClose={() => {
             setShowNotification(false)
-            router.push(`/dashboard/${projectId}/plan/level_3_product_brand/${nextPrevLevel(3)}`);
           }}
         />
       )}
