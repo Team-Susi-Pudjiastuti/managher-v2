@@ -1348,7 +1348,7 @@ export default function Level1Page() {
                           ) : (
                             <button
                               disabled
-                              className="px-4 py-2.5 bg-gray-200 text-gray-500 font-medium rounded-lg cursor-not-allowed"
+                              className="px-4 py-2.5 bg-gray-200 text-gray-500 font-medium rounded-lg flex items-center gap-1 cursor-not-allowed"
                             >
                               Next <ChevronRight size={16} />
                             </button>
