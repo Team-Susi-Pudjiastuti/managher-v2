@@ -293,7 +293,6 @@ export default function Level7Page() {
                         })}
                       </ul>
                     </div>
-                    {console.log(nextPrevLevel(1))}
 
                     {/* Aset */}
                     <div>

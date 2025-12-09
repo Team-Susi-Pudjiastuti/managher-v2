@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import useAuthStore from '@/store/useAuthStore';
 import Link from 'next/link';
@@ -19,10 +19,12 @@ export default function LoginPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [modalType, setModalType] = useState('success');
+  const [loading, setLoading] = useState(false);
 
   const closeModal = () => setShowModal(false);
 
   const handleLogin = async () => {
+    setLoading(true);
     const { username, password } = formData;
     if (!username.trim() || !password.trim()) {
       setModalMessage('Username dan kata sandi wajib diisi.');
@@ -33,6 +35,7 @@ export default function LoginPage() {
 
     const result = await login(username, password);
     if (result.success) {
+      setLoading(false);
       setModalMessage(result.message || 'Login berhasil!');
       setModalType('success');
       setShowModal(true);
@@ -121,7 +124,13 @@ export default function LoginPage() {
               hover:translate-x-0.5 hover:translate-y-0.5 font-[Poppins]"
             style={{ boxShadow: '3px 3px 0 0 #8acfd1' }}
           >
-            Masuk
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-[#f02d9c]" />
+              </div>
+            ) : (
+              'Masuk'
+            )}
           </button>
 
           {/* Divider */}
