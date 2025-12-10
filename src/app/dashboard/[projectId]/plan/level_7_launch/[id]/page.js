@@ -33,8 +33,7 @@ import Breadcrumb from '@/components/Breadcrumb';
 import PlanSidebar from '@/components/PlanSidebar';
 import NotificationModalPlan from '@/components/NotificationModalPlan';
 import useProjectStore from '@/store/useProjectStore';
-import { useLaunchChecklistStore } from '@/store/useLaunchChecklistStore';
-import useAuthStore from '@/store/useAuthStore'; 
+import useAuthStore from '@/store/useAuthStore';
 
 // === CONFETTI ===
 const Confetti = () => {
@@ -133,33 +132,83 @@ const CHECKLIST_ITEMS = [
   { id: 'schedule', label: 'Tentukan jam operasional & respons', icon: Clock },
 ];
 
+// === CUSTOM ZUSTAND STORE (PER PROJECT) ===
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+const createDefaultChecklist = () =>
+  CHECKLIST_ITEMS.reduce((acc, item) => ({ ...acc, [item.id]: false }), {});
+
+export const useLaunchChecklistStore = create(
+  persist(
+    (set, get) => ({
+      checklistByProject: {},
+
+      getChecklist: (projectId) => {
+        return get().checklistByProject[projectId] || createDefaultChecklist();
+      },
+
+      setChecklistForProject: (projectId, checklist) => {
+        set((state) => ({
+          checklistByProject: {
+            ...state.checklistByProject,
+            [projectId]: checklist,
+          },
+        }));
+      },
+
+      toggleItem: (projectId, itemId) => {
+        const current = get().getChecklist(projectId);
+        const updated = { ...current, [itemId]: !current[itemId] };
+        get().setChecklistForProject(projectId, updated);
+      },
+
+      initProject: (projectId) => {
+        const current = get().checklistByProject;
+        if (!current[projectId]) {
+          get().setChecklistForProject(projectId, createDefaultChecklist());
+        }
+      },
+    }),
+    {
+      name: 'launch-checklist-storage-v2',
+      partialize: (state) => ({ checklistByProject: state.checklistByProject }),
+    }
+  )
+);
+
+// === MAIN COMPONENT ===
 export default function Level7Page() {
   const { projectId } = useParams();
   const router = useRouter();
 
   const { planLevels, getLevels, updateLevelStatus } = useProjectStore();
-  const { checklist, toggleItem } = useLaunchChecklistStore(); // fetchChecklist dihapus
+  const { getChecklist, toggleItem, initProject } = useLaunchChecklistStore();
 
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [localChecklist, setLocalChecklist] = useState({});
 
-  const { isAuthenticated, loadSession, isHydrated } = useAuthStore(); 
+  const { isAuthenticated, loadSession, isHydrated } = useAuthStore();
 
+  // Auth guard
   useEffect(() => {
-    loadSession(); 
-  }, []); 
+    loadSession();
+  }, []);
 
   useEffect(() => {
     if (isHydrated && !isAuthenticated) {
-      router.push('/auth/login'); 
+      router.push('/auth/login');
     }
-  }, [isHydrated, isAuthenticated, router]); 
+  }, [isHydrated, isAuthenticated, router]);
 
+  // Mounting
   useEffect(() => setIsMounted(true), []);
 
+  // Responsiveness
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 1024);
     handler();
@@ -167,27 +216,33 @@ export default function Level7Page() {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
+  // Load level & init checklist
   useEffect(() => {
     if (projectId && projectId !== 'undefined') {
       getLevels(projectId);
-      // fetchChecklist(projectId); — DIHAPUS agar tidak reset ke false
+      initProject(projectId);
+      const saved = getChecklist(projectId);
+      setLocalChecklist(saved);
     }
   }, [projectId]);
 
-  // Helper: Kembalikan level lengkap berdasarkan order
+  // Helper: get level by order
   const getLevel = (order) => {
     return planLevels.find((l) => l.order === order) || null;
   };
 
-  // Progress XP
-  const totalLevels = planLevels.length;
+  // XP progress
   const currentXp = planLevels.filter((l) => l.completed).reduce((acc, l) => acc + (l.xp || 0), 0);
   const totalXp = planLevels.reduce((acc, l) => acc + (l.xp || 0), 0);
-
   const currentLevel = planLevels.find((l) => l.order === 7);
   const xpGained = currentLevel?.xp || 10;
   const badgeName = currentLevel?.badge || 'Launch Star';
-  const nextPrevLevel = (num) => planLevels.find(l => l.project._id === projectId && l.order === num).entities[0].entity_ref
+
+  // Helper for link generation
+  const nextPrevLevel = (num) => {
+    const level = planLevels.find(l => l.order === num);
+    return level?.entities[0]?.entity_ref || '';
+  };
 
   const breadcrumbItems = [
     { href: `/dashboard/${projectId}`, label: 'Dashboard' },
@@ -196,7 +251,7 @@ export default function Level7Page() {
   ];
 
   const handleSelesaiClick = () => {
-    const allDone = Object.values(checklist).every((v) => v);
+    const allDone = Object.values(localChecklist).every((v) => v);
     if (allDone) {
       updateLevelStatus(currentLevel._id, { completed: true });
       if (currentLevel?.completed) {
@@ -263,7 +318,6 @@ export default function Level7Page() {
                   </h1>
                 )}
 
-                {/* RESPONSIVE: 1 kolom di mobile, 2 di lg+ */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   {/* Kolom Kiri */}
                   <div className="space-y-6">
@@ -275,11 +329,17 @@ export default function Level7Page() {
                       </h3>
                       <ul className="space-y-2">
                         {CHECKLIST_ITEMS.map((item) => {
-                          const isChecked = checklist[item.id] || false;
+                          const isChecked = localChecklist[item.id] || false;
                           return (
                             <li key={item.id} className="flex items-start gap-2 text-sm">
                               <button
-                                onClick={() => toggleItem(projectId, item.id)}
+                                onClick={() => {
+                                  toggleItem(projectId, item.id);
+                                  setLocalChecklist(prev => ({
+                                    ...prev,
+                                    [item.id]: !prev[item.id]
+                                  }));
+                                }}
                                 className="mt-0.5 w-5 h-5 flex items-center justify-center border border-gray-400 rounded-sm bg-white hover:bg-[#f0f9f9] flex-shrink-0"
                                 aria-label={`Toggle ${item.label}`}
                               >
@@ -299,18 +359,22 @@ export default function Level7Page() {
                       <h3 className="font-bold text-[#5b5b5b] mb-3">Aset Hasil Level 1–6</h3>
                       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-2">
                         {[
-                          { id: 1, label: 'VPC', icon: Target, completed: getLevel(1)?.completed, href: `/dashboard/${projectId}/plan/level_1_idea/${nextPrevLevel(1)}` },
-                          { id: 2, label: 'RWW Analysis', icon: BarChart3, completed: getLevel(2)?.completed, href: `/dashboard/${projectId}/plan/level_2_rww/${nextPrevLevel(2)}` },
-                          { id: 3, label: 'Brand Identity', icon: Palette, completed: getLevel(3)?.completed, href: `/dashboard/${projectId}/plan/level_3_product_brand/${nextPrevLevel(3)}` },
-                          { id: 4, label: 'Lean Canvas', icon: FileText, completed: getLevel(4)?.completed, href: `/dashboard/${projectId}/plan/level_4_lean_canvas/${nextPrevLevel(4)}` },
-                          { id: 5, label: 'Prototype', icon: Rocket, completed: getLevel(5)?.completed, href: `/dashboard/${projectId}/plan/level_5_MVP/${nextPrevLevel(5)}` },
-                          { id: 6, label: 'Beta Testing', icon: Users, completed: getLevel(6)?.completed, href: `/dashboard/${projectId}/plan/level_6_beta_testing/${nextPrevLevel(6)}` },
+                          { id: 1, label: 'VPC', icon: Target, completed: getLevel(1)?.completed, order: 1 },
+                          { id: 2, label: 'RWW Analysis', icon: BarChart3, completed: getLevel(2)?.completed, order: 2 },
+                          { id: 3, label: 'Brand Identity', icon: Palette, completed: getLevel(3)?.completed, order: 3 },
+                          { id: 4, label: 'Lean Canvas', icon: FileText, completed: getLevel(4)?.completed, order: 4 },
+                          { id: 5, label: 'Prototype', icon: Rocket, completed: getLevel(5)?.completed, order: 5 },
+                          { id: 6, label: 'Beta Testing', icon: Users, completed: getLevel(6)?.completed, order: 6 },
                         ].map((item) => {
                           const Icon = item.icon;
                           const status = item.completed ? 'Selesai' : 'Belum selesai';
+                          const entityRef = nextPrevLevel(item.order);
+                          const href = entityRef
+                            ? `/dashboard/${projectId}/plan/level_${item.order}_${item.label.toLowerCase().replace(/ /g, '_')}/${entityRef}`
+                            : '#';
                           return (
                             <div key={item.id} className="border border-gray-300 rounded-xl p-3 bg-[#fdf6f0]">
-                              <Link href={item.href}>
+                              <Link href={href}>
                                 <h4 className="font-bold text-[#0a5f61] text-sm flex items-center gap-1 hover:underline">
                                   <Icon size={14} /> {item.label}
                                 </h4>
@@ -402,7 +466,7 @@ export default function Level7Page() {
                       </div>
                     </div>
 
-                    {/* Resources — SESUAI LEVEL 7 */}
+                    {/* Resources */}
                     <div className="border border-gray-200 rounded-xl p-4 bg-white">
                       <h3 className="font-bold text-[#0a5f61] mb-2 flex items-center gap-1">
                         <BookOpen size={14} /> Resources
@@ -490,15 +554,15 @@ export default function Level7Page() {
 
       {currentLevel?.completed ? (
         <NotificationModalPlan
-         isOpen={showNotification}
-         type="success"
-         pesan="Fase Plan telah selesai!"
-         keterangan="Setelah ide bisnismu berhasil dilaunching pantau perkembangan penjualan bisnismu di Fase Sell!"
-         onClose={() => {
-           setShowNotification(false);
-           router.push(`/dashboard/${projectId}`);
-         }}
-       />
+          isOpen={showNotification}
+          type="success"
+          pesan="Fase Plan telah selesai!"
+          keterangan="Setelah ide bisnismu berhasil dilaunching pantau perkembangan penjualan bisnismu di Fase Sell!"
+          onClose={() => {
+            setShowNotification(false);
+            router.push(`/dashboard/${projectId}`);
+          }}
+        />
       ) : (
         <NotificationModalPlan
           isOpen={showNotification}
@@ -511,7 +575,6 @@ export default function Level7Page() {
           }}
         />
       )}
-
     </div>
   );
 }
