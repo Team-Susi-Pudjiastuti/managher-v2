@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Menu as MenuIcon, X } from 'lucide-react';
+import { Menu as MenuIcon, X, Loader2 } from 'lucide-react';
 import useProjectStore from '@/store/useProjectStore';
 
 import {
@@ -96,6 +96,8 @@ export default function PlanSidebar({
   if (isMobile && !mobileSidebarOpen) {
     return null;
   }
+
+  console.log(planLevels)
 
   return (
     <>
@@ -214,10 +216,15 @@ export default function PlanSidebar({
                   }
                 `}
               >
-                <Icon
+                {!planLevels ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <Icon
                   size={!showText ? 16 : 18}
                   className="shrink-0"
-                />
+                  />
+                )}
+                
                 {showText && (
                   <span className="ml-3 font-medium truncate">{item.title}</span>
                 )}

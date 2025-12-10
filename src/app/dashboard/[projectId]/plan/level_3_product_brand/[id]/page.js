@@ -595,7 +595,7 @@ export default function Level3Page() {
                         ) : (
                           <button
                             disabled
-                            className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 cursor-not-allowed"
+                            className="px-4 py-2.5 bg-gray-100 text-[#5b5b5b] font-medium rounded-lg border border-gray-300 flex items-center gap-1 cursor-not-allowed"
                           >
                             Next <ChevronRight size={16} />
                           </button>
